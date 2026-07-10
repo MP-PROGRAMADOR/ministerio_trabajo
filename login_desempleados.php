@@ -339,10 +339,11 @@
             alert('Redirigiendo a la pasarela única de autenticación oficial del Estado...');
         }
 
-        function goToRegister(event) {
-            event.preventDefault();
-            alert('Redirigiendo al asistente de alta para demandantes de empleo...');
-        }
+       function goToRegister(event) {
+    event.preventDefault();
+    // Redirecciona al archivo HTML del formulario de registro
+    window.location.href = 'registro_desempleados.php'; 
+}
     </script>
 </body>
 

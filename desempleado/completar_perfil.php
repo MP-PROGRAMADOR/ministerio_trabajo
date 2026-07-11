@@ -1,6 +1,46 @@
 <?php
+session_start();
 $titulo = 'Completar Perfil - Portal de Empleo';
+
+// ===== VERIFICAR SESIÓN =====
+if (!isset($_SESSION['usuario_id'])) {
+    header('Location: ../login_desempleados.php');
+    exit();
+}
+
 include '../componentes/header_desempleado.php';
+include '../conexion/conexion.php';
+
+$usuario_id = $_SESSION['usuario_id'];
+
+try {
+    // Obtener datos del usuario
+    $stmt = $pdo->prepare("SELECT * FROM usuarios WHERE id = ?");
+    $stmt->execute([$usuario_id]);
+    $usuario = $stmt->fetch(PDO::FETCH_ASSOC);
+
+    if (!$usuario) {
+        session_destroy();
+        header('Location: ../login_desempleados.php');
+        exit();
+    }
+
+    // Verificar si ya tiene perfil completo
+    $stmt = $pdo->prepare("SELECT * FROM buscadores_empleo WHERE usuario_id = ?");
+    $stmt->execute([$usuario_id]);
+    $buscador = $stmt->fetch(PDO::FETCH_ASSOC);
+
+    if ($buscador) {
+        header('Location: index.php');
+        exit();
+    }
+
+} catch (PDOException $e) {
+    error_log("Error al cargar datos del usuario: " . $e->getMessage());
+    $_SESSION['mensaje_error'] = "Error al cargar los datos del perfil.";
+    header('Location: ../login_desempleados.php');
+    exit();
+}
 ?>
 
 <style>
@@ -155,7 +195,7 @@ include '../componentes/header_desempleado.php';
 
     /* ===== ESTILOS ESPECÍFICOS PARA EL FORMULARIO ===== */
     .section-title {
-        border-left: 4px solid var(--gov-gold);
+        border-left: 4px solid var(--gov-blue);
         padding-left: 12px;
         font-size: 1.1rem;
         font-weight: 600;
@@ -175,19 +215,19 @@ include '../componentes/header_desempleado.php';
         width: 100%;
         height: 100%;
         border-radius: 50%;
-        border: 4px solid var(--gov-gold);
+        border: 4px solid var(--gov-blue);
         object-fit: cover;
         background-color: #e9ecef;
         transition: border-color 0.2s;
     }
     .avatar-preview:hover {
-        border-color: var(--gov-blue);
+        border-color: var(--gov-blue-light);
     }
     .btn-upload-avatar {
         position: absolute;
         bottom: 0;
         right: 0;
-        background-color: var(--gov-gold);
+        background-color: var(--gov-blue);
         color: white;
         border-radius: 50%;
         width: 36px;
@@ -201,7 +241,7 @@ include '../componentes/header_desempleado.php';
     }
     .btn-upload-avatar:hover {
         transform: scale(1.1);
-        background-color: #b8953a;
+        background-color: var(--gov-blue-light);
     }
 
     .file-upload-wrapper {
@@ -236,7 +276,7 @@ include '../componentes/header_desempleado.php';
     }
     .experience-block:hover {
         background-color: rgba(11, 58, 96, 0.05);
-        border-color: var(--gov-gold-light);
+        border-color: var(--gov-blue-light);
     }
 
     .btn-submit {
@@ -258,14 +298,38 @@ include '../componentes/header_desempleado.php';
         color: #fff;
     }
 
-    .btn-outline-gold {
-        border-color: var(--gov-gold);
-        color: var(--gov-gold);
+    .btn-outline-blue {
+        border-color: var(--gov-blue);
+        color: var(--gov-blue);
     }
-    .btn-outline-gold:hover {
-        background-color: var(--gov-gold);
+    .btn-outline-blue:hover {
+        background-color: var(--gov-blue);
         color: #fff;
-        border-color: var(--gov-gold);
+        border-color: var(--gov-blue);
+    }
+
+    .btn-delete-experience {
+        position: absolute;
+        top: 10px;
+        right: 10px;
+        background-color: #dc3545;
+        color: white;
+        border: none;
+        border-radius: 50%;
+        width: 32px;
+        height: 32px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        transition: all 0.2s;
+        padding: 0;
+        line-height: 1;
+        z-index: 10;
+    }
+    .btn-delete-experience:hover {
+        background-color: #c82333;
+        transform: scale(1.1);
     }
 
     .form-switch .form-check-input {
@@ -278,8 +342,8 @@ include '../componentes/header_desempleado.php';
         border-color: var(--gov-green);
     }
     .form-switch .form-check-input:focus {
-        border-color: var(--gov-gold);
-        box-shadow: 0 0 0 0.25rem rgba(201, 168, 76, 0.25);
+        border-color: var(--gov-blue);
+        box-shadow: 0 0 0 0.25rem rgba(11, 58, 96, 0.25);
     }
 
     .btn-close-white {
@@ -334,6 +398,16 @@ include '../componentes/header_desempleado.php';
             padding: 1.5rem !important;
         }
     }
+
+    /* Mensaje de error */
+    .alert-error {
+        background-color: #f8d7da;
+        border: 1px solid #f5c6cb;
+        border-radius: var(--gov-radius);
+        color: #721c24;
+        padding: 1rem;
+        margin-bottom: 1rem;
+    }
 </style>
 
 <body>
@@ -348,12 +422,22 @@ include '../componentes/header_desempleado.php';
             <div class="row justify-content-center">
                 <div class="col-xl-9 col-lg-10">
 
+                    <?php if (isset($_SESSION['mensaje_error'])): ?>
+                        <div class="alert-error">
+                            <i class="bi bi-exclamation-triangle-fill me-2"></i>
+                            <?php 
+                                echo htmlspecialchars($_SESSION['mensaje_error']);
+                                unset($_SESSION['mensaje_error']);
+                            ?>
+                        </div>
+                    <?php endif; ?>
+
                     <div class="card dashboard-card p-4 p-lg-5">
 
-                        <form id="registrationForm" action="procesar_registro.php" method="POST" enctype="multipart/form-data">
+                        <form id="registrationForm" action="../php/procesar_completar_perfil.php" method="POST" enctype="multipart/form-data">
 
-                            <!-- Campo oculto con el ID del usuario (debe venir de la sesión) -->
-                            <input type="hidden" name="usuario_id" value="<?php echo $_SESSION['usuario_id'] ?? ''; ?>">
+                            <!-- Campo oculto con el ID del usuario -->
+                            <input type="hidden" name="usuario_id" value="<?php echo htmlspecialchars($usuario['id']); ?>">
 
                             <!-- SECCIÓN FOTO CARNET (OBLIGATORIA) -->
                             <div class="text-center mb-5">
@@ -368,20 +452,23 @@ include '../componentes/header_desempleado.php';
                                 <p class="text-muted small">Sube tu foto carnet obligatoria arriba para activar el expediente</p>
                             </div>
 
-                            <!-- SECCIÓN 1: DATOS PERSONALES (se actualizan en usuarios) -->
+                            <!-- SECCIÓN 1: DATOS PERSONALES (precargados desde la BBDD) -->
                             <h3 class="section-title">1. Datos Personales</h3>
                             <div class="row g-3 mb-5">
                                 <div class="col-md-6">
                                     <label class="form-label">Nombre *</label>
-                                    <input type="text" name="nombre" class="form-control" placeholder="Ej. Juan Carlos" required>
+                                    <input type="text" name="nombre" class="form-control" 
+                                           value="<?php echo htmlspecialchars($usuario['nombre']); ?>" required>
                                 </div>
                                 <div class="col-md-6">
                                     <label class="form-label">Apellidos *</label>
-                                    <input type="text" name="apellidos" class="form-control" placeholder="Ej. Nsue Nguema" required>
+                                    <input type="text" name="apellidos" class="form-control" 
+                                           value="<?php echo htmlspecialchars($usuario['apellidos']); ?>" required>
                                 </div>
                                 <div class="col-md-6">
                                     <label class="form-label">Documento de Identidad (DIP / Pasaporte) *</label>
-                                    <input type="text" name="documento_identidad" class="form-control" placeholder="Número de documento" required>
+                                    <input type="text" name="documento_identidad" class="form-control" 
+                                           value="<?php echo htmlspecialchars($usuario['documento_identidad']); ?>" required>
                                 </div>
                                 <div class="col-md-6">
                                     <label class="form-label">Teléfono de Contacto *</label>
@@ -429,7 +516,7 @@ include '../componentes/header_desempleado.php';
                                 </div>
                             </div>
 
-                            <!-- SECCIÓN 3: DOCUMENTACIÓN (nombres alineados con la BBDD) -->
+                            <!-- SECCIÓN 3: DOCUMENTACIÓN -->
                             <h3 class="section-title">3. Archivos y Documentación Adjunta</h3>
                             <div class="row g-3 mb-5">
                                 <div class="col-md-6">
@@ -472,13 +559,16 @@ include '../componentes/header_desempleado.php';
                             <div id="experienceWrapper">
                                 <div class="d-flex justify-content-between align-items-center mb-3">
                                     <h4 class="h6 text-uppercase tracking-wider text-muted m-0">Historial Laboral</h4>
-                                    <button type="button" class="btn btn-sm btn-outline-gold rounded-pill px-3" onclick="addExperience()">
+                                    <button type="button" class="btn btn-sm btn-outline-blue rounded-pill px-3" onclick="addExperience()">
                                         <i class="bi bi-plus-circle me-1"></i> Añadir Bloque
                                     </button>
                                 </div>
 
                                 <div id="experienceContainer">
-                                    <div class="experience-block">
+                                    <div class="experience-block" id="initialExperience">
+                                        <button type="button" class="btn-delete-experience" onclick="deleteExperience(this)" title="Eliminar experiencia">
+                                            <i class="bi bi-x-lg"></i>
+                                        </button>
                                         <div class="row g-3">
                                             <div class="col-md-6">
                                                 <label class="form-label">Nombre de la Empresa</label>
@@ -615,6 +705,16 @@ include '../componentes/header_desempleado.php';
                 }
             }
 
+            function deleteExperience(button) {
+                const block = button.closest('.experience-block');
+                const container = document.getElementById('experienceContainer');
+                if (container.children.length <= 1) {
+                    alert('Debe haber al menos un bloque de experiencia.');
+                    return;
+                }
+                block.remove();
+            }
+
             function addExperience() {
                 const container = document.getElementById('experienceContainer');
                 const newBlock = document.createElement('div');
@@ -622,7 +722,9 @@ include '../componentes/header_desempleado.php';
                 const isRequired = document.getElementById('experienceSwitch').checked ? 'required' : '';
 
                 newBlock.innerHTML = `
-                    <button type="button" class="btn-close btn-close-white position-absolute top-0 end-0 m-3" onclick="this.parentElement.remove()"></button>
+                    <button type="button" class="btn-delete-experience" onclick="deleteExperience(this)" title="Eliminar experiencia">
+                        <i class="bi bi-x-lg"></i>
+                    </button>
                     <div class="row g-3">
                         <div class="col-md-6">
                             <label class="form-label">Nombre de la Empresa</label>

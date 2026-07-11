@@ -1,3 +1,63 @@
+<?php
+// ============================================================
+// MENÚ PARA DESEMPLEADOS - DINÁMICO DESDE BBDD
+// ============================================================
+
+// Verificar sesión - Usando la variable que ya existe en tu login
+if (!isset($_SESSION['id_usuario'])) {
+    echo '<script>window.location.href = "../login_desempleados.php";</script>';
+    exit();
+}
+
+// Usar las variables que YA tienes en la sesión
+$id_usuario = $_SESSION['id_usuario'];  // <--- Esta es la que usa tu login
+$nombre_completo = $_SESSION['nombre_completo'] ?? 'Usuario';
+
+// Incluir conexión si no está definida
+if (!isset($pdo)) {
+    include_once '../conexion/conexion.php';
+}
+
+$perfil_completo = false;
+$buscador = null;
+$notificaciones = 0;
+$foto_perfil = 'https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/icons/person-bounding-box.svg';
+
+try {
+    // Verificar buscadores_empleo
+    $stmt = $pdo->prepare("SELECT * FROM buscadores_empleo WHERE usuario_id = ?");
+    $stmt->execute([$id_usuario]);
+    $buscador = $stmt->fetch(PDO::FETCH_ASSOC);
+    
+    // Verificar documentos
+    $stmt_doc = $pdo->prepare("SELECT id FROM documentos WHERE usuario_id = ?");
+    $stmt_doc->execute([$id_usuario]);
+    $documentos = $stmt_doc->fetch();
+    
+    // Perfil completo si tiene ambos
+    $perfil_completo = ($buscador && $documentos);
+    
+    // Notificaciones (favoritos)
+    if ($buscador) {
+        $stmt_notif = $pdo->prepare("SELECT COUNT(*) as total FROM favoritos WHERE buscador_id = ?");
+        $stmt_notif->execute([$buscador['id']]);
+        $result = $stmt_notif->fetch(PDO::FETCH_ASSOC);
+        $notificaciones = $result['total'] ?? 0;
+    }
+    
+    // ===== FOTO DE PERFIL =====
+    if ($buscador && !empty($buscador['foto_carnet'])) {
+        $foto_perfil = $buscador['foto_carnet'];
+        if (strpos($foto_perfil, 'http') === false) {
+            $foto_perfil = '../' . $foto_perfil;
+        }
+    }
+    
+} catch (PDOException $e) {
+    error_log("Error en menú: " . $e->getMessage());
+}
+?>
+
 <nav class="navbar navbar-expand-lg navbar-light navbar-portal py-2">
     <div class="container">
         <a class="navbar-brand fw-bold d-flex align-items-center gap-3" href="index.php">
@@ -8,41 +68,83 @@
             </div>
         </a>
 
-                <div class="d-flex align-items-center order-lg-last gap-3">
-                    <a href="notificaciones.php" class="text-muted position-relative me-1" title="Notificaciones">
-                        <i class="bi bi-bell fs-5" style="color: var(--gov-blue);"></i>
-                        <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger" style="font-size: 0.6rem; margin-top: -2px;">3</span>
-                    </a>
+        <div class="d-flex align-items-center order-lg-last gap-3">
+            <a href="notificaciones.php" class="text-muted position-relative me-1" title="Notificaciones">
+                <i class="bi bi-bell fs-5" style="color: var(--gov-blue);"></i>
+                <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger" style="font-size: 0.6rem; margin-top: -2px;"><?php echo $notificaciones; ?></span>
+            </a>
 
-                    <div class="nav-item dropdown profile-dropdown">
-                        <a class="nav-link dropdown-toggle d-flex align-items-center" href="#" id="profileMenu" role="button" data-bs-toggle="dropdown" aria-expanded="false">
-                            <img src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=150&q=80" class="profile-menu-img" alt="Foto de perfil">
-                        </a>
-                        <ul class="dropdown-menu dropdown-menu-end custom-profile-menu" aria-labelledby="profileMenu">
-                            <li>
-                                <div class="px-3 py-2 border-bottom mb-2 bg-light rounded-top">
-                                    <p class="m-0 small fw-bold text-dark"><?= $nombre_completo; ?></p>
-                                    <p class="m-0 text-success fw-bold" style="font-size: 0.7rem;"><i class="bi bi-circle-fill me-1" style="font-size: 0.4rem;"></i> Buscador Activo</p>
-                                </div>
-                            </li>
-                            <li><a class="dropdown-item small py-2" href="perfil.php"><i class="bi bi-person-gear me-2 text-muted"></i> Mi Perfil</a></li>
-                            <li><a class="dropdown-item small py-2" href="historial_laboral.php"><i class="bi bi-file-earmark-arrow-down me-2 text-muted"></i> Mi Historial Laboral</a></li>
-                            <li><hr class="dropdown-divider"></li>
-                            <li><a class="dropdown-item small text-danger fw-bold py-2" href="../php/cerrar_sesion.php"><i class="bi bi-box-arrow-right me-2"></i> Cerrar Sesión</a></li>
-                        </ul>
-                    </div>
-                </div>
-
-                <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
-                    <span class="navbar-toggler-icon"></span>
-                </button>
-
-                <div class="collapse navbar-collapse" id="navbarNav">
-                    <ul class="navbar-nav me-auto align-items-lg-center ms-lg-4 gap-1">
-                        <li class="nav-item"><a class="nav-link <?= (basename($_SERVER['PHP_SELF']) == 'index.php') ? 'active fw-bold' : 'text-secondary small fw-medium' ?>" style="<?= (basename($_SERVER['PHP_SELF']) == 'index.php') ? 'color: var(--gov-blue);' : '' ?>" href="index.php">Panel General</a></li>
-                        <li class="nav-item"><a class="nav-link <?= (basename($_SERVER['PHP_SELF']) == 'bolsa_trabajo.php') ? 'active fw-bold' : 'text-secondary small fw-medium' ?>" style="<?= (basename($_SERVER['PHP_SELF']) == 'bolsa_trabajo.php') ? 'color: var(--gov-blue);' : '' ?>" href="bolsa_trabajo.php">Bolsa de Trabajo</a></li>
-                        <li class="nav-item"><a class="nav-link <?= (basename($_SERVER['PHP_SELF']) == 'cursos_publicos.php') ? 'active fw-bold' : 'text-secondary small fw-medium' ?>" style="<?= (basename($_SERVER['PHP_SELF']) == 'cursos_publicos.php') ? 'color: var(--gov-blue);' : '' ?>" href="cursos_publicos.php">Cursos Públicos</a></li>
-                    </ul>
-                </div>
+            <div class="nav-item dropdown profile-dropdown">
+                <a class="nav-link dropdown-toggle d-flex align-items-center" href="#" id="profileMenu" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                    <img src="<?php echo htmlspecialchars($foto_perfil); ?>" 
+                         class="profile-menu-img" 
+                         alt="Foto de perfil"
+                         onerror="this.src='https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/icons/person-bounding-box.svg'">
+                </a>
+                <ul class="dropdown-menu dropdown-menu-end custom-profile-menu" aria-labelledby="profileMenu">
+                    <li>
+                        <div class="px-3 py-2 border-bottom mb-2 bg-light rounded-top">
+                            <p class="m-0 small fw-bold text-dark"><?php echo htmlspecialchars($nombre_completo); ?></p>
+                            <p class="m-0 <?php echo $perfil_completo ? 'text-success' : 'text-warning'; ?> fw-bold" style="font-size: 0.7rem;">
+                                <i class="bi bi-circle-fill me-1" style="font-size: 0.4rem;"></i> 
+                                <?php echo $perfil_completo ? '✅ Perfil Completado' : '⚠️ Perfil Pendiente'; ?>
+                            </p>
+                            <?php if ($buscador): ?>
+                                <p class="m-0 text-muted" style="font-size: 0.65rem;">
+                                    <i class="bi bi-person me-1"></i>
+                                    <?php echo ucfirst($buscador['estado_laboral'] ?? 'desempleado'); ?>
+                                    <?php if (!empty($buscador['ciudad_municipio'])): ?>
+                                        · <i class="bi bi-geo-alt me-1"></i><?php echo ucfirst(str_replace('_', ' ', $buscador['ciudad_municipio'])); ?>
+                                    <?php endif; ?>
+                                </p>
+                            <?php endif; ?>
+                        </div>
+                    </li>
+                    <li><a class="dropdown-item small py-2" href="perfil.php"><i class="bi bi-person-gear me-2 text-muted"></i> Mi Perfil</a></li>
+                       <li><a class="dropdown-item small py-2" href="noficaciones.php"><i class="bi bi-person-gear me-2 text-muted"></i> Mis Notificaciones</a></li>
+                    <li><a class="dropdown-item small py-2" href="historial_laboral.php"><i class="bi bi-file-earmark-arrow-down me-2 text-muted"></i> Mi Historial Laboral</a></li>
+                    <?php if (!$perfil_completo): ?>
+                        <li><a class="dropdown-item small py-2 text-danger fw-bold" href="completar_perfil.php">
+                            <i class="bi bi-exclamation-triangle-fill me-2 text-danger"></i> Completar Perfil
+                        </a></li>
+                    <?php endif; ?>
+                    <li><hr class="dropdown-divider"></li>
+                    <li><a class="dropdown-item small text-danger fw-bold py-2" href="../php/cerrar_sesion.php">
+                        <i class="bi bi-box-arrow-right me-2"></i> Cerrar Sesión
+                    </a></li>
+                </ul>
             </div>
-        </nav>
+        </div>
+
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+
+        <div class="collapse navbar-collapse" id="navbarNav">
+            <ul class="navbar-nav me-auto align-items-lg-center ms-lg-4 gap-1">
+                <li class="nav-item">
+                    <a class="nav-link <?= (basename($_SERVER['PHP_SELF']) == 'index.php') ? 'active fw-bold' : 'text-secondary small fw-medium' ?>" 
+                       style="<?= (basename($_SERVER['PHP_SELF']) == 'index.php') ? 'color: var(--gov-blue);' : '' ?>" 
+                       href="index.php">Panel General</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link <?= (basename($_SERVER['PHP_SELF']) == 'bolsa_trabajo.php') ? 'active fw-bold' : 'text-secondary small fw-medium' ?>" 
+                       style="<?= (basename($_SERVER['PHP_SELF']) == 'bolsa_trabajo.php') ? 'color: var(--gov-blue);' : '' ?>" 
+                       href="bolsa_trabajo.php">Bolsa de Trabajo</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link <?= (basename($_SERVER['PHP_SELF']) == 'cursos_publicos.php') ? 'active fw-bold' : 'text-secondary small fw-medium' ?>" 
+                       style="<?= (basename($_SERVER['PHP_SELF']) == 'cursos_publicos.php') ? 'color: var(--gov-blue);' : '' ?>" 
+                       href="cursos_publicos.php">Cursos Públicos</a>
+                </li>
+                <?php if (!$perfil_completo): ?>
+                    <li class="nav-item">
+                        <a class="nav-link text-danger fw-bold small" href="completar_perfil.php">
+                            <i class="bi bi-exclamation-triangle-fill me-1"></i> Completar Perfil
+                        </a>
+                    </li>
+                <?php endif; ?>
+            </ul>
+        </div>
+    </div>
+</nav>

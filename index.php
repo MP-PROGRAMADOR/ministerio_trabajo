@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="es">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -15,15 +16,16 @@
             --gris-premium: #4a5568;
         }
 
-        body, html {
+        body,
+        html {
             height: 100%;
             margin: 0;
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
         }
 
         .bg-portal {
-            background: linear-gradient(rgba(17, 45, 110, 0.88), rgba(10, 28, 72, 0.94)), 
-                        url('https://images.unsplash.com/photo-1454165804606-c3d57bc86b40?auto=format&fit=crop&w=1920&q=80') no-repeat center center fixed;
+            background: linear-gradient(rgba(17, 45, 110, 0.88), rgba(10, 28, 72, 0.94)),
+                url('https://images.unsplash.com/photo-1454165804606-c3d57bc86b40?auto=format&fit=crop&w=1920&q=80') no-repeat center center fixed;
             background-size: cover;
             min-height: 100vh;
             display: flex;
@@ -76,12 +78,12 @@
         /* ===== NUEVO SEPARADOR SOBRIO Y PROFESIONAL ===== */
         .divider-line {
             width: 3px;
-            background: linear-gradient(to bottom, rgba(212,160,23,0) 0%, rgba(212,160,23,0.7) 50%, rgba(212,160,23,0) 100%);
+            background: linear-gradient(to bottom, rgba(212, 160, 23, 0) 0%, rgba(212, 160, 23, 0.7) 50%, rgba(212, 160, 23, 0) 100%);
             height: 140px;
             margin: 0 auto;
             position: relative;
         }
-        
+
         /* Un sutil rombo corporativo en lugar del círculo brillante anterior */
         .divider-dot {
             position: absolute;
@@ -98,7 +100,7 @@
         .logo-escudo img {
             max-height: 85px;
             width: auto;
-            filter: drop-shadow(0 4px 12px rgba(0,0,0,0.3));
+            filter: drop-shadow(0 4px 12px rgba(0, 0, 0, 0.3));
         }
 
         .tracking-wide {
@@ -109,24 +111,27 @@
         .toast-container {
             z-index: 1060;
         }
+
         .custom-toast {
             background: rgba(255, 255, 255, 0.98) !important;
             border-radius: 12px !important;
-            box-shadow: 0 15px 35px rgba(0,0,0,0.2) !important;
+            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.2) !important;
             border-left: 4px solid var(--azul-marino) !important;
         }
+
         .custom-toast.toast-admin {
             border-left-color: var(--rojo-bandera) !important;
         }
     </style>
 </head>
+
 <body>
 
     <div class="bg-portal">
         <!-- Cabecera simple -->
         <header class="text-center py-3 bg-black bg-opacity-30 border-b border-white border-opacity-10">
             <p class="m-0 small text-uppercase tracking-wide text-white-75 font-monospace">
-                Bienvenido al Portal de Empleo 
+                Bienvenido al Portal de Empleo
             </p>
         </header>
 
@@ -139,12 +144,13 @@
                     </div>
                 </div>
                 <h1 class="h2 text-uppercase fw-extrabold m-0 tracking-wide text-white">Ministerio de Trabajo</h1>
-                <p class="text-white-50 small text-uppercase tracking-wider mt-1">Plataforma de Intermediación Laboral</p>
+                <p class="text-white-50 small text-uppercase tracking-wider mt-1">Plataforma de Intermediación Laboral
+                </p>
             </div>
 
             <!-- Tarjetas de acceso -->
             <div class="row justify-content-center align-items-center g-4 position-relative">
-                
+
                 <!-- Acceso Corporativo (Empresas) -->
                 <div class="col-md-5">
                     <div class="card access-card text-center" onclick="redireccionar('empleador')">
@@ -178,10 +184,12 @@
             <!-- Tercer acceso: Administración Pública -->
             <div class="row justify-content-center mt-5">
                 <div class="col-md-4">
-                    <div class="card access-card p-3 text-center" style="min-height: auto;" onclick="redireccionar('ministerio')">
+                    <div class="card access-card p-3 text-center" style="min-height: auto;"
+                        onclick="redireccionar('ministerio')">
                         <div class="d-flex align-items-center justify-content-center gap-3">
                             <i class="bi bi-shield-lock-fill fs-4 text-success"></i>
-                            <span class="fw-bold text-dark text-uppercase small tracking-wide">Administración Pública</span>
+                            <span class="fw-bold text-dark text-uppercase small tracking-wide">Administración
+                                Pública</span>
                         </div>
                     </div>
                 </div>
@@ -189,7 +197,8 @@
         </main>
 
         <!-- Footer -->
-        <footer class="bg-black bg-opacity-40 text-center py-3 text-white-50 small border-t border-white border-opacity-5">
+        <footer
+            class="bg-black bg-opacity-40 text-center py-3 text-white-50 small border-t border-white border-opacity-5">
             <div class="container d-flex flex-column flex-sm-row justify-content-between align-items-center gap-2">
                 <div>&copy; 2026 Ministerio de Trabajo y Empleo. Todos los derechos reservados.</div>
                 <div class="d-flex gap-3 fs-5">
@@ -203,7 +212,8 @@
 
     <!-- CONTENEDOR DE TOASTS PARA REEMPLAZAR LOS ALERTS INVASIVOS -->
     <div class="toast-container position-fixed bottom-0 end-0 p-4">
-        <div id="portalToast" class="toast custom-toast border-0" role="alert" aria-live="assertive" aria-atomic="true" data-bs-delay="4000">
+        <div id="portalToast" class="toast custom-toast border-0" role="alert" aria-live="assertive" aria-atomic="true"
+            data-bs-delay="4000">
             <div class="toast-header bg-transparent border-0 text-dark pt-3 px-3">
                 <i id="toastIcon" class="bi me-2 fs-5"></i>
                 <strong class="me-auto text-uppercase tracking-wide small" id="toastTitle">Sistema</strong>
@@ -216,42 +226,83 @@
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
-    
+
     <script>
         function redireccionar(perfil) {
             const toastEl = document.getElementById('portalToast');
             const toast = new bootstrap.Toast(toastEl);
-            
+
             const title = document.getElementById('toastTitle');
             const message = document.getElementById('toastMessage');
             const icon = document.getElementById('toastIcon');
-            
+
             // Resetear clases de administrador
             toastEl.classList.remove('toast-admin');
             icon.className = 'bi me-2 fs-5';
 
-            switch(perfil) {
+            switch (perfil) {
                 case 'empleador':
                     title.innerText = 'Portal Corporativo';
-                    message.innerText = 'Redirigiendo de forma segura al entorno de Gestión de Empresas y Ofertas...';
-                    icon.classList.add('bi-building-fill-check', 'text-success');
+                    // Insertamos el texto y un spinner de carga de Bootstrap justo debajo
+                    message.innerHTML = `
+        Redirigiendo de forma segura al entorno de Gestión de Empresas y Ofertas...
+        <div class="d-flex justify-content-center mt-3">
+            <div class="spinner-border text-success" role="status">
+                <span class="visually-hidden">Cargando...</span>
+            </div>
+        </div>
+    `;
+
+                    // Configuramos el icono y mostramos el Toast
+                    icon.className = 'bi bi-building-fill-check text-success fs-3 me-2';
                     toast.show();
-                    // setTimeout(() => window.location.href = '/login-empresa', 2000);
+
+                    // Temporizador de 2.5 segundos para dar tiempo a ver el spinner antes de cambiar de página
+                    setTimeout(() => {
+                        window.location.href = 'login_empleadores.php';
+                    }, 2500);
                     break;
                 case 'ciudadano':
                     title.innerText = 'Portal Ciudadano';
-                    message.innerText = 'Conectando con la base de datos nacional de empleo y carga de CV...';
-                    icon.classList.add('bi-person-bounding-box', 'text-primary');
+                    // Mensaje institucional con spinner en color azul (text-primary)
+                    message.innerHTML = `
+        Conectando con la base de datos nacional de empleo y carga de CV...
+        <div class="d-flex justify-content-center mt-3">
+            <div class="spinner-border text-primary" role="status">
+                <span class="visually-hidden">Cargando...</span>
+            </div>
+        </div>
+    `;
+
+                    icon.className = 'bi bi-person-bounding-box text-primary fs-3 me-2';
                     toast.show();
-                    // setTimeout(() => window.location.href = '/login-desempleado', 2000);
+
+                    // Redirección segura tras 2.5 segundos
+                    setTimeout(() => {
+                        window.location.href = 'login_desempleados.php';
+                    }, 2500);
                     break;
+
                 case 'ministerio':
                     toastEl.classList.add('toast-admin');
                     title.innerText = 'Acceso Restringido';
-                    message.innerText = 'Alerta: El acceso seleccionado está estrictamente limitado a personal y funcionarios del Ministerio.';
-                    icon.classList.add('bi-shield-slash-fill', 'text-danger');
+                    // Mensaje de advertencia de seguridad con spinner en color rojo institucional (text-danger)
+                    message.innerHTML = `
+        Alerta: El acceso seleccionado está estrictamente limitado a personal y funcionarios del Ministerio.
+        <div class="d-flex justify-content-center mt-3">
+            <div class="spinner-border text-danger" role="status">
+                <span class="visually-hidden">Validando credenciales...</span>
+            </div>
+        </div>
+    `;
+
+                    icon.className = 'bi bi-shield-slash-fill text-danger fs-3 me-2';
                     toast.show();
-                    // setTimeout(() => window.location.href = '/admin', 2000);
+
+                    // Redirección segura tras 2.5 segundos al entorno de administración
+                    setTimeout(() => {
+                        window.location.href = 'login_ministerio.php';
+                    }, 2500);
                     break;
                 default:
                     console.log('Perfil no reconocido');
@@ -259,4 +310,5 @@
         }
     </script>
 </body>
+
 </html>

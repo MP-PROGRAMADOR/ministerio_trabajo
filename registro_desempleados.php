@@ -181,44 +181,43 @@
 
                     <div class="form-card">
                         
-                        <!-- SECCIÓN FOTO CARNET (PARTE SUPERIOR - OBLIGATORIO) -->
-                        <div class="text-center mb-5">
-                            <div class="avatar-preview-container">
-                                <img src="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/icons/person-bounding-box.svg" id="photoPreview" class="avatar-preview" alt="Foto Carnet">
-                                <label for="photoInput" class="btn-upload-avatar">
-                                    <i class="bi bi-camera-fill"></i>
-                                </label>
-                                <!-- Input required obligatorio para validar antes del envío -->
-                                <input type="file" id="photoInput" name="foto_carnet" accept="image/*" class="d-none" onchange="previewImage(event)" required>
+                        <form id="registrationForm" action="procesar_registro.php" method="POST" enctype="multipart/form-data">
+                            
+                            <!-- SECCIÓN FOTO CARNET (PARTE SUPERIOR - OBLIGATORIO) -->
+                            <div class="text-center mb-5">
+                                <div class="avatar-preview-container">
+                                    <img src="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/icons/person-bounding-box.svg" id="photoPreview" class="avatar-preview" alt="Foto Carnet">
+                                    <label for="photoInput" class="btn-upload-avatar">
+                                        <i class="bi bi-camera-fill"></i>
+                                    </label>
+                                    <input type="file" id="photoInput" name="foto_carnet" accept="image/*" class="d-none" onchange="previewImage(event)" required>
+                                </div>
+                                <h2 class="fw-bold m-0">Expediente Digital de Buscador de Empleo</h2>
+                                <p class="text-white-50 small">Sube tu foto carnet obligatoria arriba para activar el expediente</p>
                             </div>
-                            <h2 class="fw-bold m-0">Expediente Digital de Buscador de Empleo</h2>
-                            <p class="text-white-50 small">Sube tu foto carnet obligatoria arriba para activar el expediente</p>
-                        </div>
-
-                        <form id="registrationForm" onsubmit="submitForm(event)">
                             
                             <!-- SECCIÓN 1: DATOS PERSONALES (OBLIGATORIOS) -->
                             <h3 class="section-title mb-4">1. Datos Personales</h3>
                             <div class="row g-3 custom-form-group mb-5">
                                 <div class="col-md-6">
                                     <label class="form-label">Nombre</label>
-                                    <input type="text" class="form-control" placeholder="Ej. Juan Carlos" required>
+                                    <input type="text" name="nombre" class="form-control" placeholder="Ej. Juan Carlos" required>
                                 </div>
                                 <div class="col-md-6">
                                     <label class="form-label">Apellidos</label>
-                                    <input type="text" class="form-control" placeholder="Ej. Nsue Nguema" required>
+                                    <input type="text" name="apellidos" class="form-control" placeholder="Ej. Nsue Nguema" required>
                                 </div>
                                 <div class="col-md-6">
                                     <label class="form-label">Documento de Identidad (DIP / Pasaporte)</label>
-                                    <input type="text" class="form-control" placeholder="Número de documento" required>
+                                    <input type="text" name="documento_identidad" class="form-control" placeholder="Número de documento" required>
                                 </div>
                                 <div class="col-md-6">
                                     <label class="form-label">Teléfono de Contacto</label>
-                                    <input type="tel" class="form-control" placeholder="Ej. +240 222 333 444" required>
+                                    <input type="tel" name="telefono" class="form-control" placeholder="Ej. +240 222 333 444" required>
                                 </div>
                                 <div class="col-md-6">
                                     <label class="form-label">Estado Civil</label>
-                                    <select class="form-select" required>
+                                    <select name="estado_civil" class="form-select" required>
                                         <option value="" disabled selected>Selecciona una opción</option>
                                         <option value="soltero">Soltero/a</option>
                                         <option value="casado">Casado/a</option>
@@ -233,7 +232,7 @@
                             <div class="row g-3 custom-form-group mb-5">
                                 <div class="col-md-4">
                                     <label class="form-label">Provincia</label>
-                                    <select id="provinciaSelect" class="form-select" onchange="updateDistritos()" required>
+                                    <select id="provinciaSelect" name="provincia" class="form-select" onchange="updateDistritos()" required>
                                         <option value="" disabled selected>Selecciona Provincia</option>
                                         <option value="bioko_norte">Bioko Norte</option>
                                         <option value="bioko_sur">Bioko Sur</option>
@@ -246,13 +245,13 @@
                                 </div>
                                 <div class="col-md-4">
                                     <label class="form-label">Distrito</label>
-                                    <select id="distritoSelect" class="form-select" onchange="updateCiudades()" required disabled>
+                                    <select id="distritoSelect" name="distrito" class="form-select" onchange="updateCiudades()" required disabled>
                                         <option value="" disabled selected>Selecciona primero provincia</option>
                                     </select>
                                 </div>
                                 <div class="col-md-4">
                                     <label class="form-label">Ciudad / Municipio</label>
-                                    <select id="ciudadSelect" class="form-select" required disabled>
+                                    <select id="ciudadSelect" name="ciudad" class="form-select" required disabled>
                                         <option value="" disabled selected>Selecciona primero distrito</option>
                                     </select>
                                 </div>
@@ -264,25 +263,25 @@
                                 <div class="col-md-6">
                                     <label class="form-label"><i class="bi bi-file-earmark-lock me-1"></i> Copia del DIP escaneado <span class="text-danger">*</span></label>
                                     <div class="file-upload-wrapper">
-                                        <input type="file" class="form-control" accept=".pdf, image/*" required>
+                                        <input type="file" name="archivo_dip" class="form-control" accept=".pdf, image/*" required>
                                     </div>
                                 </div>
                                 <div class="col-md-6">
                                     <label class="form-label"><i class="bi bi-file-earmark-person me-1"></i> Currículum Vitae <span class="text-danger">*</span></label>
                                     <div class="file-upload-wrapper">
-                                        <input type="file" class="form-control" accept=".pdf, .doc, .docx" required>
+                                        <input type="file" name="archivo_cv" class="form-control" accept=".pdf, .doc, .docx" required>
                                     </div>
                                 </div>
                                 <div class="col-md-6">
                                     <label class="form-label"><i class="bi bi-journal-bookmark me-1"></i> Títulos Académicos <span class="text-muted">(Opcional)</span></label>
                                     <div class="file-upload-wrapper">
-                                        <input type="file" class="form-control" accept=".pdf, image/*">
+                                        <input type="file" name="archivo_titulos" class="form-control" accept=".pdf, image/*">
                                     </div>
                                 </div>
                                 <div class="col-md-6">
                                     <label class="form-label"><i class="bi bi-folder-plus me-1"></i> Otros Documentos <span class="text-muted">(Opcional)</span></label>
                                     <div class="file-upload-wrapper">
-                                        <input type="file" class="form-control" accept=".pdf, image/*">
+                                        <input type="file" name="archivo_otros" class="form-control" accept=".pdf, image/*">
                                     </div>
                                 </div>
                             </div>
@@ -294,7 +293,7 @@
                                     <p class="m-0 small text-white-50">Desactiva esta opción si buscas tu primer empleo.</p>
                                 </div>
                                 <div class="form-check form-switch fs-5">
-                                    <input class="form-check-input" type="checkbox" id="experienceSwitch" checked onchange="toggleExperienceSection()">
+                                    <input class="form-check-input" type="checkbox" id="experienceSwitch" name="tiene_experiencia" value="1" checked onchange="toggleExperienceSection()">
                                 </div>
                             </div>
 
@@ -312,23 +311,23 @@
                                         <div class="row g-3">
                                             <div class="col-md-6">
                                                 <label class="form-label">Nombre de la Empresa</label>
-                                                <input type="text" class="form-control exp-input" placeholder="Ej. Getesa, Somagec...">
+                                                <input type="text" name="exp_empresa[]" class="form-control exp-input" placeholder="Ej. Getesa, Somagec...">
                                             </div>
                                             <div class="col-md-6">
                                                 <label class="form-label">Puesto / Cargo</label>
-                                                <input type="text" class="form-control exp-input" placeholder="Ej. Técnico, Cajero...">
+                                                <input type="text" name="exp_puesto[]" class="form-control exp-input" placeholder="Ej. Técnico, Cajero...">
                                             </div>
                                             <div class="col-md-6">
                                                 <label class="form-label">Fecha de Inicio</label>
-                                                <input type="date" class="form-control exp-input">
+                                                <input type="date" name="exp_fecha_inicio[]" class="form-control exp-input">
                                             </div>
                                             <div class="col-md-6">
                                                 <label class="form-label">Fecha de Fin</label>
-                                                <input type="date" class="form-control exp-input">
+                                                <input type="date" name="exp_fecha_fin[]" class="form-control exp-input">
                                             </div>
                                             <div class="col-12">
                                                 <label class="form-label">Descripción de funciones</label>
-                                                <textarea class="form-control exp-input" rows="3" placeholder="Tareas realizadas..."></textarea>
+                                                <textarea name="exp_funciones[]" class="form-control exp-input" rows="3" placeholder="Tareas realizadas..."></textarea>
                                             </div>
                                         </div>
                                     </div>
@@ -452,7 +451,6 @@
             const newBlock = document.createElement('div');
             newBlock.className = 'experience-block p-4 mb-3 position-relative custom-form-group';
             
-            // Si el switch está activo, los nuevos bloques creados heredan directamente el atributo required
             const isRequired = document.getElementById('experienceSwitch').checked ? 'required' : '';
 
             newBlock.innerHTML = `
@@ -460,32 +458,27 @@
                 <div class="row g-3">
                     <div class="col-md-6">
                         <label class="form-label">Nombre de la Empresa</label>
-                        <input type="text" class="form-control exp-input" placeholder="Ej. Empresa SA" ${isRequired}>
+                        <input type="text" name="exp_empresa[]" class="form-control exp-input" placeholder="Ej. Empresa SA" ${isRequired}>
                     </div>
                     <div class="col-md-6">
                         <label class="form-label">Puesto / Cargo</label>
-                        <input type="text" class="form-control exp-input" placeholder="Ej. Especialista" ${isRequired}>
+                        <input type="text" name="exp_puesto[]" class="form-control exp-input" placeholder="Ej. Especialista" ${isRequired}>
                     </div>
                     <div class="col-md-6">
                         <label class="form-label">Fecha de Inicio</label>
-                        <input type="date" class="form-control exp-input" ${isRequired}>
+                        <input type="date" name="exp_fecha_inicio[]" class="form-control exp-input" ${isRequired}>
                     </div>
                     <div class="col-md-6">
                         <label class="form-label">Fecha de Fin</label>
-                        <input type="date" class="form-control exp-input" ${isRequired}>
+                        <input type="date" name="exp_fecha_fin[]" class="form-control exp-input" ${isRequired}>
                     </div>
                     <div class="col-12">
                         <label class="form-label">Descripción de funciones</label>
-                        <textarea class="form-control exp-input" rows="3" placeholder="Tareas..." ${isRequired}></textarea>
+                        <textarea name="exp_funciones[]" class="form-control exp-input" rows="3" placeholder="Tareas..." ${isRequired}></textarea>
                     </div>
                 </div>
             `;
             container.appendChild(newBlock);
-        }
-
-        function submitForm(event) {
-            event.preventDefault();
-            alert('¡Formulario validado con éxito! Todos los campos obligatorios procesados de forma segura.');
         }
 
         // Ejecutar configuración inicial al cargar la página

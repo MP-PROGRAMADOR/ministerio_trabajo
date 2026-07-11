@@ -182,6 +182,22 @@
             background-color: rgba(17, 45, 110, 0.9);
         }
 
+        /* Personalización para que el Toast se adapte a tu diseño oscuro */
+        .custom-toast {
+            background-color: rgba(10, 28, 72, 0.95) !important;
+            border: 1px solid rgba(212, 160, 23, 0.4) !important;
+            color: #ffffff !important;
+            backdrop-filter: blur(8px);
+        }
+        .custom-toast .toast-header {
+            background-color: rgba(17, 45, 110, 0.85) !important;
+            color: #ffffff !important;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        .custom-toast .btn-close {
+            filter: invert(1); /* Vuelve la cruz blanca */
+        }
+
         /* Responsive */
         @media (max-width: 768px) {
             .divider-line {
@@ -212,7 +228,6 @@
         <main class="container my-auto py-5">
             <div class="row align-items-center justify-content-center g-5">
 
-                <!-- Carrusel -->
                 <div class="col-lg-4 col-md-5">
                     <div id="citizenCarousel" class="carousel slide carousel-fade" data-bs-ride="carousel" style="box-shadow: 0 10px 30px rgba(0,0,0,0.3); border-radius: 16px; overflow: hidden;">
                         <div class="carousel-indicators">
@@ -249,18 +264,16 @@
                     </div>
                 </div>
 
-                <!-- Separador con rombo -->
                 <div class="col-md-1 d-none d-md-block text-center">
                     <div class="divider-line">
                         <div class="divider-dot"></div>
                     </div>
                 </div>
 
-                <!-- Formulario de login ciudadano -->
                 <div class="col-lg-4 col-md-5 text-center text-md-start">
                     <div class="mb-4 text-center">
                         <i class="bi bi-person fs-1 text-gold mb-2 d-block"></i>
-                        <h1 class="h5 text-uppercase m-0 tracking-wide text-white">Ministerio de Trabajo</h1>
+                        <h1 class="h pipeline h5 text-uppercase m-0 tracking-wide text-white">Ministerio de Trabajo</h1>
                         <p class="small text-white-50 mt-1">Acceso Ciudadano</p>
                     </div>
 
@@ -268,7 +281,7 @@
 
                     <form id="loginForm" onsubmit="handleLogin(event)">
                         <div class="input-group custom-input-group">
-                            <input type="text" class="form-control" placeholder="Documento de identidad (DNI / NIE / Pasaporte)" required>
+                            <input type="text" class="form-control" placeholder="Documento de identidad (DIP / Pasaporte)" required>
                             <span class="input-group-text"><i class="bi bi-card-text"></i></span>
                         </div>
                         <div class="input-group custom-input-group">
@@ -314,37 +327,132 @@
         </footer>
     </div>
 
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
-    <script>
-        function togglePassword() {
-            const pass = document.getElementById('passwordInput');
-            const icon = document.getElementById('toggleIcon');
-            if (pass.type === 'password') {
-                pass.type = 'text';
-                icon.classList.remove('bi-eye');
-                icon.classList.add('bi-eye-slash');
-            } else {
-                pass.type = 'password';
-                icon.classList.remove('bi-eye-slash');
-                icon.classList.add('bi-eye');
-            }
-        }
+    <div class="toast-container position-fixed bottom-0 end-0 p-3" style="z-index: 1055;">
+        <div id="notificationToast" class="toast custom-toast hide" role="alert" aria-live="assertive" aria-atomic="true" data-bs-delay="4000">
+            <div class="toast-header">
+                <i id="toastIcon"></i>
+                <strong id="toastTitle" class="me-auto">Notificación</strong>
+                <button type="button" class="btn-close" data-bs-dismiss="toast" aria-label="Close"></button>
+            </div>
+            <div id="toastMessage" class="toast-body">
+                </div>
+        </div>
+    </div>
 
-        function handleLogin(e) {
-            e.preventDefault();
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <script>
+    // 1. CONTROL DE VISIBILIDAD DE CONTRASEÑA
+    function togglePassword() {
+        const pass = document.getElementById('passwordInput');
+        const icon = document.getElementById('toggleIcon');
+        if (pass.type === 'password') {
+            pass.type = 'text';
+            icon.classList.remove('bi-eye');
+            icon.classList.add('bi-eye-slash');
+        } else {
+            pass.type = 'password';
+            icon.classList.remove('bi-eye-slash');
+            icon.classList.add('bi-eye');
+        }
+    }
+
+    // 2. VALIDACIÓN DE CREDENCIALES CON SPINNER
+    function handleLogin(e) {
+        e.preventDefault();
+        
+        const toastEl = document.getElementById('notificationToast');
+        const title = document.getElementById('toastTitle');
+        const message = document.getElementById('toastMessage');
+        const icon = document.getElementById('toastIcon');
+
+        if (toastEl && title && message && icon) {
+            const toast = bootstrap.Toast.getOrCreateInstance(toastEl);
+            title.innerText = 'Validación de Acceso';
+            message.innerHTML = `
+                Comprobando credenciales en el sistema centralizado del Ministerio...
+                <div class="d-flex justify-content-center mt-3">
+                    <div class="spinner-border text-primary" role="status">
+                        <span class="visually-hidden">Procesando...</span>
+                    </div>
+                </div>
+            `;
+            icon.className = 'bi bi-shield-lock-fill text-primary fs-3 me-2';
+            toast.show();
+
+            setTimeout(() => {
+                // Redirección directa para este ejercicio
+                window.location.href = 'login_ciudadano.php';
+            }, 2500);
+        } else {
             alert('Validando credenciales de usuario en el sistema del Ministerio...');
         }
+    }
 
-        function handleGovLogin() {
+    // 3. PASARELA UNICA DEL ESTADO CON SPINNER
+    function handleGovLogin() {
+        const toastEl = document.getElementById('notificationToast');
+        const title = document.getElementById('toastTitle');
+        const message = document.getElementById('toastMessage');
+        const icon = document.getElementById('toastIcon');
+
+        if (toastEl && title && message && icon) {
+            const toast = bootstrap.Toast.getOrCreateInstance(toastEl);
+            title.innerText = 'Autenticación del Estado';
+            message.innerHTML = `
+                Conectando de forma segura con la pasarela única de identidad nacional...
+                <div class="d-flex justify-content-center mt-3">
+                    <div class="spinner-border text-warning" role="status">
+                        <span class="visually-hidden">Redirigiendo...</span>
+                    </div>
+                </div>
+            `;
+            icon.className = 'bi bi-building-fill text-warning fs-3 me-2';
+            toast.show();
+
+            setTimeout(() => {
+                window.location.href = 'autenticacion_gob.php'; 
+            }, 2500);
+        } else {
             alert('Redirigiendo a la pasarela única de autenticación oficial del Estado...');
         }
+    }
 
-       function goToRegister(event) {
-    event.preventDefault();
-    // Redirecciona al archivo HTML del formulario de registro
-    window.location.href = 'registro_desempleados.php'; 
-}
-    </script>
+    // 4. ASISTENTE DE REGISTRO 
+    function goToRegister(event) {
+        event.preventDefault();
+        
+        const toastEl = document.getElementById('notificationToast');
+        const title = document.getElementById('toastTitle');
+        const message = document.getElementById('toastMessage');
+        const icon = document.getElementById('toastIcon');
+
+        if (!toastEl || !title || !message || !icon) {
+            console.error("Error: No se encontraron los IDs del Toast en el HTML. Revisa que coincidan.");
+            window.location.href = 'registro_desempleados.php';
+            return;
+        }
+
+        const toast = bootstrap.Toast.getOrCreateInstance(toastEl);
+        
+        title.innerText = 'Registro Oficial';
+        message.innerHTML = `
+            Abriendo el asistente de alta para demandantes de empleo. Por favor, prepare su DIP y documentación...
+            <div class="d-flex justify-content-center mt-3">
+                <div class="spinner-border text-info" role="status">
+                    <span class="visually-hidden">Preparando entorno...</span>
+                </div>
+            </div>
+        `;
+        
+        icon.className = 'bi bi-file-earmark-person-fill text-info fs-3 me-2';
+        toast.show();
+        
+        setTimeout(() => {
+            window.location.href = 'registro_desempleados.php'; 
+        }, 2500);
+    }
+</script>
+
 </body>
-
 </html>

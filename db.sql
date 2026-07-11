@@ -1,17 +1,32 @@
+
+drop database if exists ministerio_trabajo;
+create database ministerio_trabajo;
+use ministerio_trabajo;
+
+
+
 -- =========================================================================
 -- SCRIPT GENERAL DE LA BASE DE DATOS: PORTAL DE EMPLEO INTERMEDIADO
 -- MINISTERIO DE TRABAJO Y FOMENTO DE EMPLEO - GUINEA ECUATORIAL
 -- =========================================================================
 
--- 1. TABLA: USUARIOS (Centraliza credenciales de acceso para todos los roles)
+-- 1. TABLA: USUARIOS (Centraliza credenciales, verificación de correo y roles institucionales)
 CREATE TABLE usuarios (
     id INT AUTO_INCREMENT PRIMARY KEY,
     nombre VARCHAR(100) NOT NULL,
     apellidos VARCHAR(100) NOT NULL,
     nombre_usuario VARCHAR(50) NOT NULL UNIQUE,
+    correo_electronico VARCHAR(150) NOT NULL UNIQUE, -- Requisito para la confirmación
     documento_identidad VARCHAR(30) NOT NULL UNIQUE, -- DIP o Pasaporte
-    password VARCHAR(255) NOT NULL,                  -- Contraseña encriptada
-    rol ENUM('buscador', 'empleador', 'administrador') DEFAULT 'buscador',
+    password VARCHAR(255) NOT NULL,                  -- Contraseña encriptada (ej. con password_hash)
+    
+    -- Roles ampliados: Se añade 'ministerio' para los funcionarios/validadores
+    rol ENUM('buscador', 'empleador', 'ministerio', 'administrador') DEFAULT 'buscador',
+    
+    -- Campos de control para la verificación por correo electrónico
+    correo_verificado TINYINT(1) DEFAULT 0,          -- 0 = No verificado, 1 = Verificado
+    token_verificacion VARCHAR(100) NULL,            -- Hash temporal enviado por correo
+    
     fecha_registro TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 

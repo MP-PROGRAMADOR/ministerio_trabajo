@@ -449,7 +449,7 @@
         toast.show();
         
         setTimeout(() => {
-            window.location.href = 'registro_desempleados.php'; 
+            window.location.href = 'registro_usuario.php'; 
         }, 2500);
     }
 </script>

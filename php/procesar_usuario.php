@@ -90,11 +90,32 @@ try {
         ':token'     => $token_verificacion
     ]);
 
+    // =======================================================
+    // MODIFICACIÓN AQUÍ: PROCESO REAL DE ENVÍO DE CORREO
+    // =======================================================
     if ($resultado) {
-        $_SESSION['exito'] = "¡Cuenta creada con éxito! Por favor, verifica tu correo electrónico.";
+        // 1. Requerir el archivo
+        require_once 'enviar_correo.php';
+
+        // 2. Construir el enlace dinámico (CORREGIDO: Se añade la barra '/' antes de verificar.php)
+        $enlace_verificacion = "http://" . $_SERVER['HTTP_HOST'] . "verificar.php?token=" . $token_verificacion;
+        
+        // 3. Llamar a la función pasándole los datos capturados
+        $nombre_completo = $nombre . ' ' . $apellidos;
+        
+        // Ejecutamos el envío
+        $correo_enviado = enviarCorreoVerificacion($correo_electronico, $nombre_completo, $enlace_verificacion);
+
+        if ($correo_enviado) {
+            $_SESSION['exito'] = "¡Cuenta creada con éxito! Por favor, revisa tu correo electrónico para verificarla.";
+        } else {
+            $_SESSION['error'] = "Registro completado, pero no se pudo enviar el correo de confirmación. Contacte a soporte.";
+        }
+        
         header("Location: $pagina_formulario");
         exit();
     }
+
 
 } catch (PDOException $e) {
     error_log("Error crítico en el registro: " . $e->getMessage());

@@ -487,73 +487,135 @@
 
          <?php include '../componentes/menu_desempleado.php'; ?>
 
-        <main class="container py-5 flex-grow-1">
-            <div class="row g-4">
-                <!-- FILTROS -->
-                <div class="col-12">
-                    <div class="card dashboard-card p-4">
-                        <h5 class="fw-bold mb-3 h6 text-uppercase tracking-wider text-muted"><i class="bi bi-funnel me-2"></i>Filtrar Cursos</h5>
-                        <form id="filterForm">
-                            <div class="row g-3">
-                                <div class="col-md-4">
-                                    <input type="text" id="searchInput" class="form-control form-control-search" placeholder="Buscar curso... (búsqueda en tiempo real)">
-                                </div>
-                                <div class="col-md-3">
-                                    <select id="areaSelect" class="form-select form-select-custom">
-                                        <option value="">Todas las áreas</option>
-                                        <option value="tecnologia">Tecnología</option>
-                                        <option value="administracion">Administración</option>
-                                        <option value="salud">Salud</option>
-                                        <option value="educacion">Educación</option>
-                                    </select>
-                                </div>
-                                <div class="col-md-2">
-                                    <select id="modalidadSelect" class="form-select form-select-custom">
-                                        <option value="">Modalidad</option>
-                                        <option value="presencial">Presencial</option>
-                                        <option value="online">Online</option>
-                                        <option value="semipresencial">Semipresencial</option>
-                                    </select>
-                                </div>
-                                <div class="col-md-2">
-                                    <select id="estadoSelect" class="form-select form-select-custom">
-                                        <option value="">Estado</option>
-                                        <option value="abierto">Abiertos</option>
-                                        <option value="cerrado">Cerrados</option>
-                                        <option value="proximo">Próximamente</option>
-                                    </select>
-                                </div>
-                                <div class="col-md-1">
-                                    <button type="button" class="btn btn-outline-secondary w-100" id="clearFiltersBtn" title="Limpiar todos los filtros">
-                                        <i class="bi bi-arrow-counterclockwise"></i>
-                                    </button>
-                                </div>
-                            </div>
-                        </form>
+
+
+
+           <?php
+
+
+$perfil_completo = false;
+
+try {
+    // 1. Verificar si tiene el registro de datos personales
+    $stmt_busc = $pdo->prepare("SELECT id FROM buscadores_empleo WHERE usuario_id = :uid LIMIT 1");
+    $stmt_busc->execute([':uid' => $id_usuario]);
+    $has_buscador = $stmt_busc->fetch();
+
+    // 2. Verificar si tiene los documentos obligatorios (DIP y CV)
+    $stmt_doc = $pdo->prepare("SELECT id FROM documentos WHERE usuario_id = :uid LIMIT 1");
+    $stmt_doc->execute([':uid' => $id_usuario]);
+    $has_documentos = $stmt_doc->fetch();
+
+    // Si tiene ambos registros obligatorios creados, el perfil se considera completado
+    if ($has_buscador && $has_documentos) {
+        $perfil_completo = true;
+    }
+
+} catch (PDOException $e) {
+    error_log("Error al verificar estado del perfil: " . $e->getMessage());
+}
+
+
+
+
+?>
+
+       
+         <main class="container py-5 flex-grow-1">
+
+    <?php if (!$perfil_completo): ?>
+        <div id="incompleteProfileBanner" class="alert alert-profile-incomplete p-4 mb-4">
+            <div class="d-flex flex-column flex-md-row align-items-md-center justify-content-between gap-3">
+                <div class="d-flex align-items-start gap-3">
+                    <i class="bi bi-exclamation-octagon-fill text-danger fs-3 mt-1"></i>
+                    <div>
+                        <h4 class="fw-bold m-0 h5 text-dark">Expediente Digital Incompleto</h4>
+                        <p class="m-0 text-muted small mt-1">Conforme a la normativa del Sistema Nacional de Empleo, debe completar su perfil adjuntando su Documento de Identidad Personal (DIP) y su Currículum Vitae para acceder a la visualización de ofertas laborales vigentes.</p>
                     </div>
                 </div>
+                <a href="completar_perfil.php" class="btn btn-danger btn-sm text-nowrap px-4 py-2 rounded-pill fw-bold shadow-sm">
+                    <i class="bi bi-pencil-square me-1"></i> Completar Perfil Ahora
+                </a>
+            </div>
+        </div>
 
-                <!-- LISTADO DE CURSOS -->
-                <div class="col-12">
-                    <div class="card dashboard-card p-4">
-                        <div class="d-flex justify-content-between align-items-center mb-3">
-                            <h5 class="fw-bold m-0 h6 text-uppercase tracking-wider text-muted"><i class="bi bi-journal-bookmark me-2"></i>Planes Estatales de Capacitación (<span id="courseCount">6</span>)</h5>
-                            <span class="badge-gold">Cupos disponibles</span>
+        <div class="registro-pendiente mb-4">
+            <div class="icono"><i class="bi bi-info-circle-fill"></i></div>
+            <div class="texto">
+                <strong>¡Atención!</strong> Para acceder a todas las funcionalidades del portal (postulaciones, ofertas personalizadas, cursos, etc.) debe completar su registro en el <a href="completar_perfil.php" class="btn-link">Sistema Nacional de Empleo</a>.
+            </div>
+            <a href="completar_perfil.php" class="btn btn-gov btn-sm rounded-pill px-4">Completar registro</a>
+        </div>
+    <?php endif; ?>
+
+    <?php if ($perfil_completo): ?>
+        <div class="row g-4">
+            
+            <div class="col-12">
+                <div class="card dashboard-card p-4">
+                    <h5 class="fw-bold mb-3 h6 text-uppercase tracking-wider text-muted"><i class="bi bi-funnel me-2"></i>Filtrar Cursos</h5>
+                    <form id="filterForm">
+                        <div class="row g-3">
+                            <div class="col-md-4">
+                                <input type="text" id="searchInput" class="form-control form-control-search" placeholder="Buscar curso... (búsqueda en tiempo real)">
+                            </div>
+                            <div class="col-md-3">
+                                <select id="areaSelect" class="form-select form-select-custom">
+                                    <option value="">Todas las áreas</option>
+                                    <option value="tecnologia">Tecnología</option>
+                                    <option value="administracion">Administración</option>
+                                    <option value="salud">Salud</option>
+                                    <option value="educacion">Educación</option>
+                                </select>
+                            </div>
+                            <div class="col-md-2">
+                                <select id="modalidadSelect" class="form-select form-select-custom">
+                                    <option value="">Modalidad</option>
+                                    <option value="presencial">Presencial</option>
+                                    <option value="online">Online</option>
+                                    <option value="semipresencial">Semipresencial</option>
+                                </select>
+                            </div>
+                            <div class="col-md-2">
+                                <select id="estadoSelect" class="form-select form-select-custom">
+                                    <option value="">Estado</option>
+                                    <option value="abierto">Abiertos</option>
+                                    <option value="cerrado">Cerrados</option>
+                                    <option value="proximo">Próximamente</option>
+                                </select>
+                            </div>
+                            <div class="col-md-1">
+                                <button type="button" class="btn btn-outline-secondary w-100" id="clearFiltersBtn" title="Limpiar todos los filtros">
+                                    <i class="bi bi-arrow-counterclockwise"></i>
+                                </button>
+                            </div>
                         </div>
-
-                        <div id="courseList" class="d-flex flex-column gap-3">
-                            <!-- Generado por JS -->
-                        </div>
-
-                        <nav class="mt-4">
-                            <ul class="pagination justify-content-center pagination-custom" id="paginationControls">
-                                <!-- Generado por JS -->
-                            </ul>
-                        </nav>
-                    </div>
+                    </form>
                 </div>
             </div>
-        </main>
+
+            <div class="col-12">
+                <div class="card dashboard-card p-4">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <h5 class="fw-bold m-0 h6 text-uppercase tracking-wider text-muted"><i class="bi bi-journal-bookmark me-2"></i>Planes Estatales de Capacitación (<span id="courseCount">6</span>)</h5>
+                        <span class="badge-gold">Cupos disponibles</span>
+                    </div>
+
+                    <div id="courseList" class="d-flex flex-column gap-3">
+                        </div>
+
+                    <nav class="mt-4">
+                        <ul class="pagination justify-content-center pagination-custom" id="paginationControls">
+                            </ul>
+                    </nav>
+                </div>
+            </div>
+            
+        </div>
+    <?php endif; ?>
+</main>
+
+
 
         <!-- MODALES -->
         <div class="modal fade" id="courseModal" tabindex="-1" aria-hidden="true">

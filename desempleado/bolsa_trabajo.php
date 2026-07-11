@@ -472,59 +472,134 @@
 
         <?php include '../componentes/menu_desempleado.php'; ?>
 
-        <main class="container py-5 flex-grow-1">
-            <div class="row g-4">
-                <div class="col-12">
-                    <div class="card dashboard-card p-4">
-                        <h5 class="fw-bold mb-3 h6 text-uppercase tracking-wider text-muted"><i class="bi bi-funnel me-2"></i>Filtros de Búsqueda</h5>
-                        <form id="filterForm">
-                            <div class="row g-3">
-                                <div class="col-md-4">
-                                    <input type="text" id="searchInput" class="form-control form-control-search" placeholder="Buscar por título o empresa... (búsqueda en tiempo real)">
-                                </div>
-                                <div class="col-md-3">
-                                    <select id="sectorSelect" class="form-select form-select-custom">
-                                        <option value="">Todos los sectores</option>
-                                        <option value="tecnologia">Tecnología</option>
-                                        <option value="construccion">Construcción</option>
-                                        <option value="salud">Salud</option>
-                                        <option value="educacion">Educación</option>
-                                    </select>
-                                </div>
-                                <div class="col-md-3">
-                                    <select id="citySelect" class="form-select form-select-custom">
-                                        <option value="">Todas las ciudades</option>
-                                        <option value="malabo">Malabo</option>
-                                        <option value="bata">Bata</option>
-                                        <option value="ebebiyin">Ebebiyín</option>
-                                    </select>
-                                </div>
-                                <div class="col-md-2">
-                                    <button type="button" class="btn btn-outline-secondary w-100" id="clearFiltersBtn" title="Limpiar todos los filtros">
-                                        <i class="bi bi-arrow-counterclockwise me-1"></i> Limpiar
-                                    </button>
-                                </div>
-                            </div>
-                        </form>
+
+
+         <?php
+
+
+$perfil_completo = false;
+
+try {
+    // 1. Verificar si tiene el registro de datos personales
+    $stmt_busc = $pdo->prepare("SELECT id FROM buscadores_empleo WHERE usuario_id = :uid LIMIT 1");
+    $stmt_busc->execute([':uid' => $id_usuario]);
+    $has_buscador = $stmt_busc->fetch();
+
+    // 2. Verificar si tiene los documentos obligatorios (DIP y CV)
+    $stmt_doc = $pdo->prepare("SELECT id FROM documentos WHERE usuario_id = :uid LIMIT 1");
+    $stmt_doc->execute([':uid' => $id_usuario]);
+    $has_documentos = $stmt_doc->fetch();
+
+    // Si tiene ambos registros obligatorios creados, el perfil se considera completado
+    if ($has_buscador && $has_documentos) {
+        $perfil_completo = true;
+    }
+
+} catch (PDOException $e) {
+    error_log("Error al verificar estado del perfil: " . $e->getMessage());
+}
+
+
+
+
+?>
+
+
+
+        <!-- CONTENIDO PRINCIPAL DE BÚSQUEDA -->
+<main class="container py-5 flex-grow-1">
+
+    <!-- ALERTA EXPEDIENTE INCOMPLETO (Se muestra SOLO si no está completo) -->
+    <?php if (!$perfil_completo): ?>
+        <div id="incompleteProfileBanner" class="alert alert-profile-incomplete p-4 mb-4">
+            <div class="d-flex flex-column flex-md-row align-items-md-center justify-content-between gap-3">
+                <div class="d-flex align-items-start gap-3">
+                    <i class="bi bi-exclamation-octagon-fill text-danger fs-3 mt-1"></i>
+                    <div>
+                        <h4 class="fw-bold m-0 h5 text-dark">Expediente Digital Incompleto</h4>
+                        <p class="m-0 text-muted small mt-1">Conforme a la normativa del Sistema Nacional de Empleo, debe completar su perfil adjuntando su Documento de Identidad Personal (DIP) y su Currículum Vitae para acceder a la visualización de ofertas laborales vigentes.</p>
                     </div>
                 </div>
+                <a href="completar_perfil.php" class="btn btn-danger btn-sm text-nowrap px-4 py-2 rounded-pill fw-bold shadow-sm">
+                    <i class="bi bi-pencil-square me-1"></i> Completar Perfil Ahora
+                </a>
+            </div>
+        </div>
 
-                <div class="col-12">
-                    <div class="card dashboard-card p-4">
-                        <div class="d-flex justify-content-between align-items-center mb-3">
-                            <h5 class="fw-bold m-0 h6 text-uppercase tracking-wider text-muted"><i class="bi bi-briefcase me-2"></i>Ofertas de Empleo (<span id="jobCount">12</span>)</h5>
-                            <span class="badge-soft-blue">Últimas 30 días</span>
+        <div class="registro-pendiente mb-4">
+            <div class="icono"><i class="bi bi-info-circle-fill"></i></div>
+            <div class="texto">
+                <strong>¡Atención!</strong> Para acceder a todas las funcionalidades del portal (postulaciones, ofertas personalizadas, cursos, etc.) debe completar su registro en el <a href="completar_perfil.php" class="btn-link">Sistema Nacional de Empleo</a>.
+            </div>
+            <a href="completar_perfil.php" class="btn btn-gov btn-sm rounded-pill px-4">Completar registro</a>
+        </div>
+    <?php endif; ?>
+
+    
+
+    <!-- DE AQUÍ EN ADELANTE TODO SE OCULTA SI EL PERFIL ESTÁ INCOMPLETO -->
+    <?php if ($perfil_completo): ?>
+        <div class="row g-4">
+            <!-- FILTROS DE BÚSQUEDA -->
+            <div class="col-12">
+                <div class="card dashboard-card p-4">
+                    <h5 class="fw-bold mb-3 h6 text-uppercase tracking-wider text-muted"><i class="bi bi-funnel me-2"></i>Filtros de Búsqueda</h5>
+                    <form id="filterForm">
+                        <div class="row g-3">
+                            <div class="col-md-4">
+                                <input type="text" id="searchInput" class="form-control form-control-search" placeholder="Buscar por título o empresa... (búsqueda en tiempo real)">
+                            </div>
+                            <div class="col-md-3">
+                                <select id="sectorSelect" class="form-select form-select-custom">
+                                    <option value="">Todos los sectores</option>
+                                    <option value="tecnologia">Tecnología</option>
+                                    <option value="construccion">Construcción</option>
+                                    <option value="salud">Salud</option>
+                                    <option value="educacion">Educación</option>
+                                </select>
+                            </div>
+                            <div class="col-md-3">
+                                <select id="citySelect" class="form-select form-select-custom">
+                                    <option value="">Todas las ciudades</option>
+                                    <option value="malabo">Malabo</option>
+                                    <option value="bata">Bata</option>
+                                    <option value="ebebiyin">Ebebiyín</option>
+                                </select>
+                            </div>
+                            <div class="col-md-2">
+                                <button type="button" class="btn btn-outline-secondary w-100" id="clearFiltersBtn" title="Limpiar todos los filtros">
+                                    <i class="bi bi-arrow-counterclockwise me-1"></i> Limpiar
+                                </button>
+                            </div>
                         </div>
-                        <div id="jobList" class="row g-3">
-                            <!-- Las tarjetas se generan con JavaScript -->
-                        </div>
-                        <nav class="mt-4">
-                            <ul class="pagination justify-content-center pagination-custom" id="paginationControls"></ul>
-                        </nav>
-                    </div>
+                    </form>
                 </div>
             </div>
-        </main>
+
+            <!-- SECCIÓN DE OFERTAS DE EMPLEO -->
+            <div class="col-12">
+                <div class="card dashboard-card p-4">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <h5 class="fw-bold m-0 h6 text-uppercase tracking-wider text-muted"><i class="bi bi-briefcase me-2"></i>Ofertas de Empleo (<span id="jobCount">12</span>)</h5>
+                        <span class="badge-soft-blue">Últimos 30 días</span>
+                    </div>
+                    <div id="jobList" class="row g-3">
+                        <!-- Las tarjetas se generan con JavaScript -->
+                    </div>
+                    <nav class="mt-4">
+                        <ul class="pagination justify-content-center pagination-custom" id="paginationControls"></ul>
+                    </nav>
+                </div>
+            </div>
+        </div>
+    <?php endif; ?>
+</main>
+
+
+
+
+
+
 
         <!-- Modales -->
         <div class="modal fade" id="postulacionModal" tabindex="-1" aria-hidden="true">

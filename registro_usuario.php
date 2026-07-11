@@ -1,3 +1,8 @@
+<?php
+if (session_status() === PHP_SESSION_NONE) {
+    session_start();
+}
+?>
 <!DOCTYPE html>
 <html lang="es">
 
@@ -44,44 +49,6 @@
             box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.3);
         }
 
-        /* Avatar de Previsualización */
-        .avatar-preview-container {
-            width: 140px;
-            height: 140px;
-            margin: 0 auto 15px auto;
-            position: relative;
-        }
-
-        .avatar-preview {
-            width: 100%;
-            height: 100%;
-            border-radius: 50%;
-            border: 4px solid var(--accent-teal);
-            object-fit: cover;
-            background-color: var(--dark-input);
-        }
-
-        .btn-upload-avatar {
-            position: absolute;
-            bottom: 0;
-            right: 0;
-            background-color: var(--accent-teal);
-            color: white;
-            border-radius: 50%;
-            width: 36px;
-            height: 36px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            cursor: pointer;
-            border: 2px solid #0f2d4a;
-            transition: transform 0.2s;
-        }
-
-        .btn-upload-avatar:hover {
-            transform: scale(1.1);
-        }
-
         .custom-form-group .form-control,
         .custom-form-group .form-select {
             background-color: var(--dark-input);
@@ -97,11 +64,6 @@
             border-color: var(--accent-teal);
             color: #ffffff;
             box-shadow: 0 0 0 0.25rem rgba(23, 162, 184, 0.25);
-        }
-
-        .custom-form-group .form-select option {
-            background-color: var(--dark-input);
-            color: #fff;
         }
 
         .custom-form-group .form-control::placeholder {
@@ -122,26 +84,6 @@
             text-transform: uppercase;
             letter-spacing: 0.5px;
             color: #ffffff;
-        }
-
-        .file-upload-wrapper {
-            background-color: rgba(26, 66, 106, 0.5);
-            border: 1px dashed rgba(255, 255, 255, 0.3);
-            border-radius: 8px;
-            padding: 12px;
-            text-align: center;
-        }
-
-        .experience-block {
-            background-color: rgba(255, 255, 255, 0.05);
-            border-radius: 8px;
-            border: 1px solid rgba(255, 255, 255, 0.1);
-        }
-
-        .form-switch .form-check-input {
-            width: 2.5em;
-            height: 1.25em;
-            cursor: pointer;
         }
 
         .btn-submit {
@@ -171,152 +113,177 @@
             </p>
         </header>
 
-      <main class="container main-content py-5">
-    <div class="row justify-content-center">
-        <div class="col-xl-8 col-lg-9">
+        <main class="container main-content py-5">
+            <div class="row justify-content-center">
+                <div class="col-xl-8 col-lg-9">
 
-            <div class="mb-4">
-                <a href="login_desempleados.php" class="text-white text-decoration-none small">
-                    <i class="bi bi-arrow-left me-2"></i> Volver al Inicio de Sesión
-                </a>
+                    <div class="mb-4">
+                        <a href="login_desempleados.php" class="text-white text-decoration-none small">
+                            <i class="bi bi-arrow-left me-2"></i> Volver al Inicio de Sesión
+                        </a>
+                    </div>
+
+                    <div id="session-alert-container">
+                        <?php if (isset($_SESSION['error'])): ?>
+                            <div class="alert alert-danger alert-dismissible fade show" role="alert" id="customAlert" style="border-left: 5px solid #dc3545;">
+                                <i class="bi bi-exclamation-octagon-fill me-2"></i>
+                                <?= htmlspecialchars($_SESSION['error']); ?>
+                                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                            </div>
+                            <?php unset($_SESSION['error']); ?>
+                        <?php endif; ?>
+
+                        <?php if (isset($_SESSION['exito'])): ?>
+                            <div class="alert alert-success alert-dismissible fade show" role="alert" id="customAlert" style="border-left: 5px solid #198754;">
+                                <i class="bi bi-check-circle-fill me-2"></i>
+                                <?= htmlspecialchars($_SESSION['exito']); ?>
+                                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                            </div>
+                            <?php unset($_SESSION['exito']); ?>
+                        <?php endif; ?>
+                    </div>
+
+                    <div class="form-card">
+                        <form id="registrationForm" action="php/procesar_usuario.php" method="POST" class="needs-validation" novalidate>
+
+                            <div class="text-center mb-5">
+                                <div class="mb-3">
+                                    <i class="bi bi-shield-lock-fill text-primary" style="font-size: 3.5rem;"></i>
+                                </div>
+                                <h2 class="fw-bold m-0">Crear Cuenta de Acceso</h2>
+                                <p class="text-white-50 small">Sistema Nacional de Empleo — Registro de Credenciales Únicas</p>
+                            </div>
+
+                            <h3 class="section-title mb-4">1. Datos de Identidad</h3>
+                            <div class="row g-3 custom-form-group mb-5">
+                                <div class="col-md-6">
+                                    <label class="form-label">Nombre</label>
+                                    <input type="text" name="nombre" class="form-control" placeholder="Ej. Juan Carlos" required minlength="2" maxlength="50" pattern="^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$">
+                                    <div class="invalid-feedback">Por favor, introduce un nombre válido (solo letras, mín. 2 caracteres).</div>
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label">Apellidos</label>
+                                    <input type="text" name="apellidos" class="form-control" placeholder="Ej. Nsue Nguema" required minlength="2" maxlength="50" pattern="^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$">
+                                    <div class="invalid-feedback">Por favor, introduce tus apellidos (solo letras, mín. 2 caracteres).</div>
+                                </div>
+                                <div class="col-md-12">
+                                    <label class="form-label">Documento Nacional de Identidad (DIP / Pasaporte)</label>
+                                    <input type="text" name="documento_identidad" class="form-control" placeholder="Número de documento oficial" required minlength="5" maxlength="20" pattern="^[a-zA-Z0-9\-]+$">
+                                    <div class="invalid-feedback">Introduce un documento de identidad válido (letras, números y guiones).</div>
+                                </div>
+                            </div>
+
+                            <h3 class="section-title mb-4">2. Credenciales y Seguridad</h3>
+                            <div class="row g-3 custom-form-group mb-5">
+                                <div class="col-md-6">
+                                    <label class="form-label">Nombre de Usuario</label>
+                                    <input type="text" name="nombre_usuario" class="form-control" placeholder="Ej. jc_nsue" required minlength="4" maxlength="30" pattern="^[a-zA-Z0-9_.]+$">
+                                    <div class="invalid-feedback">El usuario debe tener al menos 4 caracteres (solo letras, números, puntos o guiones bajos).</div>
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label">Correo Electrónico</label>
+                                    <input type="email" name="correo_electronico" class="form-control" placeholder="ejemplo@dominio.com" required>
+                                    <div class="invalid-feedback">Por favor, introduce una dirección de correo electrónico válida.</div>
+                                    <div class="form-text text-white-50" style="font-size: 0.75rem;">
+                                        <i class="bi bi-info-circle me-1"></i> Se enviará un enlace de confirmación a esta bandeja.
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label">Contraseña</label>
+                                    <input type="password" name="password" id="password" class="form-control" placeholder="Mínimo 8 caracteres" required minlength="8" pattern="^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)[a-zA-Z\d\W_]{8,}$">
+                                    <div class="invalid-feedback">La contraseña debe tener al menos 8 caracteres, incluyendo una mayúscula, una minúscula y un número.</div>
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label">Confirmar Contraseña</label>
+                                    <input type="password" id="confirm_password" class="form-control" placeholder="Repite tu contraseña" required>
+                                    <div id="passwordError" class="text-danger small mt-1 d-none">
+                                        <i class="bi bi-exclamation-triangle-fill me-1"></i> Las contraseñas no coinciden.
+                                    </div>
+                                    <div id="passwordSuccess" class="text-success small mt-1 d-none">
+                                        <i class="bi bi-check-circle-fill me-1"></i> Las contraseñas coinciden.
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="text-center pt-4 border-top border-secondary mt-5">
+                                <button type="submit" class="btn btn-submit px-5 btn-primary">Solicitar Alta y Verificar Correo</button>
+                            </div>
+
+                        </form>
+                    </div>
+                </div>
             </div>
-
-            <div class="form-card">
-                <form id="registrationForm" action="procesar_registro.php" method="POST" class="needs-validation" novalidate>
-
-                    <div class="text-center mb-5">
-                        <div class="mb-3">
-                            <i class="bi bi-shield-lock-fill text-primary" style="font-size: 3.5rem;"></i>
-                        </div>
-                        <h2 class="fw-bold m-0">Crear Cuenta de Acceso</h2>
-                        <p class="text-white-50 small">Sistema Nacional de Empleo — Registro de Credenciales Únicas</p>
-                    </div>
-
-                    <!-- SECCIÓN: DATOS DE IDENTIDAD -->
-                    <h3 class="section-title mb-4">1. Datos de Identidad</h3>
-                    <div class="row g-3 custom-form-group mb-5">
-                        <div class="col-md-6">
-                            <label class="form-label">Nombre</label>
-                            <input type="text" name="nombre" class="form-control" placeholder="Ej. Juan Carlos" 
-                                   required minlength="2" maxlength="50" pattern="^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$">
-                            <div class="invalid-feedback">Por favor, introduce un nombre válido (solo letras, mín. 2 caracteres).</div>
-                        </div>
-                        <div class="col-md-6">
-                            <label class="form-label">Apellidos</label>
-                            <input type="text" name="apellidos" class="form-control" placeholder="Ej. Nsue Nguema" 
-                                   required minlength="2" maxlength="50" pattern="^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$">
-                            <div class="invalid-feedback">Por favor, introduce tus apellidos (solo letras, mín. 2 caracteres).</div>
-                        </div>
-                        <div class="col-md-12">
-                            <label class="form-label">Documento Nacional de Identidad (DIP / Pasaporte)</label>
-                            <input type="text" name="documento_identidad" class="form-control" placeholder="Número de documento oficial" 
-                                   required minlength="5" maxlength="20" pattern="^[a-zA-Z0-9\-]+$">
-                            <div class="invalid-feedback">Introduce un documento de identidad válido (letras, números y guiones).</div>
-                        </div>
-                    </div>
-
-                    <!-- SECCIÓN: CREDENCIALES Y SEGURIDAD -->
-                    <h3 class="section-title mb-4">2. Credenciales y Seguridad</h3>
-                    <div class="row g-3 custom-form-group mb-5">
-                        <div class="col-md-6">
-                            <label class="form-label">Nombre de Usuario</label>
-                            <input type="text" name="nombre_usuario" class="form-control" placeholder="Ej. jc_nsue" 
-                                   required minlength="4" maxlength="30" pattern="^[a-zA-Z0-9_.]+$">
-                            <div class="invalid-feedback">El usuario debe tener al menos 4 caracteres (solo letras, números, puntos o guiones bajos).</div>
-                        </div>
-                        <div class="col-md-6">
-                            <label class="form-label">Correo Electrónico</label>
-                            <input type="email" name="correo_electronico" class="form-control" placeholder="ejemplo@dominio.com" required>
-                            <div class="invalid-feedback">Por favor, introduce una dirección de correo electrónico válida.</div>
-                            <div class="form-text text-white-50" style="font-size: 0.75rem;">
-                                <i class="bi bi-info-circle me-1"></i> Se enviará un enlace de confirmación a esta bandeja.
-                            </div>
-                        </div>
-                        <div class="col-md-6">
-                            <label class="form-label">Contraseña</label>
-                            <input type="password" name="password" id="password" class="form-control" 
-                                   placeholder="Mínimo 8 caracteres" required minlength="8" 
-                                   pattern="^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)[a-zA-Z\d\W_]{8,}$">
-                            <div class="invalid-feedback">La contraseña debe tener al menos 8 caracteres, incluyendo una mayúscula, una minúscula y un número.</div>
-                        </div>
-                        <div class="col-md-6">
-                            <label class="form-label">Confirmar Contraseña</label>
-                            <input type="password" id="confirm_password" class="form-control" placeholder="Repite tu contraseña" required>
-                            <div id="passwordError" class="text-danger small mt-1 d-none">
-                                <i class="bi bi-exclamation-triangle-fill me-1"></i> Las contraseñas no coinciden.
-                            </div>
-                            <div id="passwordSuccess" class="text-success small mt-1 d-none">
-                                <i class="bi bi-check-circle-fill me-1"></i> Las contraseñas coinciden.
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="text-center pt-4 border-top border-secondary mt-5">
-                        <button type="submit" class="btn btn-submit px-5 btn-primary">Solicitar Alta y Verificar Correo</button>
-                    </div>
-
-                </form>
-            </div>
-        </div>
-    </div>
-</main>
-
-
+        </main>
 
         <footer class="bg-dark bg-opacity-50 text-center py-3 text-white-50 small mt-auto">
             &copy; 2026 Ministerio de Trabajo y Empleo. Sección de Registro Estatal.
         </footer>
     </div>
 
- <script>
-document.addEventListener("DOMContentLoaded", function() {
-    const form = document.getElementById('registrationForm');
-    const password = document.getElementById('password');
-    const confirmPassword = document.getElementById('confirm_password');
-    const errorDiv = document.getElementById('passwordError');
-    const successDiv = document.getElementById('passwordSuccess');
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/dist/js/bootstrap.bundle.min.js"></script>
 
-    // Función para verificar si las contraseñas coinciden en tiempo real
-    function verificarContrasenas() {
-        const val1 = password.value;
-        const val2 = confirmPassword.value;
+    <script>
+        document.addEventListener("DOMContentLoaded", function () {
+            const form = document.getElementById('registrationForm');
+            const password = document.getElementById('password');
+            const confirmPassword = document.getElementById('confirm_password');
+            const errorDiv = document.getElementById('passwordError');
+            const successDiv = document.getElementById('passwordSuccess');
+            const alerta = document.getElementById('customAlert');
 
-        // Si el campo de confirmar está vacío, ocultamos los avisos de coincidencia
-        if (val2 === "") {
-            errorDiv.classList.add('d-none');
-            successDiv.classList.add('d-none');
-            confirmPassword.setCustomValidity("Debes confirmar la contraseña");
-            return;
-        }
+            // 1. Temporizador para ocultar la alerta de sesión en 6 segundos
+            if (alerta) {
+                setTimeout(function () {
+                    if (typeof bootstrap !== 'undefined' && bootstrap.Alert) {
+                        const bsAlert = new bootstrap.Alert(alerta);
+                        bsAlert.close();
+                    } else {
+                        alerta.style.transition = "opacity 0.5s ease";
+                        alerta.style.opacity = "0";
+                        setTimeout(() => alerta.remove(), 500);
+                    }
+                }, 6000);
+            }
 
-        if (val1 === val2) {
-            errorDiv.classList.add('d-none');
-            successDiv.classList.remove('d-none');
-            confirmPassword.setCustomValidity(""); // Informa al navegador que el campo es válido
-        } else {
-            successDiv.classList.add('d-none');
-            errorDiv.classList.remove('d-none');
-            confirmPassword.setCustomValidity("Las contraseñas no coinciden"); // Forza la invalidez en HTML5
-        }
-    }
+            // 2. Función para verificar si las contraseñas coinciden en tiempo real
+            function verificarContrasenas() {
+                const val1 = password.value;
+                const val2 = confirmPassword.value;
 
-    // Escuchar los eventos input mientras el usuario escribe en ambos campos
-    password.addEventListener('input', verificarContrasenas);
-    confirmPassword.addEventListener('input', verificarContrasenas);
+                if (val2 === "") {
+                    errorDiv.classList.add('d-none');
+                    successDiv.classList.add('d-none');
+                    confirmPassword.setCustomValidity("Debes confirmar la contraseña");
+                    return;
+                }
 
-    // Validación general al intentar enviar (Bootstrap / HTML5 Native)
-    form.addEventListener('submit', function (event) {
-        verificarContrasenas(); // Validación final antes del envío
+                if (val1 === val2) {
+                    errorDiv.classList.add('d-none');
+                    successDiv.classList.remove('d-none');
+                    confirmPassword.setCustomValidity("");
+                } else {
+                    successDiv.classList.add('d-none');
+                    errorDiv.classList.remove('d-none');
+                    confirmPassword.setCustomValidity("Las contraseñas no coinciden");
+                }
+            }
 
-        if (!form.checkValidity()) {
-            event.preventDefault();
-            event.stopPropagation();
-        }
+            password.addEventListener('input', verificarContrasenas);
+            confirmPassword.addEventListener('input', verificarContrasenas);
 
-        form.classList.add('was-validated');
-    }, false);
-});
-</script>
+            // 3. Validación al intentar enviar el formulario
+            form.addEventListener('submit', function (event) {
+                verificarContrasenas();
+
+                if (!form.checkValidity()) {
+                    event.preventDefault();
+                    event.stopPropagation();
+                }
+
+                form.classList.add('was-validated');
+            }, false);
+        });
+    </script>
 </body>
 
 </html>

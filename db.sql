@@ -123,14 +123,47 @@ CREATE TABLE favoritos (
     FOREIGN KEY (oferta_id) REFERENCES ofertas_empleo(id) ON DELETE CASCADE
 );
 
--- 9. TABLA: CURSOS (Oferta informativa de capacitación del Estado)
+-- =========================================================================
+-- 1. NUEVA TABLA: ENTIDADES_FORMADORAS
+-- =========================================================================
+CREATE TABLE entidades_formadoras (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    codigo_entidad VARCHAR(20) NOT NULL UNIQUE,          -- Ej: ENT-INEM-01, ENT-UNGE-02
+    nombre_entidad VARCHAR(150) NOT NULL,                -- Ej: Instituto Nacional de Empleo (INEM)
+    siglas VARCHAR(20) NULL,                             -- Ej: INEM, UNGE, AAUCA
+    tipo_entidad ENUM('publica', 'privada', 'ong', 'internacional') DEFAULT 'publica',
+    responsable_contacto VARCHAR(150) NULL,              -- Nombre de la persona o director de contacto
+    telefono VARCHAR(30) NULL,
+    correo_electronico VARCHAR(150) NULL,
+    direccion TEXT NULL,                                 -- Dirección física o sede
+    provincia VARCHAR(100) DEFAULT 'Bioko Norte',        -- Ubicación principal
+    estado ENUM('activo', 'inactivo', 'suspendido') DEFAULT 'activo',
+    fecha_registro TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- =========================================================================
+-- 2. TABLA CURSOS REFACTORIZADA (VINCULADA A ENTIDADES_FORMADORAS)
+-- =========================================================================
+-- Eliminamos el campo VARCHAR 'entidad_imparte' y agregamos la FK 'entidad_id'
+
+DROP TABLE IF EXISTS cursos;
+
 CREATE TABLE cursos (
     id INT AUTO_INCREMENT PRIMARY KEY,
+    codigo_curso VARCHAR(20) NOT NULL UNIQUE,            -- Ej: CUR-2026-001
     titulo_curso VARCHAR(150) NOT NULL,
     descripcion_curso TEXT NOT NULL,
-    entidad_imparte VARCHAR(150) NOT NULL,          -- Ej: INEM, Centros Técnicos, etc.
+    entidad_id INT NOT NULL,                             -- Clave foránea hacia entidades_formadoras
     duracion_horas INT NOT NULL,
+    modalidad ENUM('presencial', 'online', 'hibrido') DEFAULT 'presencial',
     fecha_inicio DATE NULL,
     fecha_fin DATE NULL,
-    estado ENUM('activo', 'finalizado', 'proximamente') DEFAULT 'activo'
+    cupos_maximos INT DEFAULT 30,
+    estado ENUM('activo', 'finalizado', 'proximamente') DEFAULT 'activo',
+    fecha_creacion TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    
+    FOREIGN KEY (entidad_id) REFERENCES entidades_formadoras(id) ON DELETE CASCADE
 );
+
+ALTER TABLE cursos 
+ADD COLUMN imagen_portada VARCHAR(255) DEFAULT 'img/cursos/default.jpg' AFTER descripcion_curso;

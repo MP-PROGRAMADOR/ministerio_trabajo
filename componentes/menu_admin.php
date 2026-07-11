@@ -26,7 +26,10 @@
                 <a class="nav-link" href="#ofertas"><i class="bi bi-card-checklist"></i> Ofertas de Empleo</a>
             </li>
             <li class="nav-item">
-                <a class="nav-link" href="#cursos"><i class="bi bi-journal-bookmark-fill"></i> Capacitación / Cursos</a>
+                <a class="nav-link" href="capacitaciones.php"><i class="bi bi-journal-bookmark-fill"></i> Capacitación / Cursos</a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" href="entidades.php"><i class="bi bi-journal-bookmark-fill"></i> Entidades / Centros</a>
             </li>
             <li class="nav-item mt-3">
                 <small class="text-uppercase text-muted px-3 font-monospace fs-7">Administración</small>

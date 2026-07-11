@@ -1,3 +1,10 @@
+<?php
+// 1. Asegúrate de tener la sesión iniciada al principio de entidades.php
+if (session_status() === PHP_SESSION_NONE) {
+    session_start();
+}
+require_once '../conexion/conexion.php'; 
+?>
 <!DOCTYPE html>
 <html lang="es">
 <head>

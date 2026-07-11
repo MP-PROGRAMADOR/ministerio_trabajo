@@ -51,5 +51,23 @@
     const tooltipList = [...tooltipTriggerList].map(tooltipTriggerEl => new bootstrap.Tooltip(tooltipTriggerEl))
 </script>
 
+<script>
+    document.addEventListener("DOMContentLoaded", function() {
+        const alertElement = document.getElementById('customAlert');
+        if (alertElement) {
+            setTimeout(function() {
+                if (typeof bootstrap !== 'undefined') {
+                    const bsAlert = bootstrap.Alert.getOrCreateInstance(alertElement);
+                    bsAlert.close();
+                } else {
+                    alertElement.style.transition = "opacity 0.5s ease";
+                    alertElement.style.opacity = "0";
+                    setTimeout(() => alertElement.remove(), 500);
+                }
+            }, 5000);
+        }
+    });
+</script>
+
 </body>
 </html>

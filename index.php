@@ -23,8 +23,8 @@
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
         }
 
-        .bg-portal {
-            background: linear-gradient(rgba(17, 45, 110, 0.88), rgba(10, 28, 72, 0.94)),
+      .bg-portal {
+            background: linear-gradient(rgba(26, 66, 106, 0.85), rgba(26, 66, 106, 0.85)),
                 url('https://images.unsplash.com/photo-1454165804606-c3d57bc86b40?auto=format&fit=crop&w=1920&q=80') no-repeat center center fixed;
             background-size: cover;
             min-height: 100vh;
@@ -33,7 +33,6 @@
             justify-content: space-between;
             color: #ffffff;
         }
-
         /* Tarjetas de acceso profesionales y pulidas */
         .access-card {
             background: rgba(255, 255, 255, 0.96);
@@ -129,8 +128,8 @@
 
     <div class="bg-portal">
         <!-- Cabecera simple -->
-        <header class="text-center py-3 bg-black bg-opacity-30 border-b border-white border-opacity-10">
-            <p class="m-0 small text-uppercase tracking-wide text-white-75 font-monospace">
+      <header class="text-center py-3 bg-dark bg-opacity-25 border-bottom border-secondary">
+            <p class="m-0 small text-uppercase tracking-wider">
                 Bienvenido al Portal de Empleo
             </p>
         </header>
@@ -197,10 +196,9 @@
         </main>
 
         <!-- Footer -->
-        <footer
-            class="bg-black bg-opacity-40 text-center py-3 text-white-50 small border-t border-white border-opacity-5">
+            <footer class="bg-dark bg-opacity-50 text-center py-3 text-white-50 small">
             <div class="container d-flex flex-column flex-sm-row justify-content-between align-items-center gap-2">
-                <div>&copy; 2026 Ministerio de Trabajo y Empleo. Todos los derechos reservados.</div>
+               <div>&copy; 2026 Ministerio de Trabajo y Empleo. Todos los derechos reservados.</div>
                 <div class="d-flex gap-3 fs-5">
                     <a href="#" class="text-white-50"><i class="bi bi-facebook"></i></a>
                     <a href="#" class="text-white-50"><i class="bi bi-twitter-x"></i></a>

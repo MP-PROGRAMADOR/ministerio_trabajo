@@ -24,7 +24,8 @@
         }
 
         .bg-portal {
-            background: linear-gradient(rgba(17, 45, 110, 0.88), rgba(10, 28, 72, 0.94));
+            background: linear-gradient(rgba(26, 66, 106, 0.85), rgba(26, 66, 106, 0.85)),
+                url('https://images.unsplash.com/photo-1454165804606-c3d57bc86b40?auto=format&fit=crop&w=1920&q=80') no-repeat center center fixed;
             background-size: cover;
             min-height: 100vh;
             display: flex;
@@ -166,6 +167,23 @@
             background-color: rgba(17, 45, 110, 0.9);
         }
 
+          /* ===== BOTÓN VOLVER ===== */
+        .btn-back {
+            color: #ffffff;
+            text-decoration: none;
+            font-size: 0.95rem;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            transition: all 0.25s ease;
+            padding: 4px 8px;
+            border: 1px solid transparent;
+        }
+
+        .btn-back:hover {
+            color: var(--dorado);
+        }
+
         /* Responsive */
         @media (max-width: 768px) {
             .divider-line {
@@ -175,6 +193,7 @@
                 background: linear-gradient(to right, rgba(212, 160, 23, 0) 0%, rgba(212, 160, 23, 0.7) 50%, rgba(212, 160, 23, 0) 100%);
                 min-height: auto;
             }
+
             .divider-dot {
                 top: 50%;
                 left: 50%;
@@ -187,8 +206,8 @@
 <body>
 
     <div class="bg-portal">
-        <header class="text-center py-3 bg-black bg-opacity-30 border-b border-white border-opacity-10">
-            <p class="m-0 small text-uppercase tracking-wide text-white-75 font-monospace">
+         <header class="text-center py-3 bg-dark bg-opacity-25 border-bottom border-secondary">
+            <p class="m-0 small text-uppercase tracking-wider">
                 Portal de Empleo - Área de Empresas e Instituciones
             </p>
         </header>
@@ -268,13 +287,19 @@
                             <p class="mb-2 text-white-50 small">¿Tu empresa no tiene cuenta?</p>
                             <a href="#" class="btn-register-outline" onclick="goToRegister(event)">Regístrate aquí de forma gratuita</a>
                         </div>
+
+                          <!-- BOTÓN VOLVER -->
+                        <div class="d-flex justify-content-center mt-4 mb-3">
+                            <a href="#" class="btn-back" onclick="goBack(event)">
+                                <i class="bi bi-arrow-left"></i> Volver al portal
+                            </a>
+                        </div>
                     </form>
                 </div>
 
             </div>
         </main>
-
-        <footer class="bg-black bg-opacity-40 text-center py-3 text-white-50 small border-t border-white border-opacity-5">
+        <footer class="bg-dark bg-opacity-50 text-center py-3 text-white-50 small">
             <div class="container d-flex flex-column flex-sm-row justify-content-between align-items-center gap-2">
                 <div>&copy; 2026 Ministerio de Trabajo y Empleo. Sección Empresas.</div>
                 <div class="d-flex gap-3 fs-5">
@@ -310,6 +335,12 @@
         function goToRegister(e) {
             e.preventDefault();
             alert('Redirigiendo al formulario de registro y homologación de empresas...');
+        }
+
+        // 5. FUNCIÓN VOLVER
+        function goBack(event) {
+            event.preventDefault();
+            window.location.href = './index.php';
         }
     </script>
 </body>

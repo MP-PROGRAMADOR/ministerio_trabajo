@@ -29,9 +29,11 @@ if (!isset($_SESSION['rol']) || $_SESSION['rol'] !== 'buscador') {
         </a>
 
         <div class="d-flex align-items-center order-lg-last gap-3">
-            <a href="#" class="text-muted position-relative me-1" title="Notificaciones">
+            <a href="notificaciones.php" class="text-muted position-relative me-1" title="Notificaciones">
                 <i class="bi bi-bell fs-5" style="color: var(--gov-blue);"></i>
-                <span class="position-absolute top-0 start-100 translate-middle p-1 bg-danger border border-white rounded-circle"></span>
+                <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger" style="font-size: 0.6rem; margin-top: -2px;">
+                    3
+                </span>
             </a>
 
             <div class="nav-item dropdown profile-dropdown">

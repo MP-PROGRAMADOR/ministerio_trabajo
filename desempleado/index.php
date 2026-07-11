@@ -434,266 +434,211 @@
 
         <?php include '../componentes/menu_desempleado.php'; ?>
 
-        <!-- CONTENIDO PRINCIPAL -->
-        <main class="container py-5 flex-grow-1">
 
-            <!-- ALERTA EXPEDIENTE INCOMPLETO -->
-            <div id="incompleteProfileBanner" class="alert alert-profile-incomplete p-4 mb-4 d-none">
-                <div class="d-flex flex-column flex-md-row align-items-md-center justify-content-between gap-3">
-                    <div class="d-flex align-items-start gap-3">
-                        <i class="bi bi-exclamation-octagon-fill text-danger fs-3 mt-1"></i>
+
+
+
+        <?php
+
+
+$perfil_completo = false;
+
+try {
+    // 1. Verificar si tiene el registro de datos personales
+    $stmt_busc = $pdo->prepare("SELECT id FROM buscadores_empleo WHERE usuario_id = :uid LIMIT 1");
+    $stmt_busc->execute([':uid' => $id_usuario]);
+    $has_buscador = $stmt_busc->fetch();
+
+    // 2. Verificar si tiene los documentos obligatorios (DIP y CV)
+    $stmt_doc = $pdo->prepare("SELECT id FROM documentos WHERE usuario_id = :uid LIMIT 1");
+    $stmt_doc->execute([':uid' => $id_usuario]);
+    $has_documentos = $stmt_doc->fetch();
+
+    // Si tiene ambos registros obligatorios creados, el perfil se considera completado
+    if ($has_buscador && $has_documentos) {
+        $perfil_completo = true;
+    }
+
+} catch (PDOException $e) {
+    error_log("Error al verificar estado del perfil: " . $e->getMessage());
+}
+
+
+
+
+?>
+
+
+
+      <main class="container py-5 flex-grow-1">
+
+    <?php if (!$perfil_completo): ?>
+        <div id="incompleteProfileBanner" class="alert alert-profile-incomplete p-4 mb-4">
+            <div class="d-flex flex-column flex-md-row align-items-md-center justify-content-between gap-3">
+                <div class="d-flex align-items-start gap-3">
+                    <i class="bi bi-exclamation-octagon-fill text-danger fs-3 mt-1"></i>
+                    <div>
+                        <h4 class="fw-bold m-0 h5 text-dark">Expediente Digital Incompleto</h4>
+                        <p class="m-0 text-muted small mt-1">Conforme a la normativa del Sistema Nacional de Empleo, debe completar su perfil adjuntando su Documento de Identidad Personal (DIP) y su Currículum Vitae para acceder a la visualización de ofertas laborales vigentes.</p>
+                    </div>
+                </div>
+                <a href="completar_perfil.php" class="btn btn-danger btn-sm text-nowrap px-4 py-2 rounded-pill fw-bold shadow-sm">
+                    <i class="bi bi-pencil-square me-1"></i> Completar Perfil Ahora
+                </a>
+            </div>
+        </div>
+
+        <div class="registro-pendiente mb-4">
+            <div class="icono"><i class="bi bi-info-circle-fill"></i></div>
+            <div class="texto">
+                <strong>¡Atención!</strong> Para acceder a todas las funcionalidades del portal (postulaciones, ofertas personalizadas, cursos, etc.) debe completar su registro en el <a href="completar_perfil.php" class="btn-link">Sistema Nacional de Empleo</a>.
+            </div>
+            <a href="completar_perfil.php" class="btn btn-gov btn-sm rounded-pill px-4">Completar registro</a>
+        </div>
+    <?php endif; ?>
+
+    <?php if ($perfil_completo): ?>
+
+        <div class="row g-3 mb-4">
+            <div class="col-6 col-md-3">
+                <div class="stat-card">
+                    <div class="stat-icon"><i class="bi bi-send"></i></div>
+                    <div class="stat-number">12</div>
+                    <div class="stat-label">Postulaciones</div>
+                </div>
+            </div>
+            <div class="col-6 col-md-3">
+                <div class="stat-card">
+                    <div class="stat-icon"><i class="bi bi-eye"></i></div>
+                    <div class="stat-number">34</div>
+                    <div class="stat-label">Ofertas Vistas</div>
+                </div>
+            </div>
+            <div class="col-6 col-md-3">
+                <div class="stat-card">
+                    <div class="stat-icon"><i class="bi bi-journal-bookmark"></i></div>
+                    <div class="stat-number">5</div>
+                    <div class="stat-label">Cursos Inscritos</div>
+                </div>
+            </div>
+            <div class="col-6 col-md-3">
+                <div class="stat-card">
+                    <div class="stat-icon"><i class="bi bi-bell"></i></div>
+                    <div class="stat-number">3</div>
+                    <div class="stat-label">Notificaciones</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="row g-4">
+
+            <div class="col-xl-4 col-lg-5">
+                <div class="card dashboard-card p-4 text-center mb-4">
+                    <img src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=300&q=80"
+                        class="rounded-circle border border-3 border-light mx-auto mb-3 shadow-sm"
+                        style="width: 100px; height: 100px; object-fit: cover;" alt="Foto">
+                    <h4 class="fw-bold m-0 h5 text-dark"><?php echo htmlspecialchars($_SESSION['nombre_completo']); ?></h4>
+                    <p class="text-muted small mb-3">ID Expediente: <strong style="color: var(--gov-blue);">#EG-94821</strong></p>
+
+                    <div class="text-start small mb-3">
+                        <div class="profile-detail-item">
+                            <span class="label">Antigüedad</span>
+                            <span class="value">2 años 3 meses</span>
+                        </div>
+                        <div class="profile-detail-item">
+                            <span class="label">Última actividad</span>
+                            <span class="value">Hace 2 días</span>
+                        </div>
+                        <div class="profile-detail-item">
+                            <span class="label">Nivel de perfil</span>
+                            <span class="value"><span class="badge bg-gold" style="background: var(--gov-gold);">Avanzado</span></span>
+                        </div>
+                    </div>
+
+                    <div class="p-3 bg-light bg-opacity-70 rounded border-0 text-start small mb-3">
+                        <div class="d-flex justify-content-between mb-2">
+                            <span class="text-muted">Residencia:</span>
+                            <span class="fw-semibold text-dark">Malabo, Bioko Norte</span>
+                        </div>
+                        <div class="d-flex justify-content-between">
+                            <span class="text-muted">Progreso:</span>
+                            <span id="profilePercentage" class="fw-bold text-success">100%</span>
+                        </div>
+                        <div class="progress mt-2" style="height: 6px; background-color: #E2E8F0;">
+                            <div id="profileProgressBar" class="progress-bar bg-success" role="progressbar" style="width: 100%"></div>
+                        </div>
+                    </div>
+
+                    <div class="d-grid gap-2">
+                        <button class="btn btn-gov btn-sm fw-semibold"><i class="bi bi-qr-code me-2"></i> Descargar Tarjeta Demandante</button>
+                        <button class="btn btn-gov-outline btn-sm fw-semibold"><i class="bi bi-pencil-square me-2"></i> Editar Perfil</button>
+                    </div>
+                </div>
+
+                <div class="card dashboard-card p-4 mb-4">
+                    <h5 class="fw-bold mb-3 h6 text-uppercase tracking-wider text-muted"><i class="bi bi-chat-left-text text-primary me-2" style="color: var(--gov-blue) !important;"></i>Notificaciones de Oficina</h5>
+                    <div class="d-flex flex-column gap-2">
+                        <div class="p-2 rounded bg-info bg-opacity-10 border-0 small">
+                            <strong class="text-info-emphasis d-block" style="font-weight: 600;">Nueva oferta en tu sector</strong>
+                            <span class="text-muted" style="font-size: 0.75rem;">Se ha publicado una vacante para Técnico de Soporte TI en GETESA.</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card dashboard-card p-4">
+                    <h5 class="fw-bold mb-3 h6 text-uppercase tracking-wider text-muted"><i class="bi bi-newspaper me-2" style="color: var(--gov-gold);"></i>Noticias y Eventos</h5>
+                    <div class="news-item">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <span class="news-title">Nueva convocatoria de empleo público</span>
+                            <span class="news-badge">Nuevo</span>
+                        </div>
+                        <div class="news-meta"><i class="bi bi-calendar-event me-1"></i> 15/07/2026</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-xl-8 col-lg-7">
+                <div id="jobOffersSection">
+                    <div class="card dashboard-card p-4 mb-4">
+                        <h5 class="fw-bold mb-3 h6 text-uppercase tracking-wider text-muted">Ofertas Recomendadas</h5>
+                        <div class="d-flex flex-column gap-3">
+                            <div class="list-item-custom p-3 d-flex flex-column flex-sm-row justify-content-between align-items-sm-center gap-3">
+                                <div>
+                                    <span class="badge bg-gold" style="background: var(--gov-gold); color: white;">Nuevo</span>
+                                    <h6 class="fw-bold m-0 text-dark mt-1">Técnico de Soporte TI</h6>
+                                    <p class="m-0 small text-muted"><i class="bi bi-building me-1"></i>GETESA · <i class="bi bi-geo-alt me-1"></i>Malabo</p>
+                                </div>
+                                <button class="btn btn-sm btn-gov btn-pill-custom">Postularme</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card dashboard-card p-4 mb-4">
+                    <h5 class="fw-bold mb-3 h6 text-uppercase tracking-wider text-muted">Estado de mis Candidaturas</h5>
+                    <div class="d-flex flex-column gap-3 mt-2">
+                        <div class="timeline-item">
+                            <span class="badge bg-light text-secondary border mb-1" style="font-size: 0.65rem; font-weight: 600;">28/06/2026</span>
+                            <h6 class="fw-bold text-dark m-0 small">Postulación enviada a GETESA</h6>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card dashboard-card p-4 mb-4">
+                    <h5 class="fw-bold mb-3 h6 text-uppercase tracking-wider text-muted">Planes Estatales de Capacitación</h5>
+                    <div class="p-3 rounded list-item-custom d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3 mb-3">
                         <div>
-                            <h4 class="fw-bold m-0 h5 text-dark">Expediente Digital Incompleto</h4>
-                            <p class="m-0 text-muted small mt-1">Conforme a la normativa del Sistema Nacional de Empleo, debe completar su perfil adjuntando su Documento de Identidad Personal (DIP) y su Currículum Vitae para acceder a la visualización de ofertas laborales vigentes.</p>
+                            <h6 class="fw-bold m-0 text-dark">Administración de Redes y Ciberseguridad</h6>
                         </div>
-                    </div>
-                    <a href="#" class="btn btn-danger btn-sm text-nowrap px-4 py-2 rounded-pill fw-bold shadow-sm">
-                        <i class="bi bi-pencil-square me-1"></i> Completar Perfil Ahora
-                    </a>
-                </div>
-            </div>
-
-            <!-- ===== NUEVO MENSAJE DE REGISTRO PENDIENTE ===== -->
-            <div class="registro-pendiente">
-                <div class="icono"><i class="bi bi-info-circle-fill"></i></div>
-                <div class="texto">
-                    <strong>¡Atención!</strong> Para acceder a todas las funcionalidades del portal (postulaciones, ofertas personalizadas, cursos, etc.) debe completar su registro en el <a href="#" class="btn-link">Sistema Nacional de Empleo</a>.
-                </div>
-                <a href="#" class="btn btn-gov btn-sm rounded-pill px-4">Completar registro</a>
-            </div>
-
-            <!-- ESTADÍSTICAS RÁPIDAS -->
-            <div class="row g-3 mb-4">
-                <div class="col-6 col-md-3">
-                    <div class="stat-card">
-                        <div class="stat-icon"><i class="bi bi-send"></i></div>
-                        <div class="stat-number">12</div>
-                        <div class="stat-label">Postulaciones</div>
-                    </div>
-                </div>
-                <div class="col-6 col-md-3">
-                    <div class="stat-card">
-                        <div class="stat-icon"><i class="bi bi-eye"></i></div>
-                        <div class="stat-number">34</div>
-                        <div class="stat-label">Ofertas Vistas</div>
-                    </div>
-                </div>
-                <div class="col-6 col-md-3">
-                    <div class="stat-card">
-                        <div class="stat-icon"><i class="bi bi-journal-bookmark"></i></div>
-                        <div class="stat-number">5</div>
-                        <div class="stat-label">Cursos Inscritos</div>
-                    </div>
-                </div>
-                <div class="col-6 col-md-3">
-                    <div class="stat-card">
-                        <div class="stat-icon"><i class="bi bi-bell"></i></div>
-                        <div class="stat-number">3</div>
-                        <div class="stat-label">Notificaciones</div>
+                        <a href="#" class="btn btn-sm btn-green btn-pill-custom text-nowrap">Solicitar Plaza</a>
                     </div>
                 </div>
             </div>
 
-            <div class="row g-4">
+        </div>
 
-                <!-- COLUMNA IZQUIERDA (PERFIL + NOTICIAS) -->
-                <div class="col-xl-4 col-lg-5">
-                    <!-- PERFIL -->
-                    <div class="card dashboard-card p-4 text-center mb-4">
-                        <img src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=300&q=80"
-                            class="rounded-circle border border-3 border-light mx-auto mb-3 shadow-sm"
-                            style="width: 100px; height: 100px; object-fit: cover;" alt="Foto">
-                        <h4 class="fw-bold m-0 h5 text-dark">Ana Trini Maye</h4>
-                        <p class="text-muted small mb-3">ID Expediente: <strong style="color: var(--gov-blue);">#EG-94821</strong></p>
-
-                        <div class="text-start small mb-3">
-                            <div class="profile-detail-item">
-                                <span class="label">Antigüedad</span>
-                                <span class="value">2 años 3 meses</span>
-                            </div>
-                            <div class="profile-detail-item">
-                                <span class="label">Última actividad</span>
-                                <span class="value">Hace 2 días</span>
-                            </div>
-                            <div class="profile-detail-item">
-                                <span class="label">Nivel de perfil</span>
-                                <span class="value"><span class="badge bg-gold" style="background: var(--gov-gold);">Avanzado</span></span>
-                            </div>
-                        </div>
-
-                        <div class="p-3 bg-light bg-opacity-70 rounded border-0 text-start small mb-3">
-                            <div class="d-flex justify-content-between mb-2">
-                                <span class="text-muted">Residencia:</span>
-                                <span class="fw-semibold text-dark">Malabo, Bioko Norte</span>
-                            </div>
-                            <div class="d-flex justify-content-between">
-                                <span class="text-muted">Progreso:</span>
-                                <span id="profilePercentage" class="fw-bold text-danger">40%</span>
-                            </div>
-                            <div class="progress mt-2" style="height: 6px; background-color: #E2E8F0;">
-                                <div id="profileProgressBar" class="progress-bar bg-danger" role="progressbar" style="width: 40%"></div>
-                            </div>
-                        </div>
-
-                        <div class="d-grid gap-2">
-                            <button class="btn btn-gov btn-sm fw-semibold"><i class="bi bi-qr-code me-2"></i> Descargar Tarjeta Demandante</button>
-                            <button class="btn btn-gov-outline btn-sm fw-semibold"><i class="bi bi-pencil-square me-2"></i> Editar Perfil</button>
-                        </div>
-                    </div>
-
-                    <!-- NOTIFICACIONES DE OFICINA -->
-                    <div class="card dashboard-card p-4 mb-4">
-                        <h5 class="fw-bold mb-3 h6 text-uppercase tracking-wider text-muted"><i class="bi bi-chat-left-text text-primary me-2" style="color: var(--gov-blue) !important;"></i>Notificaciones de Oficina</h5>
-                        <div class="d-flex flex-column gap-2">
-                            <div class="p-2 rounded bg-warning bg-opacity-10 border-0 small">
-                                <strong class="text-warning-emphasis d-block" style="font-weight: 600;">Revisión de DIP Pendiente</strong>
-                                <span class="text-muted" style="font-size: 0.75rem;">Su documento escaneado debe ser completamente legible para su validación estatal.</span>
-                            </div>
-                            <div class="p-2 rounded bg-info bg-opacity-10 border-0 small">
-                                <strong class="text-info-emphasis d-block" style="font-weight: 600;">Nueva oferta en tu sector</strong>
-                                <span class="text-muted" style="font-size: 0.75rem;">Se ha publicado una vacante para Técnico de Soporte TI en GETESA.</span>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- NOTICIAS Y EVENTOS -->
-                    <div class="card dashboard-card p-4">
-                        <h5 class="fw-bold mb-3 h6 text-uppercase tracking-wider text-muted"><i class="bi bi-newspaper me-2" style="color: var(--gov-gold);"></i>Noticias y Eventos</h5>
-                        <div class="news-item">
-                            <div class="d-flex justify-content-between align-items-center">
-                                <span class="news-title">Nueva convocatoria de empleo público</span>
-                                <span class="news-badge">Nuevo</span>
-                            </div>
-                            <div class="news-meta"><i class="bi bi-calendar-event me-1"></i> 15/07/2026 · <i class="bi bi-clock me-1"></i> Plazo: 30 días</div>
-                        </div>
-                        <div class="news-item">
-                            <div class="d-flex justify-content-between align-items-center">
-                                <span class="news-title">Curso gratuito de ciberseguridad</span>
-                                <span class="news-badge" style="background: var(--gov-green);">Inscripción abierta</span>
-                            </div>
-                            <div class="news-meta"><i class="bi bi-calendar-event me-1"></i> Inicio: 01/08/2026 · <i class="bi bi-clock me-1"></i> 6 semanas</div>
-                        </div>
-                        <div class="news-item">
-                            <div class="d-flex justify-content-between align-items-center">
-                                <span class="news-title">Reforma del Sistema Nacional de Empleo</span>
-                                <span class="news-badge" style="background: var(--gov-blue);">Información</span>
-                            </div>
-                            <div class="news-meta"><i class="bi bi-calendar-event me-1"></i> Publicado: 10/07/2026</div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- COLUMNA DERECHA (CONTENIDO / ACCIONES) -->
-                <div class="col-xl-8 col-lg-7">
-
-                    <div id="jobOffersSection">
-                   
-
-                        <!-- OFERTAS RECOMENDADAS -->
-                        <div class="card dashboard-card p-4 mb-4">
-                            <h5 class="fw-bold mb-3 h6 text-uppercase tracking-wider text-muted">Ofertas Recomendadas</h5>
-                            <div class="d-flex flex-column gap-3">
-                                <div class="list-item-custom p-3 d-flex flex-column flex-sm-row justify-content-between align-items-sm-center gap-3">
-                                    <div>
-                                        <span class="badge bg-gold" style="background: var(--gov-gold); color: white;">Nuevo</span>
-                                        <h6 class="fw-bold m-0 text-dark mt-1">Técnico de Soporte TI</h6>
-                                        <p class="m-0 small text-muted"><i class="bi bi-building me-1"></i>GETESA · <i class="bi bi-geo-alt me-1"></i>Malabo</p>
-                                        <p class="m-0 small text-muted"><i class="bi bi-cash-coin me-1"></i>450.000 FCFA · <i class="bi bi-clock me-1"></i>Jornada completa</p>
-                                    </div>
-                                    <button class="btn btn-sm btn-gov btn-pill-custom">Postularme</button>
-                                </div>
-                                <div class="list-item-custom p-3 d-flex flex-column flex-sm-row justify-content-between align-items-sm-center gap-3">
-                                    <div>
-                                        <span class="badge bg-green" style="background: var(--gov-green); color: white;">Destacado</span>
-                                        <h6 class="fw-bold m-0 text-dark mt-1">Ingeniero Civil</h6>
-                                        <p class="m-0 small text-muted"><i class="bi bi-building me-1"></i>SOMAGEC · <i class="bi bi-geo-alt me-1"></i>Bata</p>
-                                        <p class="m-0 small text-muted"><i class="bi bi-cash-coin me-1"></i>600.000 FCFA · <i class="bi bi-clock me-1"></i>Indefinido</p>
-                                    </div>
-                                    <button class="btn btn-sm btn-gov btn-pill-custom">Postularme</button>
-                                </div>
-                                <div class="list-item-custom p-3 d-flex flex-column flex-sm-row justify-content-between align-items-sm-center gap-3">
-                                    <div>
-                                        <span class="badge bg-danger">Urgente</span>
-                                        <h6 class="fw-bold m-0 text-dark mt-1">Enfermero/a</h6>
-                                        <p class="m-0 small text-muted"><i class="bi bi-building me-1"></i>Hospital Regional · <i class="bi bi-geo-alt me-1"></i>Ebebiyín</p>
-                                        <p class="m-0 small text-muted"><i class="bi bi-cash-coin me-1"></i>350.000 FCFA · <i class="bi bi-clock me-1"></i>Parcial</p>
-                                    </div>
-                                    <button class="btn btn-sm btn-gov btn-pill-custom">Postularme</button>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- ESTADO CANDIDATURAS -->
-                    <div class="card dashboard-card p-4 mb-4">
-                        <h5 class="fw-bold mb-3 h6 text-uppercase tracking-wider text-muted">Estado de mis Candidaturas</h5>
-                        <div class="d-flex flex-column gap-3 mt-2">
-                            <div class="timeline-item">
-                                <span class="badge bg-light text-secondary border mb-1" style="font-size: 0.65rem; font-weight: 600;">05/07/2026</span>
-                                <h6 class="fw-bold text-dark m-0 small">Postulación enviada a SOMAGEC</h6>
-                                <p class="text-muted m-0 small mt-1" style="font-size: 0.8rem;">Puesto: Auxiliar Técnico de Obras. Estado: <span class="text-warning fw-bold" style="color: #B45309 !important;">En Revisión Ministerial</span></p>
-                            </div>
-                            <div class="timeline-item">
-                                <span class="badge bg-light text-secondary border mb-1" style="font-size: 0.65rem; font-weight: 600;">28/06/2026</span>
-                                <h6 class="fw-bold text-dark m-0 small">Postulación enviada a GETESA</h6>
-                                <p class="text-muted m-0 small mt-1" style="font-size: 0.8rem;">Puesto: Técnico de Soporte TI. Estado: <span class="text-success fw-bold">Preseleccionado</span></p>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- PLANES ESTATALES + CALENDARIO -->
-                    <div class="card dashboard-card p-4 mb-4">
-                        <div class="d-flex justify-content-between align-items-center mb-3">
-                            <h5 class="fw-bold m-0 h6 text-uppercase tracking-wider text-muted"><i class="bi bi-journal-bookmark text-success me-2" style="color: var(--gov-green) !important;"></i>Planes Estatales de Capacitación</h5>
-                            <span class="badge bg-success bg-opacity-10 text-success rounded-pill small px-2 py-1" style="font-weight: 600; font-size: 0.7rem;">Cupos Abiertos</span>
-                        </div>
-                        <div class="p-3 rounded list-item-custom d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3 mb-3">
-                            <div>
-                                <span class="badge bg-light text-dark mb-1 border" style="font-size: 0.65rem; font-weight: 500;">Presencial</span>
-                                <h6 class="fw-bold m-0 text-dark">Administración de Redes y Ciberseguridad</h6>
-                                <p class="text-muted small m-0 mt-1">Programa oficial subvencionado enfocado al sector de telecomunicaciones nacional.</p>
-                            </div>
-                            <a href="#" class="btn btn-sm btn-green btn-pill-custom text-nowrap">Solicitar Plaza</a>
-                        </div>
-                        <div class="p-3 rounded list-item-custom d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3">
-                            <div>
-                                <span class="badge bg-light text-dark mb-1 border" style="font-size: 0.65rem; font-weight: 500;">Online</span>
-                                <h6 class="fw-bold m-0 text-dark">Gestión de Proyectos con Metodología Ágil</h6>
-                                <p class="text-muted small m-0 mt-1">Formación en Scrum y Kanban para el sector público y privado.</p>
-                            </div>
-                            <a href="#" class="btn btn-sm btn-green btn-pill-custom text-nowrap">Solicitar Plaza</a>
-                        </div>
-                    </div>
-
-                    <!-- CALENDARIO / PRÓXIMAS FECHAS -->
-                    <div class="card dashboard-card p-4">
-                        <h5 class="fw-bold mb-3 h6 text-uppercase tracking-wider text-muted"><i class="bi bi-calendar2-week me-2" style="color: var(--gov-blue);"></i>Próximas Fechas Importantes</h5>
-                        <div class="event-item">
-                            <span class="event-date">15 Jul</span>
-                            <div class="event-info">
-                                <div class="event-title">Cierre de inscripción - Curso de Ciberseguridad</div>
-                                <div class="event-desc">Último día para solicitar plaza</div>
-                            </div>
-                        </div>
-                        <div class="event-item">
-                            <span class="event-date gold">20 Jul</span>
-                            <div class="event-info">
-                                <div class="event-title">Publicación de resultados - SOMAGEC</div>
-                                <div class="event-desc">Lista de preseleccionados para el puesto de Ingeniero Civil</div>
-                            </div>
-                        </div>
-                        <div class="event-item">
-                            <span class="event-date green">01 Ago</span>
-                            <div class="event-info">
-                                <div class="event-title">Inicio del curso de Administración de Redes</div>
-                                <div class="event-desc">Primera sesión presencial en el Centro de Formación de Malabo</div>
-                            </div>
-                        </div>
-                    </div>
-
-                </div>
-            </div>
-        </main>
+    <?php endif; ?>
+</main>
 
         <script>
             const perfilCompleto = false; // Cambia a true cuando el perfil esté completo

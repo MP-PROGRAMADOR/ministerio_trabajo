@@ -16,8 +16,10 @@ if (!isset($_SESSION['rol']) || $_SESSION['rol'] !== 'buscador') {
     exit();
 }
 
+require_once '../conexion/conexion.php';
 
 $nombre_completo=$_SESSION['nombre_completo'];
+$id_usuario=$_SESSION['id_usuario']
 // Si pasa los dos filtros anteriores, el usuario es un buscador válido y puede ver la página
 ?>
 

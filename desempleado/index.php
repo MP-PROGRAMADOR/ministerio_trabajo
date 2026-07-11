@@ -389,6 +389,41 @@
         @media (max-width: 576px) {
             .dashboard-card { padding: 1.5rem !important; }
         }
+
+        /* ===== MENSAJE DE REGISTRO PENDIENTE ===== */
+        .registro-pendiente {
+            background: #f0f7ff;
+            border: 1px solid #cfe2ff;
+            border-radius: var(--gov-radius);
+            padding: 1.2rem 1.5rem;
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            flex-wrap: wrap;
+            margin-bottom: 1.5rem;
+        }
+        .registro-pendiente .icono {
+            font-size: 2rem;
+            color: var(--gov-blue);
+        }
+        .registro-pendiente .texto {
+            flex: 1;
+            font-size: 0.95rem;
+            color: var(--gov-dark);
+        }
+        .registro-pendiente .texto strong {
+            color: var(--gov-blue);
+        }
+        .registro-pendiente .btn-link {
+            color: var(--gov-blue);
+            font-weight: 600;
+            text-decoration: none;
+            border-bottom: 2px solid transparent;
+            transition: all 0.2s;
+        }
+        .registro-pendiente .btn-link:hover {
+            border-bottom-color: var(--gov-blue);
+        }
     </style>
 </head>
 <body>
@@ -416,6 +451,15 @@
                         <i class="bi bi-pencil-square me-1"></i> Completar Perfil Ahora
                     </a>
                 </div>
+            </div>
+
+            <!-- ===== NUEVO MENSAJE DE REGISTRO PENDIENTE ===== -->
+            <div class="registro-pendiente">
+                <div class="icono"><i class="bi bi-info-circle-fill"></i></div>
+                <div class="texto">
+                    <strong>¡Atención!</strong> Para acceder a todas las funcionalidades del portal (postulaciones, ofertas personalizadas, cursos, etc.) debe completar su registro en el <a href="#" class="btn-link">Sistema Nacional de Empleo</a>.
+                </div>
+                <a href="#" class="btn btn-gov btn-sm rounded-pill px-4">Completar registro</a>
             </div>
 
             <!-- ESTADÍSTICAS RÁPIDAS -->
@@ -651,4 +695,17 @@
             </div>
         </main>
 
+        <script>
+            const perfilCompleto = false; // Cambia a true cuando el perfil esté completo
+
+function evaluarEstadoPerfil() {
+    const banner = document.getElementById('incompleteProfileBanner');
+    if (perfilCompleto) {
+        banner.classList.add('d-none');
+    } else {
+        banner.classList.remove('d-none');
+    }
+}
+evaluarEstadoPerfil();
+        </script>
         <?php include '../componentes/footer_desempleado.php'; ?>

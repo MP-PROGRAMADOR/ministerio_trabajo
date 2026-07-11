@@ -10,7 +10,7 @@
     <style>
         /* ===== COLORES INSTITUCIONALES ===== */
         :root {
-            --azul-marino: #112d6e;
+            --azul-marino: rgba(26, 66, 106, 0.85);
             --dorado: #d4a017;
             --rojo-bandera: #ce1126;
             --gris-premium: #4a5568;
@@ -23,8 +23,10 @@
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
         }
 
+        /* Fondo institucional con capa azul traslúcida */
         .bg-portal {
-            background: linear-gradient(rgba(17, 45, 110, 0.88), rgba(10, 28, 72, 0.94));
+            background: linear-gradient(rgba(26, 66, 106, 0.85), rgba(26, 66, 106, 0.85)),
+                url('https://images.unsplash.com/photo-1454165804606-c3d57bc86b40?auto=format&fit=crop&w=1920&q=80') no-repeat center center fixed;
             background-size: cover;
             min-height: 100vh;
             display: flex;
@@ -174,6 +176,26 @@
             border-bottom-color: var(--dorado);
         }
 
+        /* ===== BOTÓN VOLVER ===== */
+        .btn-back {
+            color: #ffffff;
+            text-decoration: none;
+            font-size: 0.95rem;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            transition: all 0.25s ease;
+            padding: 4px 8px;
+            border: 1px solid transparent;
+        }
+
+        .btn-back:hover {
+            color: var(--dorado);
+        }
+
+
+
+
         .text-gold {
             color: var(--dorado);
         }
@@ -189,13 +211,15 @@
             color: #ffffff !important;
             backdrop-filter: blur(8px);
         }
+
         .custom-toast .toast-header {
             background-color: rgba(17, 45, 110, 0.85) !important;
             color: #ffffff !important;
             border-bottom: 1px solid rgba(255, 255, 255, 0.1);
         }
+
         .custom-toast .btn-close {
-            filter: invert(1); /* Vuelve la cruz blanca */
+            filter: invert(1);
         }
 
         /* Responsive */
@@ -207,6 +231,7 @@
                 background: linear-gradient(to right, rgba(212, 160, 23, 0) 0%, rgba(212, 160, 23, 0.7) 50%, rgba(212, 160, 23, 0) 100%);
                 min-height: auto;
             }
+
             .divider-dot {
                 top: 50%;
                 left: 50%;
@@ -219,15 +244,16 @@
 <body>
 
     <div class="bg-portal">
-        <header class="text-center py-3 bg-black bg-opacity-30 border-b border-white border-opacity-10">
-            <p class="m-0 small text-uppercase tracking-wide text-white-75 font-monospace">
-                Portal de Empleo - Canal de Atención al Ciudadano
+        <header class="text-center py-3 bg-dark bg-opacity-25 border-bottom border-secondary">
+            <p class="m-0 small text-uppercase tracking-wider">
+                Portal de Empleo - Área de Ciudadano desempleado
             </p>
         </header>
 
         <main class="container my-auto py-5">
             <div class="row align-items-center justify-content-center g-5">
 
+                <!-- CARRUSEL PARA CIUDADANOS -->
                 <div class="col-lg-4 col-md-5">
                     <div id="citizenCarousel" class="carousel slide carousel-fade" data-bs-ride="carousel" style="box-shadow: 0 10px 30px rgba(0,0,0,0.3); border-radius: 16px; overflow: hidden;">
                         <div class="carousel-indicators">
@@ -236,24 +262,27 @@
                             <button type="button" data-bs-target="#citizenCarousel" data-bs-slide-to="2" aria-label="Slide 3"></button>
                         </div>
                         <div class="carousel-inner">
+                            <!-- Slide 1: Currículum -->
                             <div class="carousel-item active">
-                                <div class="carousel-bg-img" style="background: linear-gradient(rgba(0, 0, 0, 0.2), rgba(17, 45, 110, 0.9)), url('img/img4.png');"></div>
+                                <div class="carousel-bg-img" style="background: linear-gradient(rgba(0, 0, 0, 0.2), rgba(17, 45, 110, 0.9)), url('img/img7.jpg');"></div>
                                 <div class="carousel-caption d-flex flex-column justify-content-end h-100 pb-5">
                                     <div class="mb-3 text-gold"><i class="bi bi-file-earmark-person fs-1"></i></div>
                                     <h3 class="h4 fw-bold text-white mb-2">Tu Currículum Profesional</h3>
                                     <p class="small text-white-50 m-0">Crea y actualiza tu hoja de vida con nuestro asistente guiado, destacando tus competencias ante las empresas.</p>
                                 </div>
                             </div>
+                            <!-- Slide 2: Capacitación -->
                             <div class="carousel-item">
-                                <div class="carousel-bg-img" style="background: linear-gradient(rgba(0, 0, 0, 0.2), rgba(17, 45, 110, 0.9)), url('img/img5.png');"></div>
+                                <div class="carousel-bg-img" style="background: linear-gradient(rgba(0, 0, 0, 0.2), rgba(17, 45, 110, 0.9)), url('img/img5.jpeg');"></div>
                                 <div class="carousel-caption d-flex flex-column justify-content-end h-100 pb-5">
                                     <div class="mb-3 text-gold"><i class="bi bi-journal-bookmark-fill fs-1"></i></div>
                                     <h3 class="h4 fw-bold text-white mb-2">Capacitación y Formación</h3>
                                     <p class="small text-white-50 m-0">Accede a cursos certificados por el Ministerio, diseñados para mejorar tu empleabilidad sin coste alguno.</p>
                                 </div>
                             </div>
+                            <!-- Slide 3: Oportunidades -->
                             <div class="carousel-item">
-                                <div class="carousel-bg-img" style="background: linear-gradient(rgba(0, 0, 0, 0.2), rgba(17, 45, 110, 0.9)), url('img/img6.png');"></div>
+                                <div class="carousel-bg-img" style="background: linear-gradient(rgba(0, 0, 0, 0.2), rgba(17, 45, 110, 0.9)), url('img/ima6.jpeg');"></div>
                                 <div class="carousel-caption d-flex flex-column justify-content-end h-100 pb-5">
                                     <div class="mb-3 text-gold"><i class="bi bi-award-fill fs-1"></i></div>
                                     <h3 class="h4 fw-bold text-white mb-2">Conectamos Oportunidades</h3>
@@ -270,6 +299,7 @@
                     </div>
                 </div>
 
+                <!-- FORMULARIO DE LOGIN -->
                 <div class="col-lg-4 col-md-5 text-center text-md-start">
                     <div class="mb-4 text-center">
                         <i class="bi bi-person fs-1 text-gold mb-2 d-block"></i>
@@ -309,15 +339,23 @@
                             <p class="mb-2">¿Primera vez aquí?</p>
                             <a href="#" class="btn-register-outline" onclick="goToRegister(event)">Crea tu cuenta de buscador de empleo</a>
                         </div>
+
+
+                        <!-- BOTÓN VOLVER -->
+                        <div class="d-flex justify-content-center mt-4 mb-3">
+                            <a href="#" class="btn-back" onclick="goBack(event)">
+                                <i class="bi bi-arrow-left"></i> Volver al portal
+                            </a>
+                        </div>
                     </form>
                 </div>
 
             </div>
         </main>
 
-        <footer class="bg-black bg-opacity-40 text-center py-3 text-white-50 small border-t border-white border-opacity-5">
+        <footer class="bg-dark bg-opacity-50 text-center py-3 text-white-50 small">
             <div class="container d-flex flex-column flex-sm-row justify-content-between align-items-center gap-2">
-                <div>&copy; 2026 Ministerio de Trabajo y Empleo. Atención Ciudadana.</div>
+                <div>&copy; 2026 Ministerio de Trabajo y Empleo. Sección Empresas.</div>
                 <div class="d-flex gap-3 fs-5">
                     <a href="#" class="text-white-50"><i class="bi bi-facebook"></i></a>
                     <a href="#" class="text-white-50"><i class="bi bi-twitter-x"></i></a>
@@ -335,124 +373,130 @@
                 <button type="button" class="btn-close" data-bs-dismiss="toast" aria-label="Close"></button>
             </div>
             <div id="toastMessage" class="toast-body">
-                </div>
+            </div>
         </div>
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
-    
+
     <script>
-    // 1. CONTROL DE VISIBILIDAD DE CONTRASEÑA
-    function togglePassword() {
-        const pass = document.getElementById('passwordInput');
-        const icon = document.getElementById('toggleIcon');
-        if (pass.type === 'password') {
-            pass.type = 'text';
-            icon.classList.remove('bi-eye');
-            icon.classList.add('bi-eye-slash');
-        } else {
-            pass.type = 'password';
-            icon.classList.remove('bi-eye-slash');
-            icon.classList.add('bi-eye');
+        // 1. CONTROL DE VISIBILIDAD DE CONTRASEÑA
+        function togglePassword() {
+            const pass = document.getElementById('passwordInput');
+            const icon = document.getElementById('toggleIcon');
+            if (pass.type === 'password') {
+                pass.type = 'text';
+                icon.classList.remove('bi-eye');
+                icon.classList.add('bi-eye-slash');
+            } else {
+                pass.type = 'password';
+                icon.classList.remove('bi-eye-slash');
+                icon.classList.add('bi-eye');
+            }
         }
-    }
 
-    // 2. VALIDACIÓN DE CREDENCIALES CON SPINNER
-    function handleLogin(e) {
-        e.preventDefault();
-        
-        const toastEl = document.getElementById('notificationToast');
-        const title = document.getElementById('toastTitle');
-        const message = document.getElementById('toastMessage');
-        const icon = document.getElementById('toastIcon');
+        // 2. VALIDACIÓN DE CREDENCIALES CON SPINNER
+        function handleLogin(e) {
+            e.preventDefault();
 
-        if (toastEl && title && message && icon) {
+            const toastEl = document.getElementById('notificationToast');
+            const title = document.getElementById('toastTitle');
+            const message = document.getElementById('toastMessage');
+            const icon = document.getElementById('toastIcon');
+
+            if (toastEl && title && message && icon) {
+                const toast = bootstrap.Toast.getOrCreateInstance(toastEl);
+                title.innerText = 'Validación de Acceso';
+                message.innerHTML = `
+                    Comprobando credenciales en el sistema centralizado del Ministerio...
+                    <div class="d-flex justify-content-center mt-3">
+                        <div class="spinner-border text-primary" role="status">
+                            <span class="visually-hidden">Procesando...</span>
+                        </div>
+                    </div>
+                `;
+                icon.className = 'bi bi-shield-lock-fill text-primary fs-3 me-2';
+                toast.show();
+
+                setTimeout(() => {
+                    window.location.href = 'login_ciudadano.php';
+                }, 2500);
+            } else {
+                alert('Validando credenciales de usuario en el sistema del Ministerio...');
+            }
+        }
+
+        // 3. PASARELA UNICA DEL ESTADO CON SPINNER
+        function handleGovLogin() {
+            const toastEl = document.getElementById('notificationToast');
+            const title = document.getElementById('toastTitle');
+            const message = document.getElementById('toastMessage');
+            const icon = document.getElementById('toastIcon');
+
+            if (toastEl && title && message && icon) {
+                const toast = bootstrap.Toast.getOrCreateInstance(toastEl);
+                title.innerText = 'Autenticación del Estado';
+                message.innerHTML = `
+                    Conectando de forma segura con la pasarela única de identidad nacional...
+                    <div class="d-flex justify-content-center mt-3">
+                        <div class="spinner-border text-warning" role="status">
+                            <span class="visually-hidden">Redirigiendo...</span>
+                        </div>
+                    </div>
+                `;
+                icon.className = 'bi bi-building-fill text-warning fs-3 me-2';
+                toast.show();
+
+                setTimeout(() => {
+                    window.location.href = 'autenticacion_gob.php';
+                }, 2500);
+            } else {
+                alert('Redirigiendo a la pasarela única de autenticación oficial del Estado...');
+            }
+        }
+
+        // 4. ASISTENTE DE REGISTRO 
+        function goToRegister(event) {
+            event.preventDefault();
+
+            const toastEl = document.getElementById('notificationToast');
+            const title = document.getElementById('toastTitle');
+            const message = document.getElementById('toastMessage');
+            const icon = document.getElementById('toastIcon');
+
+            if (!toastEl || !title || !message || !icon) {
+                console.error("Error: No se encontraron los IDs del Toast en el HTML. Revisa que coincidan.");
+                window.location.href = 'registro_desempleados.php';
+                return;
+            }
+
             const toast = bootstrap.Toast.getOrCreateInstance(toastEl);
-            title.innerText = 'Validación de Acceso';
+
+            title.innerText = 'Registro Oficial';
             message.innerHTML = `
-                Comprobando credenciales en el sistema centralizado del Ministerio...
+                Abriendo el asistente de alta para demandantes de empleo. Por favor, prepare su DIP y documentación...
                 <div class="d-flex justify-content-center mt-3">
-                    <div class="spinner-border text-primary" role="status">
-                        <span class="visually-hidden">Procesando...</span>
+                    <div class="spinner-border text-info" role="status">
+                        <span class="visually-hidden">Preparando entorno...</span>
                     </div>
                 </div>
             `;
-            icon.className = 'bi bi-shield-lock-fill text-primary fs-3 me-2';
+
+            icon.className = 'bi bi-file-earmark-person-fill text-info fs-3 me-2';
             toast.show();
 
             setTimeout(() => {
-                // Redirección directa para este ejercicio
-                window.location.href = 'login_ciudadano.php';
+                window.location.href = 'registro_usuario.php';
             }, 2500);
-        } else {
-            alert('Validando credenciales de usuario en el sistema del Ministerio...');
-        }
-    }
-
-    // 3. PASARELA UNICA DEL ESTADO CON SPINNER
-    function handleGovLogin() {
-        const toastEl = document.getElementById('notificationToast');
-        const title = document.getElementById('toastTitle');
-        const message = document.getElementById('toastMessage');
-        const icon = document.getElementById('toastIcon');
-
-        if (toastEl && title && message && icon) {
-            const toast = bootstrap.Toast.getOrCreateInstance(toastEl);
-            title.innerText = 'Autenticación del Estado';
-            message.innerHTML = `
-                Conectando de forma segura con la pasarela única de identidad nacional...
-                <div class="d-flex justify-content-center mt-3">
-                    <div class="spinner-border text-warning" role="status">
-                        <span class="visually-hidden">Redirigiendo...</span>
-                    </div>
-                </div>
-            `;
-            icon.className = 'bi bi-building-fill text-warning fs-3 me-2';
-            toast.show();
-
-            setTimeout(() => {
-                window.location.href = 'autenticacion_gob.php'; 
-            }, 2500);
-        } else {
-            alert('Redirigiendo a la pasarela única de autenticación oficial del Estado...');
-        }
-    }
-
-    // 4. ASISTENTE DE REGISTRO 
-    function goToRegister(event) {
-        event.preventDefault();
-        
-        const toastEl = document.getElementById('notificationToast');
-        const title = document.getElementById('toastTitle');
-        const message = document.getElementById('toastMessage');
-        const icon = document.getElementById('toastIcon');
-
-        if (!toastEl || !title || !message || !icon) {
-            console.error("Error: No se encontraron los IDs del Toast en el HTML. Revisa que coincidan.");
-            window.location.href = 'registro_desempleados.php';
-            return;
         }
 
-        const toast = bootstrap.Toast.getOrCreateInstance(toastEl);
-        
-        title.innerText = 'Registro Oficial';
-        message.innerHTML = `
-            Abriendo el asistente de alta para demandantes de empleo. Por favor, prepare su DIP y documentación...
-            <div class="d-flex justify-content-center mt-3">
-                <div class="spinner-border text-info" role="status">
-                    <span class="visually-hidden">Preparando entorno...</span>
-                </div>
-            </div>
-        `;
-        
-        icon.className = 'bi bi-file-earmark-person-fill text-info fs-3 me-2';
-        toast.show();
-        
-        setTimeout(() => {
-            window.location.href = 'registro_usuario.php'; 
-        }, 2500);
-    }
-</script>
+        // 5. FUNCIÓN VOLVER
+        function goBack(event) {
+            event.preventDefault();
+            window.location.href = './index.php';
+        }
+    </script>
 
 </body>
+
 </html>

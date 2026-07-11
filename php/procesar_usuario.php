@@ -74,31 +74,45 @@ try {
     $password_encriptada = password_hash($password, PASSWORD_DEFAULT);
     $token_verificacion = bin2hex(random_bytes(32));
 
-    $sql_insert = "INSERT INTO usuarios (nombre, apellidos, nombre_usuario, correo_electronico, documento_identidad, password, rol, correo_verificado, token_verificacion) 
-                   VALUES (:nombre, :apellidos, :usuario, :email, :dip, :pass, :rol, 0, :token)";
+    // =======================================================
+    // NUEVO: GENERACIÓN DE NÚMERO DE EXPEDIENTE AUTOGENERADO
+    // =======================================================
+    $numero_expediente = "EG-" . rand(10000, 99999);
+
+    // Verificación rápida para asegurar que no colisione con uno existente
+    $stmt_check_exp = $pdo->prepare("SELECT id FROM usuarios WHERE numero_expediente = :exp LIMIT 1");
+    $stmt_check_exp->execute([':exp' => $numero_expediente]);
+    if ($stmt_check_exp->fetch()) {
+        $numero_expediente = "EG-" . rand(10000, 99999); // Re-generar en caso extremo de duplicado
+    }
+
+    // Insertar incluyendo la columna 'numero_expediente'
+    $sql_insert = "INSERT INTO usuarios (numero_expediente, nombre, apellidos, nombre_usuario, correo_electronico, documento_identidad, password, rol, correo_verificado, token_verificacion) 
+                   VALUES (:expediente, :nombre, :apellidos, :usuario, :email, :dip, :pass, :rol, 0, :token)";
     
     $stmt_insert = $pdo->prepare($sql_insert);
     
     $resultado = $stmt_insert->execute([
-        ':nombre'    => $nombre,
-        ':apellidos' => $apellidos,
-        ':usuario'   => $nombre_usuario,
-        ':email'     => $correo_electronico,
-        ':dip'       => $documento_identidad,
-        ':pass'      => $password_encriptada,
-        ':rol'       => $rol_por_defecto,
-        ':token'     => $token_verificacion
+        ':expediente' => $numero_expediente,
+        ':nombre'     => $nombre,
+        ':apellidos'  => $apellidos,
+        ':usuario'    => $nombre_usuario,
+        ':email'      => $correo_electronico,
+        ':dip'        => $documento_identidad,
+        ':pass'       => $password_encriptada,
+        ':rol'        => $rol_por_defecto,
+        ':token'      => $token_verificacion
     ]);
 
     // =======================================================
-    // MODIFICACIÓN AQUÍ: PROCESO REAL DE ENVÍO DE CORREO
+    // PROCESO REAL DE ENVÍO DE CORREO
     // =======================================================
     if ($resultado) {
         // 1. Requerir el archivo
         require_once 'enviar_correo.php';
 
-        // 2. Construir el enlace dinámico (CORREGIDO: Se añade la barra '/' antes de verificar.php)
-        $enlace_verificacion = "http://" . $_SERVER['HTTP_HOST'] . "verificar.php?token=" . $token_verificacion;
+        // 2. Construir el enlace dinámico (CORREGIDO: Se añade la barra '/' inicial y la carpeta 'php' si corresponde)
+        $enlace_verificacion = "http://" . $_SERVER['HTTP_HOST'] . "/ministerio_trabajo/php/verificar.php?token=" . $token_verificacion;
         
         // 3. Llamar a la función pasándole los datos capturados
         $nombre_completo = $nombre . ' ' . $apellidos;
@@ -107,15 +121,15 @@ try {
         $correo_enviado = enviarCorreoVerificacion($correo_electronico, $nombre_completo, $enlace_verificacion);
 
         if ($correo_enviado) {
-            $_SESSION['exito'] = "¡Cuenta creada con éxito! Por favor, revisa tu correo electrónico para verificarla.";
+            $_SESSION['exito'] = "¡Cuenta creada con éxito! Tu número de expediente provisional es " . $numero_expediente . ". Por favor, revisa tu correo electrónico para verificarla.";
         } else {
-            $_SESSION['error'] = "Registro completado, pero no se pudo enviar el correo de confirmación. Contacte a soporte.";
+            // Ya que acordamos dejar el fix de SMTP para producción, el usuario se crea igual en la BD
+            $_SESSION['exito'] = "¡Cuenta creada con éxito! Tu expediente es " . $numero_expediente . ". (Aviso: Correo de activación pendiente de envío).";
         }
         
         header("Location: $pagina_formulario");
         exit();
     }
-
 
 } catch (PDOException $e) {
     error_log("Error crítico en el registro: " . $e->getMessage());

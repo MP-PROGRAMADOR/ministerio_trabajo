@@ -1,3 +1,25 @@
+<?php
+if (session_status() === PHP_SESSION_NONE) {
+    session_start();
+}
+
+// 1. Validar si el usuario está logueado
+if (!isset($_SESSION['id_usuario'])) {
+    header("Location: ../php/cerrar_sesion.php");
+    exit();
+}
+
+// 2. Control estricto de Rol: Solo permitimos al 'buscador'
+// Si intenta entrar un administrador, ministerio o empleador, destruimos su sesión por intruso
+if (!isset($_SESSION['rol']) || $_SESSION['rol'] !== 'buscador') {
+    header("Location: ../php/cerrar_sesion.php");
+    exit();
+}
+
+
+$nombre_completo=$_SESSION['nombre_completo'];
+// Si pasa los dos filtros anteriores, el usuario es un buscador válido y puede ver la página
+?>
 
 <!DOCTYPE html>
 <html lang="es">

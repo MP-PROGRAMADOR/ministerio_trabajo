@@ -21,14 +21,14 @@
                         <ul class="dropdown-menu dropdown-menu-end custom-profile-menu" aria-labelledby="profileMenu">
                             <li>
                                 <div class="px-3 py-2 border-bottom mb-2 bg-light rounded-top">
-                                    <p class="m-0 small fw-bold text-dark">Ana Trini Maye</p>
+                                    <p class="m-0 small fw-bold text-dark"><?= $nombre_completo; ?></p>
                                     <p class="m-0 text-success fw-bold" style="font-size: 0.7rem;"><i class="bi bi-circle-fill me-1" style="font-size: 0.4rem;"></i> Buscador Activo</p>
                                 </div>
                             </li>
                             <li><a class="dropdown-item small py-2" href="perfil.php"><i class="bi bi-person-gear me-2 text-muted"></i> Mi Perfil</a></li>
                             <li><a class="dropdown-item small py-2" href="historial_laboral.php"><i class="bi bi-file-earmark-arrow-down me-2 text-muted"></i> Mi Historial Laboral</a></li>
                             <li><hr class="dropdown-divider"></li>
-                            <li><a class="dropdown-item small text-danger fw-bold py-2" href="logout.php"><i class="bi bi-box-arrow-right me-2"></i> Cerrar Sesión</a></li>
+                            <li><a class="dropdown-item small text-danger fw-bold py-2" href="../php/cerrar_sesion.php"><i class="bi bi-box-arrow-right me-2"></i> Cerrar Sesión</a></li>
                         </ul>
                     </div>
                 </div>

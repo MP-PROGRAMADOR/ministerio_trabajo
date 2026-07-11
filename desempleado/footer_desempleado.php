@@ -1,5 +1,3 @@
-        <!-- ===== FIN DEL CONTENIDO ===== -->
-
         <!-- ===== FOOTER INSTITUCIONAL ===== -->
         <footer class="bg-white text-center py-4 text-muted small mt-auto border-top">
             <div class="container">

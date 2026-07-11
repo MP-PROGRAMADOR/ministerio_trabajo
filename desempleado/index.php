@@ -1,6 +1,5 @@
 <!DOCTYPE html>
 <html lang="es">
-
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -23,8 +22,7 @@
             --gov-radius-sm: 4px;
         }
 
-        body,
-        html {
+        body, html {
             min-height: 100vh;
             margin: 0;
             font-family: 'Inter', system-ui, -apple-system, sans-serif;
@@ -32,7 +30,6 @@
             color: var(--gov-dark);
             position: relative;
         }
-
         #canvas-background {
             position: fixed;
             top: 0;
@@ -43,7 +40,6 @@
             pointer-events: none;
             opacity: 0.3;
         }
-
         .main-wrapper {
             position: relative;
             z-index: 1;
@@ -56,12 +52,11 @@
         .navbar-portal {
             background-color: rgba(255, 255, 255, 0.96) !important;
             backdrop-filter: blur(12px);
-            border-bottom: 3px solid var(--gov-gold);
+            border-bottom: 3px solid var(--gov-blue);
             box-shadow: 0 4px 20px rgba(11, 58, 96, 0.04);
             position: relative;
             z-index: 1050;
         }
-
         .navbar-nav .nav-link {
             font-weight: 500;
             color: var(--gov-dark) !important;
@@ -69,16 +64,64 @@
             border-radius: var(--gov-radius-sm);
             transition: all 0.2s;
         }
-
         .navbar-nav .nav-link:hover,
         .navbar-nav .nav-link.active {
             background: rgba(11, 58, 96, 0.06);
             color: var(--gov-blue) !important;
         }
-
         .navbar-nav .nav-link.active {
             background: rgba(11, 58, 96, 0.10);
             font-weight: 600;
+        }
+
+        /* ===== DROPDOWN PERFIL ===== */
+        .profile-dropdown { position: relative !important; }
+        .profile-menu-img {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            border: 2px solid var(--gov-green);
+            object-fit: cover;
+            cursor: pointer;
+            transition: transform 0.2s ease;
+        }
+        .profile-menu-img:hover { transform: scale(1.05); }
+        .custom-profile-menu {
+            background-color: #ffffff !important;
+            border: 1px solid var(--gov-border) !important;
+            border-radius: var(--gov-radius) !important;
+            box-shadow: 0 12px 30px rgba(10, 25, 47, 0.1) !important;
+            padding: 10px !important;
+            z-index: 1060 !important;
+        }
+        @media (min-width: 992px) {
+            .custom-profile-menu {
+                position: absolute !important;
+                right: 0 !important;
+                left: auto !important;
+                min-width: 260px;
+                transform: translateY(8px) !important;
+            }
+            .profile-dropdown:hover .custom-profile-menu {
+                display: block !important;
+                opacity: 1 !important;
+                visibility: visible !important;
+            }
+        }
+        @media (max-width: 991.98px) {
+            .custom-profile-menu {
+                position: absolute !important;
+                left: 50% !important;
+                right: auto !important;
+                transform: translate(-85%, 12px) !important;
+                width: 260px !important;
+                max-width: calc(100vw - 30px) !important;
+            }
+            .profile-dropdown:hover .custom-profile-menu {
+                display: block !important;
+                opacity: 1 !important;
+                visibility: visible !important;
+            }
         }
 
         /* ===== TARJETAS ===== */
@@ -89,7 +132,6 @@
             box-shadow: 0 4px 12px rgba(11, 58, 96, 0.015);
             transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
         }
-
         .dashboard-card:hover {
             border-color: var(--gov-gold);
             box-shadow: 0 10px 25px rgba(11, 58, 96, 0.04);
@@ -105,27 +147,23 @@
             transition: all 0.3s;
             text-align: center;
         }
-
         .stat-card:hover {
             border-color: var(--gov-gold);
             transform: translateY(-3px);
             box-shadow: 0 8px 20px rgba(11, 58, 96, 0.06);
         }
-
         .stat-card .stat-icon {
             font-size: 2rem;
             color: var(--gov-blue);
             opacity: 0.7;
             margin-bottom: 0.4rem;
         }
-
         .stat-card .stat-number {
             font-size: 1.8rem;
             font-weight: 700;
             color: var(--gov-dark);
             line-height: 1.2;
         }
-
         .stat-card .stat-label {
             font-size: 0.8rem;
             color: #6b7a8a;
@@ -144,13 +182,11 @@
             font-weight: 500;
             transition: background-color 0.2s ease, transform 0.15s;
         }
-
         .btn-gov:hover {
             background-color: var(--gov-blue-light);
             color: #ffffff;
             transform: translateY(-1px);
         }
-
         .btn-gov-outline {
             background: transparent;
             border: 2px solid var(--gov-blue);
@@ -160,12 +196,10 @@
             font-weight: 500;
             transition: all 0.2s;
         }
-
         .btn-gov-outline:hover {
             background: var(--gov-blue);
             color: white;
         }
-
         .btn-gold {
             background-color: var(--gov-gold);
             color: #ffffff;
@@ -175,13 +209,11 @@
             font-weight: 500;
             transition: all 0.2s;
         }
-
         .btn-gold:hover {
             background-color: #B8953A;
             color: white;
             transform: translateY(-1px);
         }
-
         .btn-green {
             background-color: var(--gov-green);
             color: #ffffff;
@@ -191,13 +223,11 @@
             font-weight: 500;
             transition: all 0.2s;
         }
-
         .btn-green:hover {
             background-color: var(--gov-green-light);
             color: white;
             transform: translateY(-1px);
         }
-
         .btn-pill-custom {
             border-radius: 20px;
             padding: 0.4rem 1.2rem;
@@ -220,12 +250,10 @@
             transition: all 0.2s;
             border: 1px solid transparent;
         }
-
         .filter-tag:hover {
             background: var(--gov-gold-light);
             border-color: var(--gov-gold);
         }
-
         .filter-tag.active {
             background: var(--gov-blue);
             color: white;
@@ -241,26 +269,17 @@
             padding-left: 0.5rem;
             padding-right: 0.5rem;
         }
-
-        .news-item:last-child {
-            border-bottom: none;
-        }
-
-        .news-item:hover {
-            background: #f8fafc;
-        }
-
+        .news-item:last-child { border-bottom: none; }
+        .news-item:hover { background: #f8fafc; }
         .news-item .news-title {
             font-weight: 600;
             color: var(--gov-dark);
             font-size: 0.95rem;
         }
-
         .news-item .news-meta {
             font-size: 0.75rem;
             color: #6b7a8a;
         }
-
         .news-item .news-badge {
             background: var(--gov-gold);
             color: white;
@@ -279,11 +298,7 @@
             padding: 0.5rem 0;
             border-bottom: 1px solid #f1f5f9;
         }
-
-        .event-item:last-child {
-            border-bottom: none;
-        }
-
+        .event-item:last-child { border-bottom: none; }
         .event-date {
             background: var(--gov-blue);
             color: white;
@@ -294,25 +309,13 @@
             min-width: 70px;
             text-align: center;
         }
-
-        .event-date.gold {
-            background: var(--gov-gold);
-        }
-
-        .event-date.green {
-            background: var(--gov-green);
-        }
-
-        .event-info {
-            flex: 1;
-            font-size: 0.9rem;
-        }
-
+        .event-date.gold { background: var(--gov-gold); }
+        .event-date.green { background: var(--gov-green); }
+        .event-info { flex: 1; font-size: 0.9rem; }
         .event-info .event-title {
             font-weight: 600;
             color: var(--gov-dark);
         }
-
         .event-info .event-desc {
             font-size: 0.8rem;
             color: #6b7a8a;
@@ -326,79 +329,11 @@
             font-size: 0.9rem;
             border-bottom: 1px dashed #e9edf2;
         }
-
-        .profile-detail-item:last-child {
-            border-bottom: none;
-        }
-
-        .profile-detail-item .label {
-            color: #6b7a8a;
-        }
-
+        .profile-detail-item:last-child { border-bottom: none; }
+        .profile-detail-item .label { color: #6b7a8a; }
         .profile-detail-item .value {
             font-weight: 500;
             color: var(--gov-dark);
-        }
-
-        /* ===== DROPDOWN PERFIL ===== */
-        .profile-dropdown {
-            position: relative !important;
-        }
-
-        .profile-menu-img {
-            width: 40px;
-            height: 40px;
-            border-radius: 50%;
-            border: 2px solid var(--gov-green);
-            object-fit: cover;
-            cursor: pointer;
-            transition: transform 0.2s ease;
-        }
-
-        .profile-menu-img:hover {
-            transform: scale(1.05);
-        }
-
-        .custom-profile-menu {
-            background-color: #ffffff !important;
-            border: 1px solid var(--gov-border) !important;
-            border-radius: var(--gov-radius) !important;
-            box-shadow: 0 12px 30px rgba(10, 25, 47, 0.1) !important;
-            padding: 10px !important;
-            z-index: 1060 !important;
-        }
-
-        @media (min-width: 992px) {
-            .custom-profile-menu {
-                position: absolute !important;
-                right: 0 !important;
-                left: auto !important;
-                min-width: 260px;
-                transform: translateY(8px) !important;
-            }
-
-            .profile-dropdown:hover .custom-profile-menu {
-                display: block !important;
-                opacity: 1 !important;
-                visibility: visible !important;
-            }
-        }
-
-        @media (max-width: 991.98px) {
-            .custom-profile-menu {
-                position: absolute !important;
-                left: 50% !important;
-                right: auto !important;
-                transform: translate(-85%, 12px) !important;
-                width: 260px !important;
-                max-width: calc(100vw - 30px) !important;
-            }
-
-            .profile-dropdown:hover .custom-profile-menu {
-                display: block !important;
-                opacity: 1 !important;
-                visibility: visible !important;
-            }
         }
 
         /* ===== LISTAS ===== */
@@ -408,7 +343,6 @@
             border-radius: var(--gov-radius);
             transition: all 0.2s ease;
         }
-
         .list-item-custom:hover {
             background-color: #F1F5F9;
             border-color: var(--gov-gold);
@@ -420,7 +354,6 @@
             padding-left: 24px;
             border-left: 2px solid var(--gov-border);
         }
-
         .timeline-item::before {
             content: '';
             position: absolute;
@@ -440,83 +373,40 @@
             border-radius: var(--gov-radius);
             color: #7F1D1D;
         }
+        .tracking-wider { letter-spacing: 0.05em; }
 
-        .tracking-wider {
-            letter-spacing: 0.05em;
+        /* ===== INPUTS ===== */
+        .form-control-custom {
+            border-radius: var(--gov-radius-sm) !important;
+            border: 1px solid var(--gov-border);
+            padding: 0.6rem 1rem;
+            font-size: 0.95rem;
+            transition: all 0.2s ease;
+        }
+        .form-control-custom:focus {
+            border-color: var(--gov-blue);
+            box-shadow: 0 0 0 3px rgba(11, 58, 96, 0.1);
         }
 
         /* ===== RESPONSIVE ===== */
         @media (max-width: 768px) {
-            .stat-card .stat-number {
-                font-size: 1.4rem;
-            }
-
-            .event-date {
-                min-width: 60px;
-                font-size: 0.65rem;
-            }
+            .stat-card .stat-number { font-size: 1.4rem; }
+            .event-date { min-width: 60px; font-size: 0.65rem; }
+        }
+        @media (max-width: 576px) {
+            .dashboard-card { padding: 1.5rem !important; }
         }
     </style>
 </head>
-
 <body>
 
     <canvas id="canvas-background"></canvas>
 
     <div class="main-wrapper">
 
-        <!-- NAV PRINCIPAL -->
-        <nav class="navbar navbar-expand-lg navbar-light navbar-portal py-2">
-            <div class="container">
-                <a class="navbar-brand fw-bold d-flex align-items-center gap-3" href="index.php">
-                    <img src="../img/logo_,ministerio.png" alt="Escudo" style="height: 45px; width: auto; object-fit: contain;" onerror="this.src='https://placehold.co/45x50?text=Logo'">
-                    <div class="d-flex flex-column lh-1 border-start ps-3 border-secondary border-opacity-25">
-                        <span style="color: var(--gov-dark); font-size: 1.15rem; letter-spacing: -0.3px; font-weight: 700;">PortalEmpleo</span>
-                        <span class="text-muted" style="font-size: 0.62rem; text-transform: uppercase; letter-spacing: 0.5px; font-weight: 600;">Min. de Trabajo, Fomento del Empleo y Seguridad Social</span>
-                    </div>
-                </a>
+        <?php include 'header_desempleado.php'; ?>
 
-                <div class="d-flex align-items-center order-lg-last gap-3">
-                    <a href="#" class="text-muted position-relative me-1" title="Notificaciones">
-                        <i class="bi bi-bell fs-5" style="color: var(--gov-blue);"></i>
-                        <span class="position-absolute top-0 start-100 translate-middle p-1 bg-danger border border-white rounded-circle"></span>
-                    </a>
-
-                    <div class="nav-item dropdown profile-dropdown">
-                        <a class="nav-link dropdown-toggle d-flex align-items-center" href="#" id="profileMenu" role="button" data-bs-toggle="dropdown" aria-expanded="false">
-                            <img src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=150&q=80" class="profile-menu-img" alt="Foto">
-                        </a>
-                        <ul class="dropdown-menu dropdown-menu-end custom-profile-menu" aria-labelledby="profileMenu">
-                            <li>
-                                <div class="px-3 py-2 border-bottom mb-2 bg-light rounded-top">
-                                    <p class="m-0 small fw-bold text-dark">Ana Trini Maye</p>
-                                    <p class="m-0 text-success fw-bold" style="font-size: 0.7rem;"><i class="bi bi-circle-fill me-1" style="font-size: 0.4rem;"></i> Buscador Activo</p>
-                                </div>
-                            </li>
-                            <li><a class="dropdown-item small py-2" href="#"><i class="bi bi-person-gear me-2 text-muted"></i> Modificar mi Perfil</a></li>
-                            <li><a class="dropdown-item small py-2" href="#"><i class="bi bi-shield-lock me-2 text-muted"></i> Seguridad y Acceso</a></li>
-                            <li><a class="dropdown-item small py-2" href="#"><i class="bi bi-file-earmark-arrow-down me-2 text-muted"></i> Mi Historial Laboral</a></li>
-                            <li><hr class="dropdown-divider"></li>
-                            <li><a class="dropdown-item small text-danger fw-bold py-2" href="logout.php"><i class="bi bi-box-arrow-right me-2"></i> Cerrar Sesión</a></li>
-                        </ul>
-                    </div>
-                </div>
-
-                <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
-                    <span class="navbar-toggler-icon"></span>
-                </button>
-
-                <div class="collapse navbar-collapse" id="navbarNav">
-                    <ul class="navbar-nav me-auto align-items-lg-center ms-lg-4 gap-1">
-                        <li class="nav-item"><a class="nav-link active fw-bold" style="color: var(--gov-blue);" href="index.php">Panel General</a></li>
-                        <li class="nav-item"><a class="nav-link text-secondary small fw-medium" href="bolsa_trabajo.php">Bolsa de Trabajo</a></li>
-                        <li class="nav-item"><a class="nav-link text-secondary small fw-medium" href="cursos_publicos.php">Cursos Públicos</a></li>
-                    </ul>
-                </div>
-            </div>
-        </nav>
-
-        <!-- CONTENEDOR PRINCIPAL -->
+        <!-- CONTENIDO PRINCIPAL -->
         <main class="container py-5 flex-grow-1">
 
             <!-- ALERTA EXPEDIENTE INCOMPLETO -->
@@ -579,7 +469,6 @@
                         <h4 class="fw-bold m-0 h5 text-dark">Ana Trini Maye</h4>
                         <p class="text-muted small mb-3">ID Expediente: <strong style="color: var(--gov-blue);">#EG-94821</strong></p>
 
-                        <!-- Detalles del perfil -->
                         <div class="text-start small mb-3">
                             <div class="profile-detail-item">
                                 <span class="label">Antigüedad</span>
@@ -660,29 +549,10 @@
                 <!-- COLUMNA DERECHA (CONTENIDO / ACCIONES) -->
                 <div class="col-xl-8 col-lg-7">
 
-                    <!-- SECCIÓN DINÁMICA DE OFERTAS (OCULTABLE SEGÚN JS) -->
                     <div id="jobOffersSection">
-                        <!-- BUSCADOR CON FILTROS RÁPIDOS -->
-                        <div class="card dashboard-card p-4 mb-4">
-                            <h5 class="fw-bold mb-3 h6 text-uppercase tracking-wider text-muted">Buscador del Sistema</h5>
-                            <form class="d-flex gap-2 flex-wrap">
-                                <div class="input-group flex-grow-1">
-                                    <span class="input-group-text bg-white border-end-0 text-muted" style="border-radius: var(--gov-radius-sm) 0 0 var(--gov-radius-sm); border-color: var(--gov-border);"><i class="bi bi-search"></i></span>
-                                    <input type="text" class="form-control form-control-custom" style="border-radius: 0 var(--gov-radius-sm) var(--gov-radius-sm) 0 !important; border-left: none;" placeholder="Buscar cargos, sectores profesionales...">
-                                </div>
-                                <button class="btn btn-gov px-4" type="button">Buscar</button>
-                            </form>
-                            <div class="mt-3">
-                                <span class="filter-tag active">Todos</span>
-                                <span class="filter-tag">Tecnología</span>
-                                <span class="filter-tag">Salud</span>
-                                <span class="filter-tag">Educación</span>
-                                <span class="filter-tag">Construcción</span>
-                                <span class="filter-tag">Administración</span>
-                            </div>
-                        </div>
+                   
 
-                        <!-- OFERTAS RECOMENDADAS (MEJORADAS) -->
+                        <!-- OFERTAS RECOMENDADAS -->
                         <div class="card dashboard-card p-4 mb-4">
                             <h5 class="fw-bold mb-3 h6 text-uppercase tracking-wider text-muted">Ofertas Recomendadas</h5>
                             <div class="d-flex flex-column gap-3">
@@ -788,119 +658,4 @@
             </div>
         </main>
 
-        <!-- FOOTER INSTITUCIONAL -->
-        <footer class="bg-white text-center py-4 text-muted small mt-auto border-top">
-            <div class="container">
-                <p class="m-0 fw-medium">&copy; 2026 Ministerio de Trabajo, Fomento del Empleo y Seguridad Social.</p>
-                <p class="m-0 text-uppercase tracking-wider mt-1" style="font-size: 0.65rem; color: var(--gov-green); font-weight: 700;">Unidad • Paz • Justicia</p>
-            </div>
-        </footer>
-    </div>
-
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
-
-    <script>
-        // CONFIGURACIÓN DE VISTA (Cambiar a 'true' para simular perfil completo)
-        const perfilCompleto = false;
-
-        function evaluarEstadoPerfil() {
-            const banner = document.getElementById('incompleteProfileBanner');
-            const ofertas = document.getElementById('jobOffersSection');
-            const badgePct = document.getElementById('profilePercentage');
-            const progressBar = document.getElementById('profileProgressBar');
-
-            if (perfilCompleto) {
-                banner.classList.add('d-none');
-                ofertas.classList.remove('d-none');
-                badgePct.innerText = "100%";
-                badgePct.className = "fw-bold text-success";
-                progressBar.style.width = "100%";
-                progressBar.className = "progress-bar bg-success";
-            } else {
-                banner.classList.remove('d-none');
-                ofertas.classList.add('d-none');
-                badgePct.innerText = "40%";
-                badgePct.className = "fw-bold text-danger";
-                progressBar.style.width = "40%";
-                progressBar.className = "progress-bar bg-danger";
-            }
-        }
-        evaluarEstadoPerfil();
-
-        // CANVAS ANIMADO (TEXTURA SUAVE)
-        const canvas = document.getElementById('canvas-background');
-        const ctx = canvas.getContext('2d');
-        let points = [];
-        const maxPoints = 40;
-        const maxDistance = 150;
-
-        function resizeCanvas() {
-            canvas.width = window.innerWidth;
-            canvas.height = window.innerHeight;
-        }
-        window.addEventListener('resize', resizeCanvas);
-        resizeCanvas();
-
-        class Point {
-            constructor() {
-                this.x = Math.random() * canvas.width;
-                this.y = Math.random() * canvas.height;
-                this.vx = (Math.random() - 0.5) * 0.25;
-                this.vy = (Math.random() - 0.5) * 0.25;
-                this.radius = Math.random() * 2 + 1;
-            }
-            update() {
-                this.x += this.vx;
-                this.y += this.vy;
-                if (this.x < 0 || this.x > canvas.width) this.vx *= -1;
-                if (this.y < 0 || this.y > canvas.height) this.vy *= -1;
-            }
-            draw() {
-                ctx.beginPath();
-                ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
-                ctx.fillStyle = 'rgba(11, 58, 96, 0.15)';
-                ctx.fill();
-            }
-        }
-
-        for (let i = 0; i < maxPoints; i++) {
-            points.push(new Point());
-        }
-
-        function animate() {
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-            for (let i = 0; i < points.length; i++) {
-                points[i].update();
-                points[i].draw();
-
-                for (let j = i + 1; j < points.length; j++) {
-                    const dx = points[i].x - points[j].x;
-                    const dy = points[i].y - points[j].y;
-                    const dist = Math.sqrt(dx * dx + dy * dy);
-
-                    if (dist < maxDistance) {
-                        ctx.beginPath();
-                        ctx.moveTo(points[i].x, points[i].y);
-                        ctx.lineTo(points[j].x, points[j].y);
-                        ctx.strokeStyle = `rgba(11, 58, 96, ${0.1 * (1 - dist / maxDistance)})`;
-                        ctx.lineWidth = 0.6;
-                        ctx.stroke();
-                    }
-                }
-            }
-            requestAnimationFrame(animate);
-        }
-        animate();
-
-        // INTERACCIÓN CON FILTROS RÁPIDOS (ejemplo visual)
-        document.querySelectorAll('.filter-tag').forEach(tag => {
-            tag.addEventListener('click', function() {
-                document.querySelectorAll('.filter-tag').forEach(t => t.classList.remove('active'));
-                this.classList.add('active');
-            });
-        });
-    </script>
-</body>
-
-</html>
+        <?php include 'footer_desempleado.php'; ?>

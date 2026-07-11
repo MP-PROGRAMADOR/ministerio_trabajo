@@ -1,11 +1,13 @@
   <div id="sidebar-wrapper">
-        <div class="sidebar-heading d-flex align-items-center gap-2">
-            <i class="bi bi-building-fill-lock text-primary fs-3"></i>
-            <div>
-                <h6 class="mb-0 text-white fw-bold">MINISTERIO DE TRABAJO</h6>
-                <small class="text-muted" style="font-size: 10px;">GUINEA ECUATORIAL</small>
-            </div>
-        </div>
+       <div class="sidebar-heading d-flex align-items-center gap-2">
+    <!-- Reemplazamos el icono por tu logo -->
+    <img src="../src/img/logo_,ministerio.png" alt="Logo Ministerio" class="img-fluid" style="max-height: 40px; width: auto;">
+    
+    <div>
+        <h6 class="mb-0 text-white fw-bold">MINISTERIO DE TRABAJO</h6>
+        <small class="text-muted" style="font-size: 10px;">GUINEA ECUATORIAL</small>
+    </div>
+</div>
 
         <ul class="nav flex-column sidebar-nav">
             <li class="nav-item">

@@ -312,7 +312,8 @@
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
-    <script>
+     <script>
+        // 1. CONTROL DE VISIBILIDAD DE CONTRASEÑA
         function togglePassword() {
             const pass = document.getElementById('passwordInput');
             const icon = document.getElementById('toggleIcon');
@@ -327,21 +328,172 @@
             }
         }
 
-        function handleLogin(e) {
-            e.preventDefault();
-            alert('Validando credenciales corporativas en el sistema del Ministerio...');
-        }
+        // =======================================================
+// 1. VALIDACIÓN DE CREDENCIALES REAL (AJAX + SPINNER INFERIOR)
+// =======================================================
+function handleLogin(e) {
+    e.preventDefault();
 
-        function goToRegister(e) {
-            e.preventDefault();
-            alert('Redirigiendo al formulario de registro y homologación de empresas...');
-        }
+    // Capturar los valores ingresados por el usuario
+    const email = document.getElementById('emailInput').value.trim();
+    const password = document.getElementById('passwordInput').value;
+    const statusContainer = document.getElementById('loginStatus');
+    const btnIngresar = document.getElementById('btnIngresar');
 
-        // 5. FUNCIÓN VOLVER
-        function goBack(event) {
-            event.preventDefault();
-            window.location.href = './index.php';
+    // Elementos del Toast institucional en caso de que existan en el DOM
+    const toastEl = document.getElementById('notificationToast');
+    const title = document.getElementById('toastTitle');
+    const message = document.getElementById('toastMessage');
+    const icon = document.getElementById('toastIcon');
+
+    // Deshabilitar botón y activar Spinner en la parte inferior del login
+    if (btnIngresar) btnIngresar.disabled = true;
+    if (statusContainer) {
+        statusContainer.innerHTML = `
+            <div class="d-flex align-items-center justify-content-center text-white">
+                <div class="spinner-border spinner-border-sm text-info me-2" role="status"></div>
+                <span>Verificando...</span>
+            </div>
+        `;
+    }
+
+    // Opcional: Si el Toast existe, también le damos feedback institucional concurrente
+    if (toastEl && title && message && icon) {
+        const toast = bootstrap.Toast.getOrCreateInstance(toastEl);
+        title.innerText = 'Validación de Acceso';
+        message.innerHTML = `
+            Comprobando las credenciales de <strong>${email}</strong> en el sistema centralizado del Ministerio...
+            <div class="d-flex justify-content-center mt-3">
+                <div class="spinner-border text-primary" role="status">
+                    <span class="visually-hidden">Procesando...</span>
+                </div>
+            </div>
+        `;
+        icon.className = 'bi bi-shield-lock-fill text-primary fs-3 me-2';
+        toast.show();
+    }
+
+    // Petición asíncrona al Servidor PHP
+    fetch('php/procesar_loginD.php', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ correo: email, password: password })
+    })
+    .then(response => response.json())
+    .then(data => {
+        // Retraso controlado para que el flujo visual sea apreciable
+        setTimeout(() => {
+            if (data.status === 'success') {
+                if (statusContainer) {
+                    statusContainer.innerHTML = `<span class="text-success fw-bold"><i class="bi bi-check-circle-fill me-1"></i> ${data.message}</span>`;
+                }
+                
+                setTimeout(() => {
+                    // Redirección definitiva al panel de desempleados
+                    window.location.href = 'desempleado/index.php';
+                }, 800);
+            } else {
+                // Si hay error en la base de datos o en la clave
+                if (btnIngresar) btnIngresar.disabled = false;
+                if (statusContainer) {
+                    statusContainer.innerHTML = `<span class="text-danger fw-bold"><i class="bi bi-exclamation-triangle-fill me-1"></i> ${data.message}</span>`;
+                }
+                
+                // Si el toast está activo, actualizamos el error visualmente ahí también
+                if (toastEl && title && message && icon) {
+                    title.innerText = 'Error de Autenticación';
+                    message.innerHTML = `<span class="text-danger">${data.message}</span>`;
+                    icon.className = 'bi bi-exclamation-triangle-fill text-danger fs-3 me-2';
+                }
+            }
+        }, 1000);
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        if (btnIngresar) btnIngresar.disabled = false;
+        if (statusContainer) {
+            statusContainer.innerHTML = `<span class="text-danger fw-bold"><i class="bi bi-wifi-off me-1"></i> Error de conexión con el servidor.</span>`;
         }
+    });
+}
+
+// =======================================================
+// 2. PASARELA UNICA DEL ESTADO CON SPINNER
+// =======================================================
+function handleGovLogin() {
+    const toastEl = document.getElementById('notificationToast');
+    const title = document.getElementById('toastTitle');
+    const message = document.getElementById('toastMessage');
+    const icon = document.getElementById('toastIcon');
+
+    if (toastEl && title && message && icon) {
+        const toast = bootstrap.Toast.getOrCreateInstance(toastEl);
+        title.innerText = 'Autenticación del Estado';
+        message.innerHTML = `
+            Conectando de forma segura con la pasarela única de identidad nacional...
+            <div class="d-flex justify-content-center mt-3">
+                <div class="spinner-border text-warning" role="status">
+                    <span class="visually-hidden">Redirigiendo...</span>
+                </div>
+            </div>
+        `;
+        icon.className = 'bi bi-building-fill text-warning fs-3 me-2';
+        toast.show();
+
+        setTimeout(() => {
+            window.location.href = 'autenticacion_gob.php';
+        }, 2500);
+    } else {
+        alert('Redirigiendo a la pasarela única de autenticación oficial del Estado...');
+    }
+}
+
+// =======================================================
+// 3. ASISTENTE DE REGISTRO
+// =======================================================
+function goToRegister(event) {
+    event.preventDefault();
+
+    const toastEl = document.getElementById('notificationToast');
+    const title = document.getElementById('toastTitle');
+    const message = document.getElementById('toastMessage');
+    const icon = document.getElementById('toastIcon');
+
+    if (!toastEl || !title || !message || !icon) {
+        console.error("Error: No se encontraron los IDs del Toast en el HTML. Revisa que coincidan.");
+        window.location.href = 'registro_desempleados.php';
+        return;
+    }
+
+    const toast = bootstrap.Toast.getOrCreateInstance(toastEl);
+
+    title.innerText = 'Registro Oficial';
+    message.innerHTML = `
+        Abriendo el asistente de alta para demandantes de empleo. Por favor, prepare su DIP y documentación...
+        <div class="d-flex justify-content-center mt-3">
+            <div class="spinner-border text-info" role="status">
+                <span class="visually-hidden">Preparando entorno...</span>
+            </div>
+        </div>
+    `;
+
+    icon.className = 'bi bi-file-earmark-person-fill text-info fs-3 me-2';
+    toast.show();
+
+    setTimeout(() => {
+        window.location.href = 'registro_empleadores.php';
+    }, 2500);
+}
+
+// =======================================================
+// 4. FUNCIÓN VOLVER
+// =======================================================
+function goBack(event) {
+    event.preventDefault();
+    window.location.href = './index.php';
+}
     </script>
 </body>
 

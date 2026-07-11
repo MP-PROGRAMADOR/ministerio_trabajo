@@ -23,7 +23,7 @@
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
         }
 
-      .bg-portal {
+        .bg-portal {
             background: linear-gradient(rgba(26, 66, 106, 0.85), rgba(26, 66, 106, 0.85)),
                 url('https://images.unsplash.com/photo-1454165804606-c3d57bc86b40?auto=format&fit=crop&w=1920&q=80') no-repeat center center fixed;
             background-size: cover;
@@ -33,6 +33,7 @@
             justify-content: space-between;
             color: #ffffff;
         }
+
         /* Tarjetas de acceso profesionales y pulidas */
         .access-card {
             background: rgba(255, 255, 255, 0.96);
@@ -128,7 +129,7 @@
 
     <div class="bg-portal">
         <!-- Cabecera simple -->
-      <header class="text-center py-3 bg-dark bg-opacity-25 border-bottom border-secondary">
+        <header class="text-center py-3 bg-dark bg-opacity-25 border-bottom border-secondary">
             <p class="m-0 small text-uppercase tracking-wider">
                 Bienvenido al Portal de Empleo
             </p>
@@ -196,9 +197,9 @@
         </main>
 
         <!-- Footer -->
-            <footer class="bg-dark bg-opacity-50 text-center py-3 text-white-50 small">
+        <footer class="bg-dark bg-opacity-50 text-center py-3 text-white-50 small">
             <div class="container d-flex flex-column flex-sm-row justify-content-between align-items-center gap-2">
-               <div>&copy; 2026 Ministerio de Trabajo y Empleo. Todos los derechos reservados.</div>
+                <div>&copy; 2026 Ministerio de Trabajo y Empleo. Todos los derechos reservados.</div>
                 <div class="d-flex gap-3 fs-5">
                     <a href="#" class="text-white-50"><i class="bi bi-facebook"></i></a>
                     <a href="#" class="text-white-50"><i class="bi bi-twitter-x"></i></a>
@@ -242,14 +243,14 @@
                 case 'empleador':
                     title.innerText = 'Portal Corporativo';
                     // Insertamos el texto y un spinner de carga de Bootstrap justo debajo
-                    message.innerHTML = `
-        Redirigiendo de forma segura al entorno de Gestión de Empresas y Ofertas...
-        <div class="d-flex justify-content-center mt-3">
-            <div class="spinner-border text-success" role="status">
-                <span class="visually-hidden">Cargando...</span>
-            </div>
-        </div>
-    `;
+                            message.innerHTML = `
+                        Redirigiendo de forma segura al entorno de Gestión de Empresas y Ofertas...
+                        <div class="d-flex justify-content-center mt-3">
+                            <div class="spinner-border text-success" role="status">
+                                <span class="visually-hidden">Cargando...</span>
+                            </div>
+                        </div>
+                    `;
 
                     // Configuramos el icono y mostramos el Toast
                     icon.className = 'bi bi-building-fill-check text-success fs-3 me-2';
@@ -263,14 +264,14 @@
                 case 'ciudadano':
                     title.innerText = 'Portal Ciudadano';
                     // Mensaje institucional con spinner en color azul (text-primary)
-                    message.innerHTML = `
-        Conectando con la base de datos nacional de empleo y carga de CV...
-        <div class="d-flex justify-content-center mt-3">
-            <div class="spinner-border text-primary" role="status">
-                <span class="visually-hidden">Cargando...</span>
-            </div>
-        </div>
-    `;
+                            message.innerHTML = `
+                    Conectando con la base de datos nacional de empleo y carga de CV...
+                    <div class="d-flex justify-content-center mt-3">
+                        <div class="spinner-border text-primary" role="status">
+                            <span class="visually-hidden">Cargando...</span>
+                        </div>
+                    </div>
+                `;
 
                     icon.className = 'bi bi-person-bounding-box text-primary fs-3 me-2';
                     toast.show();
@@ -286,13 +287,13 @@
                     title.innerText = 'Acceso Restringido';
                     // Mensaje de advertencia de seguridad con spinner en color rojo institucional (text-danger)
                     message.innerHTML = `
-        Alerta: El acceso seleccionado está estrictamente limitado a personal y funcionarios del Ministerio.
-        <div class="d-flex justify-content-center mt-3">
-            <div class="spinner-border text-danger" role="status">
-                <span class="visually-hidden">Validando credenciales...</span>
-            </div>
-        </div>
-    `;
+                    Alerta: El acceso seleccionado está estrictamente limitado a personal y funcionarios del Ministerio.
+                    <div class="d-flex justify-content-center mt-3">
+                        <div class="spinner-border text-danger" role="status">
+                            <span class="visually-hidden">Validando credenciales...</span>
+                        </div>
+                    </div>
+                `;
 
                     icon.className = 'bi bi-shield-slash-fill text-danger fs-3 me-2';
                     toast.show();

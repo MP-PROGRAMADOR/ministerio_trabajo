@@ -1,8 +1,32 @@
 <?php
-// 1. Asegúrate de tener la sesión iniciada al principio de entidades.php
+
+// php/auth.php
+
 if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }
+
+/**
+ * Función para proteger páginas que requieren autenticación.
+ * * @param array $rolesPermitidos Lista de roles permitidos. Ejemplo: ['administrador']
+ */
+function protegerPagina(array $rolesPermitidos = ['administrador']) {
+    // 1. Verificar si el usuario ha iniciado sesión
+    if (!isset($_SESSION['id_usuario']) || empty($_SESSION['id_usuario'])) {
+        header('Location: ../login_admin.php?error=no_session');
+        exit();
+    }
+
+    // 2. Verificar que el rol del usuario coincida exactamente con los permitidos
+    $rolUsuario = $_SESSION['rol'] ?? '';
+
+    if (!in_array($rolUsuario, $rolesPermitidos, true)) {
+        // Si el usuario no es 'administrador' (por ejemplo, si es 'buscador' o 'empleador'), se deniega el acceso
+        header('Location: ../index.php?error=acceso_denegado');
+        exit();
+    }
+}
+
 require_once '../conexion/conexion.php'; 
 ?>
 <!DOCTYPE html>

@@ -300,7 +300,7 @@
 
                     // Redirección segura tras 2.5 segundos al entorno de administración
                     setTimeout(() => {
-                        window.location.href = 'login_ministerio.php';
+                        window.location.href = 'login_admin.php';
                     }, 2500);
                     break;
                 default:

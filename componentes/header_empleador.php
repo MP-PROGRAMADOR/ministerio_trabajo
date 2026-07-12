@@ -1,3 +1,51 @@
+<?php
+// php/auth_empleador.php
+
+if (session_status() === PHP_SESSION_NONE) {
+    session_start();
+}
+
+/**
+ * Función para proteger páginas que requieren autenticación de Empleador.
+ * @param array $rolesPermitidos Lista de roles permitidos (por defecto 'empleador' y 'administrador').
+ */
+function protegerPaginaEmpleador(array $rolesPermitidos = ['empleador', 'administrador']) {
+    
+    // 1. Verificar si el usuario ha iniciado sesión
+    if (!isset($_SESSION['id_usuario']) || empty($_SESSION['id_usuario'])) {
+        header('Location: ../login_empleadores.php?error=no_session');
+        exit();
+    }
+
+    // 2. Verificar que el rol del usuario esté dentro de los permitidos
+    $rolUsuario = $_SESSION['rol'] ?? '';
+
+    if (!in_array($rolUsuario, $rolesPermitidos, true)) {
+        header('Location: ./index.php?error=acceso_denegado');
+        exit();
+    }
+
+    // 3. Verificar que la cuenta tenga un ID de empleador/empresa asociado en sesión
+    if ($rolUsuario === 'empleador' && empty($_SESSION['empleador_id'])) {
+        header('Location: ../login_empleadores.php?error=perfil_incompleto');
+        exit();
+    }
+}
+
+// ⚠️ EJECUCIÓN DE LA PROTECCIÓN DE LA PÁGINA
+protegerPaginaEmpleador(['empleador']);
+
+// Variables globales de sesión listas para usar en las vistas/páginas del panel
+$id_usuario      = $_SESSION['id_usuario'];
+$empleador_id    = $_SESSION['empleador_id'] ?? null;
+$nombre_completo = $_SESSION['nombre_completo'] ?? '';
+$nombre_empresa  = $_SESSION['nombre_empresa'] ?? '';
+$numero_exp      = $_SESSION['numero_expediente'] ?? '';
+
+// Conexión a la base de datos
+require_once '../conexion/conexion.php'; 
+?>
+
 <!DOCTYPE html>
 <html lang="es">
 <head>

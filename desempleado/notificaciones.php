@@ -1,3 +1,4 @@
+
 <?php
 session_start();
 
@@ -14,12 +15,33 @@ include '../conexion/conexion.php';
 $id_usuario = $_SESSION['id_usuario'];
 $nombre_completo = $_SESSION['nombre_completo'] ?? '';
 
-// ===== OBTENER DATOS DEL USUARIO =====
+// ===== DIAGNÓSTICO: VER QUÉ HAY EN LA BBDD =====
+echo "<!-- DIAGNÓSTICO DE NOTIFICACIONES -->\n";
+echo "<!-- ID Usuario: " . $id_usuario . " -->\n";
+
 try {
     // Verificar buscadores_empleo
     $stmt = $pdo->prepare("SELECT * FROM buscadores_empleo WHERE usuario_id = ?");
     $stmt->execute([$id_usuario]);
     $buscador = $stmt->fetch(PDO::FETCH_ASSOC);
+
+    echo "<!-- Buscador encontrado: " . ($buscador ? 'SI' : 'NO') . " -->\n";
+    
+    if ($buscador) {
+        echo "<!-- Buscador ID: " . $buscador['id'] . " -->\n";
+        
+        // Contar notificaciones de intermediación
+        $stmt = $pdo->prepare("SELECT COUNT(*) as total FROM notificaciones_intermediacion WHERE buscador_id = ?");
+        $stmt->execute([$buscador['id']]);
+        $result = $stmt->fetch(PDO::FETCH_ASSOC);
+        echo "<!-- Notificaciones intermediación: " . ($result['total'] ?? 0) . " -->\n";
+        
+        // Contar favoritos
+        $stmt = $pdo->prepare("SELECT COUNT(*) as total FROM favoritos WHERE buscador_id = ?");
+        $stmt->execute([$buscador['id']]);
+        $result = $stmt->fetch(PDO::FETCH_ASSOC);
+        echo "<!-- Favoritos: " . ($result['total'] ?? 0) . " -->\n";
+    }
 
     // Verificar documentos
     $stmt_doc = $pdo->prepare("SELECT id FROM documentos WHERE usuario_id = ?");
@@ -27,11 +49,12 @@ try {
     $documentos = $stmt_doc->fetch();
     
     $perfil_completo = ($buscador && $documentos);
+    echo "<!-- Perfil completo: " . ($perfil_completo ? 'SI' : 'NO') . " -->\n";
 
-    // ===== OBTENER NOTIFICACIONES DESDE BBDD =====
+    // ===== INICIALIZAR NOTIFICACIONES =====
     $notificaciones = [];
 
-    // 1. Notificaciones de intermediación (notificaciones_intermediacion)
+    // 1. Notificaciones de intermediación
     if ($buscador) {
         $stmt = $pdo->prepare("
             SELECT 
@@ -51,49 +74,40 @@ try {
         $stmt->execute([$buscador['id']]);
         $notificaciones_intermediacion = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
-        foreach ($notificaciones_intermediacion as $noti) {
-            $estado_colores = [
-                'pendiente' => 'warning',
-                'en_revision' => 'info',
-                'aprobado' => 'success',
-                'rechazado' => 'danger'
-            ];
-            $estado_textos = [
-                'pendiente' => 'Pendiente',
-                'en_revision' => 'En revisión',
-                'aprobado' => 'Aprobado',
-                'rechazado' => 'Rechazado'
-            ];
+        echo "<!-- Notificaciones intermediación (detalle): " . count($notificaciones_intermediacion) . " -->\n";
 
-            $titulo = '';
-            $descripcion = '';
-            $icono = 'bi-clock-history';
-
-            if ($noti['origen'] == 'empleador') {
-                $titulo = "Nueva oferta de interés de {$noti['nombre_empresa']}";
-                $descripcion = "La empresa {$noti['nombre_empresa']} ha mostrado interés en tu perfil para el puesto de {$noti['titulo_puesto']}. Estado: " . ($estado_textos[$noti['estado_ministerio']] ?? 'Pendiente');
-                $icono = 'bi-briefcase';
-            } else {
-                $titulo = "Actualización de postulación";
-                $descripcion = "Tu postulación para {$noti['titulo_puesto']} en {$noti['nombre_empresa']} está " . ($estado_textos[$noti['estado_ministerio']] ?? 'en proceso');
+        if (is_array($notificaciones_intermediacion) && !empty($notificaciones_intermediacion)) {
+            foreach ($notificaciones_intermediacion as $noti) {
+                $titulo = '';
+                $descripcion = '';
                 $icono = 'bi-clock-history';
-            }
 
-            $notificaciones[] = [
-                'id' => $noti['id'],
-                'titulo' => $titulo,
-                'descripcion' => $descripcion,
-                'fecha' => date('d/m/Y H:i', strtotime($noti['fecha_creacion'])),
-                'leida' => false,
-                'icono' => $icono,
-                'tipo' => 'intermediacion',
-                'codigo' => $noti['codigo_seguimiento'] ?? null,
-                'estado' => $noti['estado_ministerio'] ?? 'pendiente'
-            ];
+                if ($noti['origen'] == 'empleador') {
+                    $titulo = "Nueva oferta de interés de {$noti['nombre_empresa']}";
+                    $descripcion = "La empresa {$noti['nombre_empresa']} ha mostrado interés en tu perfil para el puesto de {$noti['titulo_puesto']}. Estado: " . ucfirst($noti['estado_ministerio'] ?? 'pendiente');
+                    $icono = 'bi-briefcase';
+                } else {
+                    $titulo = "Actualización de postulación";
+                    $descripcion = "Tu postulación para {$noti['titulo_puesto']} en {$noti['nombre_empresa']} está " . ucfirst($noti['estado_ministerio'] ?? 'en proceso');
+                    $icono = 'bi-clock-history';
+                }
+
+                $notificaciones[] = [
+                    'id' => $noti['id'],
+                    'titulo' => $titulo,
+                    'descripcion' => $descripcion,
+                    'fecha' => date('d/m/Y H:i', strtotime($noti['fecha_creacion'])),
+                    'leida' => false,
+                    'icono' => $icono,
+                    'tipo' => 'intermediacion',
+                    'codigo' => $noti['codigo_seguimiento'] ?? null,
+                    'estado' => $noti['estado_ministerio'] ?? 'pendiente'
+                ];
+            }
         }
     }
 
-    // 2. Notificaciones de favoritos (cuando se guarda una oferta)
+    // 2. Favoritos
     if ($buscador) {
         $stmt = $pdo->prepare("
             SELECT 
@@ -110,66 +124,35 @@ try {
         $stmt->execute([$buscador['id']]);
         $favoritos = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
-        foreach ($favoritos as $fav) {
-            $notificaciones[] = [
-                'id' => 'fav_' . $fav['id'],
-                'titulo' => "Oferta guardada en favoritos",
-                'descripcion' => "Has guardado la oferta de {$fav['titulo_puesto']} en {$fav['nombre_empresa']} como favorita.",
-                'fecha' => date('d/m/Y H:i', strtotime($fav['fecha_guardado'])),
-                'leida' => false,
-                'icono' => 'bi-star',
-                'tipo' => 'favorito'
-            ];
+        echo "<!-- Favoritos (detalle): " . count($favoritos) . " -->\n";
+
+        if (is_array($favoritos) && !empty($favoritos)) {
+            foreach ($favoritos as $fav) {
+                $notificaciones[] = [
+                    'id' => 'fav_' . $fav['id'],
+                    'titulo' => "Oferta guardada en favoritos",
+                    'descripcion' => "Has guardado la oferta de {$fav['titulo_puesto']} en {$fav['nombre_empresa']} como favorita.",
+                    'fecha' => date('d/m/Y H:i', strtotime($fav['fecha_guardado'])),
+                    'leida' => false,
+                    'icono' => 'bi-star',
+                    'tipo' => 'favorito'
+                ];
+            }
         }
     }
 
-    // 3. Notificaciones del sistema (verificar perfil incompleto, cursos, etc.)
-    if (!$perfil_completo) {
-        $notificaciones[] = [
-            'id' => 'sys_1',
-            'titulo' => '⚠️ Expediente digital incompleto',
-            'descripcion' => 'Tu expediente digital está incompleto. Adjunta tu DIP y CV para acceder a más ofertas y cursos.',
-            'fecha' => date('d/m/Y'),
-            'leida' => false,
-            'icono' => 'bi-exclamation-triangle',
-            'tipo' => 'sistema'
-        ];
+    // 3. Notificaciones del sistema (si no hay otras notificaciones)
+    if (empty($notificaciones)) {
+        // Si no hay notificaciones de BBDD, mostrar mensaje
+        // No agregamos notificaciones de sistema para que coincida con el contador
     }
 
-    // 4. Notificaciones de cursos disponibles
-    $stmt = $pdo->prepare("
-        SELECT COUNT(*) as total 
-        FROM cursos 
-        WHERE estado = 'activo'
-    ");
-    $stmt->execute();
-    $cursos_activos = $stmt->fetch(PDO::FETCH_ASSOC)['total'] ?? 0;
+    echo "<!-- Total notificaciones: " . count($notificaciones) . " -->\n";
+    echo "<!-- FIN DIAGNÓSTICO -->\n";
 
-    if ($cursos_activos > 0) {
-        $notificaciones[] = [
-            'id' => 'sys_2',
-            'titulo' => "📚 {$cursos_activos} cursos disponibles",
-            'descripcion' => "Hay {$cursos_activos} cursos activos disponibles para tu formación. ¡Inscríbete ahora!",
-            'fecha' => date('d/m/Y'),
-            'leida' => false,
-            'icono' => 'bi-journal-bookmark',
-            'tipo' => 'sistema'
-        ];
-    }
-
-    // Ordenar por fecha (más reciente primero)
-    usort($notificaciones, function($a, $b) {
-        return strtotime($b['fecha']) - strtotime($a['fecha']);
-    });
-
-    // Limitar a 20 notificaciones
-    $notificaciones = array_slice($notificaciones, 0, 20);
-
-    // Contar no leídas
-    $no_leidas = array_filter($notificaciones, function($n) {
+    $total_no_leidas = count(array_filter($notificaciones, function($n) {
         return !$n['leida'];
-    });
-    $total_no_leidas = count($no_leidas);
+    }));
 
 } catch (PDOException $e) {
     error_log("Error en notificaciones: " . $e->getMessage());
@@ -182,6 +165,7 @@ try {
 // ===== INCLUIR MENÚ =====
 include '../componentes/menu_desempleado.php';
 ?>
+
 
 <style>
     /* ===== PALETA INSTITUCIONAL UNIFICADA ===== */
@@ -229,7 +213,7 @@ include '../componentes/menu_desempleado.php';
     .navbar-portal {
         background-color: rgba(255, 255, 255, 0.96) !important;
         backdrop-filter: blur(12px);
-        border-bottom: 3px solid var(--gov-gold);
+        border-bottom: 3px solid var(--gov-blue);
         box-shadow: 0 4px 20px rgba(11, 58, 96, 0.04);
         position: relative;
         z-index: 1050;
@@ -506,7 +490,7 @@ include '../componentes/menu_desempleado.php';
                 <!-- TÍTULO DE LA PÁGINA -->
                 <div class="col-12">
                     <div class="d-flex align-items-center gap-3 mb-3">
-                        <i class="bi bi-bell fs-1" style="color: var(--gov-gold);"></i>
+                        <i class="bi bi-bell fs-1" style="color: var(--gov-blue);"></i>
                         <div>
                             <h1 class="h3 fw-bold m-0" style="color: var(--gov-dark);">Notificaciones</h1>
                             <p class="text-muted m-0">Revisa los últimos avisos y actualizaciones de tu cuenta</p>
@@ -526,8 +510,7 @@ include '../componentes/menu_desempleado.php';
                         </div>
 
                         <div id="notificacionesList">
-                            <!-- Generado por PHP/JavaScript -->
-                            <?php if (empty($notificaciones)): ?>
+                            <?php if (empty($notificaciones) || !is_array($notificaciones)): ?>
                                 <div class="text-center py-5 text-muted">
                                     <i class="bi bi-inbox fs-2 d-block mb-2"></i>
                                     No tienes notificaciones en este momento.
@@ -574,7 +557,7 @@ include '../componentes/menu_desempleado.php';
                         </div>
 
                         <!-- BOTÓN MARCAR TODAS COMO LEÍDAS -->
-                        <?php if (!empty($notificaciones)): ?>
+                        <?php if (!empty($notificaciones) && is_array($notificaciones)): ?>
                             <div class="mt-3 text-end">
                                 <button class="btn btn-sm btn-outline-secondary" id="marcarLeidasBtn">
                                     <i class="bi bi-check2-all me-1"></i>Marcar todas como leídas

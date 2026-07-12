@@ -10,7 +10,7 @@ if (!isset($_SESSION['id_usuario'])) {
 }
 
 // Usar las variables que YA tienes en la sesión
-$id_usuario = $_SESSION['id_usuario'];  // <--- Esta es la que usa tu login
+$id_usuario = $_SESSION['id_usuario'];
 $nombre_completo = $_SESSION['nombre_completo'] ?? 'Usuario';
 
 // Incluir conexión si no está definida
@@ -28,23 +28,29 @@ try {
     $stmt = $pdo->prepare("SELECT * FROM buscadores_empleo WHERE usuario_id = ?");
     $stmt->execute([$id_usuario]);
     $buscador = $stmt->fetch(PDO::FETCH_ASSOC);
-    
+
     // Verificar documentos
     $stmt_doc = $pdo->prepare("SELECT id FROM documentos WHERE usuario_id = ?");
     $stmt_doc->execute([$id_usuario]);
     $documentos = $stmt_doc->fetch();
-    
-    // Perfil completo si tiene ambos
+
     $perfil_completo = ($buscador && $documentos);
-    
-    // Notificaciones (favoritos)
+
+    // ===== CONTAR NOTIFICACIONES =====
     if ($buscador) {
-        $stmt_notif = $pdo->prepare("SELECT COUNT(*) as total FROM favoritos WHERE buscador_id = ?");
+        // 1. Notificaciones de intermediación
+        $stmt_notif = $pdo->prepare("SELECT COUNT(*) as total FROM notificaciones_intermediacion WHERE buscador_id = ?");
         $stmt_notif->execute([$buscador['id']]);
         $result = $stmt_notif->fetch(PDO::FETCH_ASSOC);
-        $notificaciones = $result['total'] ?? 0;
+        $notificaciones = is_array($result) ? (int)($result['total'] ?? 0) : 0;
+
+        // 2. Favoritos
+        $stmt_fav = $pdo->prepare("SELECT COUNT(*) as total FROM favoritos WHERE buscador_id = ?");
+        $stmt_fav->execute([$buscador['id']]);
+        $result = $stmt_fav->fetch(PDO::FETCH_ASSOC);
+        $notificaciones += is_array($result) ? (int)($result['total'] ?? 0) : 0;
     }
-    
+
     // ===== FOTO DE PERFIL =====
     if ($buscador && !empty($buscador['foto_carnet'])) {
         $foto_perfil = $buscador['foto_carnet'];
@@ -52,16 +58,109 @@ try {
             $foto_perfil = '../' . $foto_perfil;
         }
     }
-    
 } catch (PDOException $e) {
     error_log("Error en menú: " . $e->getMessage());
 }
 ?>
+<!-- ===== ESTILOS DEL MENÚ ===== -->
+<style>
+    /* ===== ESTILOS DEL MENÚ ===== */
+    .navbar-portal {
+        background: rgba(255, 255, 255, 0.96) !important;
+        backdrop-filter: blur(12px);
+        border-bottom: 3px solid var(--gov-blue);
+        box-shadow: 0 4px 20px rgba(11, 58, 96, 0.04);
+        position: relative;
+        z-index: 1050;
+    }
+    .navbar-nav .nav-link {
+        font-weight: 500;
+        color: var(--gov-dark) !important;
+        padding: 0.5rem 1rem;
+        border-radius: var(--gov-radius-sm);
+        transition: all 0.2s;
+    }
+    .navbar-nav .nav-link:hover,
+    .navbar-nav .nav-link.active {
+        background: rgba(11, 58, 96, 0.06);
+        color: var(--gov-blue) !important;
+    }
+    .navbar-nav .nav-link.active {
+        background: rgba(11, 58, 96, 0.10);
+        font-weight: 600;
+    }
+
+    .profile-dropdown { position: relative !important; }
+    .profile-menu-img {
+        width: 44px;
+        height: 44px;
+        border-radius: 50%;
+        border: 2.5px solid var(--gov-green);
+        object-fit: cover;
+        cursor: pointer;
+        transition: border-color 0.3s, transform 0.2s;
+    }
+    .profile-menu-img:hover {
+        border-color: var(--gov-blue);
+        transform: scale(1.04);
+    }
+    .custom-profile-menu {
+        background: rgba(255, 255, 255, 0.98) !important;
+        backdrop-filter: blur(12px);
+        border: 1px solid rgba(11, 58, 96, 0.15) !important;
+        border-radius: var(--gov-radius) !important;
+        box-shadow: 0 12px 40px rgba(11, 58, 96, 0.12) !important;
+        padding: 8px !important;
+        z-index: 1060 !important;
+        min-width: 240px;
+    }
+    .custom-profile-menu .dropdown-item {
+        border-radius: var(--gov-radius-sm);
+        padding: 0.6rem 1rem;
+        font-weight: 500;
+        color: var(--gov-dark);
+        transition: all 0.15s;
+    }
+    .custom-profile-menu .dropdown-item:hover {
+        background: rgba(11, 58, 96, 0.05);
+        color: var(--gov-blue);
+    }
+    .custom-profile-menu .dropdown-item i { color: var(--gov-blue); }
+
+    @media (min-width: 992px) {
+        .custom-profile-menu {
+            position: absolute !important;
+            right: 0 !important;
+            left: auto !important;
+            transform: translateY(8px) !important;
+        }
+        .profile-dropdown:hover .custom-profile-menu {
+            display: block !important;
+            opacity: 1 !important;
+            visibility: visible !important;
+        }
+    }
+    @media (max-width: 991.98px) {
+        .custom-profile-menu {
+            position: absolute !important;
+            left: 50% !important;
+            right: auto !important;
+            transform: translate(-50%, 10px) !important;
+            width: 260px !important;
+            max-width: calc(100vw - 30px) !important;
+        }
+        .profile-dropdown:hover .custom-profile-menu {
+            display: block !important;
+            opacity: 1 !important;
+            visibility: visible !important;
+        }
+    }
+</style>
 
 <nav class="navbar navbar-expand-lg navbar-light navbar-portal py-2">
     <div class="container">
         <a class="navbar-brand fw-bold d-flex align-items-center gap-3" href="index.php">
-            <img src="../img/logo_,ministerio.png" alt="Escudo de Guinea Ecuatorial" style="height: 45px; width: auto; object-fit: contain;" onerror="this.src='https://placehold.co/45x50?text=Logo'">
+            <img src="../src/img/logo_,ministerio.png" alt="Escudo de Guinea Ecuatorial" style="height: 45px; width: auto; object-fit: contain;" onerror="this.src='https://placehold.co/45x50?text=Logo'">
             <div class="d-flex flex-column lh-1 border-start ps-3 border-secondary border-opacity-25">
                 <span style="color: var(--gov-dark); font-size: 1.15rem; letter-spacing: -0.3px; font-weight: 700;">PortalEmpleo</span>
                 <span class="text-muted" style="font-size: 0.62rem; text-transform: uppercase; letter-spacing: 0.5px; font-weight: 600;">Min. de Trabajo, Fomento del Empleo y Seguridad Social</span>
@@ -76,17 +175,17 @@ try {
 
             <div class="nav-item dropdown profile-dropdown">
                 <a class="nav-link dropdown-toggle d-flex align-items-center" href="#" id="profileMenu" role="button" data-bs-toggle="dropdown" aria-expanded="false">
-                    <img src="<?php echo htmlspecialchars($foto_perfil); ?>" 
-                         class="profile-menu-img" 
-                         alt="Foto de perfil"
-                         onerror="this.src='https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/icons/person-bounding-box.svg'">
+                    <img src="<?php echo htmlspecialchars($foto_perfil); ?>"
+                        class="profile-menu-img"
+                        alt="Foto de perfil"
+                        onerror="this.src='https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/icons/person-bounding-box.svg'">
                 </a>
                 <ul class="dropdown-menu dropdown-menu-end custom-profile-menu" aria-labelledby="profileMenu">
                     <li>
                         <div class="px-3 py-2 border-bottom mb-2 bg-light rounded-top">
                             <p class="m-0 small fw-bold text-dark"><?php echo htmlspecialchars($nombre_completo); ?></p>
                             <p class="m-0 <?php echo $perfil_completo ? 'text-success' : 'text-warning'; ?> fw-bold" style="font-size: 0.7rem;">
-                                <i class="bi bi-circle-fill me-1" style="font-size: 0.4rem;"></i> 
+                                <i class="bi bi-circle-fill me-1" style="font-size: 0.4rem;"></i>
                                 <?php echo $perfil_completo ? '✅ Perfil Completado' : '⚠️ Perfil Pendiente'; ?>
                             </p>
                             <?php if ($buscador): ?>
@@ -101,17 +200,19 @@ try {
                         </div>
                     </li>
                     <li><a class="dropdown-item small py-2" href="perfil.php"><i class="bi bi-person-gear me-2 text-muted"></i> Mi Perfil</a></li>
-                       <li><a class="dropdown-item small py-2" href="noficaciones.php"><i class="bi bi-person-gear me-2 text-muted"></i> Mis Notificaciones</a></li>
+                    <li><a class="dropdown-item small py-2" href="notificaciones.php"><i class="bi bi-bell me-2 text-muted"></i> Mis Notificaciones</a></li>
                     <li><a class="dropdown-item small py-2" href="historial_laboral.php"><i class="bi bi-file-earmark-arrow-down me-2 text-muted"></i> Mi Historial Laboral</a></li>
                     <?php if (!$perfil_completo): ?>
                         <li><a class="dropdown-item small py-2 text-danger fw-bold" href="completar_perfil.php">
-                            <i class="bi bi-exclamation-triangle-fill me-2 text-danger"></i> Completar Perfil
-                        </a></li>
+                                <i class="bi bi-exclamation-triangle-fill me-2 text-danger"></i> Completar Perfil
+                            </a></li>
                     <?php endif; ?>
-                    <li><hr class="dropdown-divider"></li>
+                    <li>
+                        <hr class="dropdown-divider">
+                    </li>
                     <li><a class="dropdown-item small text-danger fw-bold py-2" href="../php/cerrar_sesion.php">
-                        <i class="bi bi-box-arrow-right me-2"></i> Cerrar Sesión
-                    </a></li>
+                            <i class="bi bi-box-arrow-right me-2"></i> Cerrar Sesión
+                        </a></li>
                 </ul>
             </div>
         </div>
@@ -123,19 +224,19 @@ try {
         <div class="collapse navbar-collapse" id="navbarNav">
             <ul class="navbar-nav me-auto align-items-lg-center ms-lg-4 gap-1">
                 <li class="nav-item">
-                    <a class="nav-link <?= (basename($_SERVER['PHP_SELF']) == 'index.php') ? 'active fw-bold' : 'text-secondary small fw-medium' ?>" 
-                       style="<?= (basename($_SERVER['PHP_SELF']) == 'index.php') ? 'color: var(--gov-blue);' : '' ?>" 
-                       href="index.php">Panel General</a>
+                    <a class="nav-link <?= (basename($_SERVER['PHP_SELF']) == 'index.php') ? 'active fw-bold' : 'text-secondary small fw-medium' ?>"
+                        style="<?= (basename($_SERVER['PHP_SELF']) == 'index.php') ? 'color: var(--gov-blue);' : '' ?>"
+                        href="index.php">Panel General</a>
                 </li>
                 <li class="nav-item">
-                    <a class="nav-link <?= (basename($_SERVER['PHP_SELF']) == 'bolsa_trabajo.php') ? 'active fw-bold' : 'text-secondary small fw-medium' ?>" 
-                       style="<?= (basename($_SERVER['PHP_SELF']) == 'bolsa_trabajo.php') ? 'color: var(--gov-blue);' : '' ?>" 
-                       href="bolsa_trabajo.php">Bolsa de Trabajo</a>
+                    <a class="nav-link <?= (basename($_SERVER['PHP_SELF']) == 'bolsa_trabajo.php') ? 'active fw-bold' : 'text-secondary small fw-medium' ?>"
+                        style="<?= (basename($_SERVER['PHP_SELF']) == 'bolsa_trabajo.php') ? 'color: var(--gov-blue);' : '' ?>"
+                        href="bolsa_trabajo.php">Bolsa de Trabajo</a>
                 </li>
                 <li class="nav-item">
-                    <a class="nav-link <?= (basename($_SERVER['PHP_SELF']) == 'cursos_publicos.php') ? 'active fw-bold' : 'text-secondary small fw-medium' ?>" 
-                       style="<?= (basename($_SERVER['PHP_SELF']) == 'cursos_publicos.php') ? 'color: var(--gov-blue);' : '' ?>" 
-                       href="cursos_publicos.php">Cursos Públicos</a>
+                    <a class="nav-link <?= (basename($_SERVER['PHP_SELF']) == 'cursos_publicos.php') ? 'active fw-bold' : 'text-secondary small fw-medium' ?>"
+                        style="<?= (basename($_SERVER['PHP_SELF']) == 'cursos_publicos.php') ? 'color: var(--gov-blue);' : '' ?>"
+                        href="cursos_publicos.php">Cursos Públicos</a>
                 </li>
                 <?php if (!$perfil_completo): ?>
                     <li class="nav-item">

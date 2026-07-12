@@ -91,7 +91,7 @@ include '../componentes/menu_desempleado.php';
     .navbar-portal {
         background-color: rgba(255, 255, 255, 0.96) !important;
         backdrop-filter: blur(12px);
-        border-bottom: 3px solid var(--gov-gold);
+        border-bottom: 3px solid var(--gov-blue);
         box-shadow: 0 4px 20px rgba(11, 58, 96, 0.04);
         position: relative;
         z-index: 1050;
@@ -240,14 +240,12 @@ include '../componentes/menu_desempleado.php';
         transition: border-color 0.3s;
     }
     .form-select-custom:focus {
-        border-color: var(--gov-gold);
+        border-color: var(--gov-blue);
         box-shadow: 0 0 0 4px rgba(201, 168, 76, 0.12);
     }
 
     /* ===== ESTILOS ADICIONALES PARA PERFIL ===== */
-    .border-gold {
-        border-color: var(--gov-gold) !important;
-    }
+   
     .position-relative .rounded-circle {
         transition: transform 0.3s ease;
     }
@@ -358,7 +356,7 @@ include '../componentes/menu_desempleado.php';
                                             alt="Foto de perfil"
                                             onerror="this.src='https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/icons/person-bounding-box.svg'">
                                         <label class="position-absolute bottom-0 end-0 bg-white rounded-circle p-1 shadow-sm" 
-                                               style="border: 2px solid var(--gov-gold); cursor: pointer;">
+                                               style="border: 2px solid var(--gov-blue); cursor: pointer;">
                                             <i class="bi bi-camera-fill" style="color: var(--gov-blue); font-size: 1.2rem;"></i>
                                             <input type="file" name="foto_carnet" accept="image/*" class="d-none" onchange="previewImage(event)">
                                         </label>

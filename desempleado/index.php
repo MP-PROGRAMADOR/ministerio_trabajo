@@ -101,137 +101,31 @@ include '../componentes/menu_desempleado.php';
 <style>
     /* ===== PALETA INSTITUCIONAL UNIFICADA ===== */
     :root {
-            --gov-blue: #0B3A60;
-            --gov-blue-light: #165285;
-            --gov-gold: #C9A84C;
-            --gov-gold-light: #E8D5A3;
-            --gov-green: #1E7E34;
-            --gov-green-light: #2E9B4A;
-            --gov-dark: #0A192F;
-            --gov-bg: #F8FAFC;
-            --gov-border: #E2E8F0;
-            --gov-radius: 8px;
-            --gov-radius-sm: 4px;
-        }
+        --gov-blue: #0B3A60;
+        --gov-blue-light: #1A4F7A;
+        --gov-blue-dark: #072A45;
+        --gov-blue-soft: #E8EEF3;
+        --gov-green: #1E7E34;
+        --gov-green-light: #2E9B4A;
+        --gov-green-soft: #E6F3E8;
+        --gov-gold: #C9A84C;
+        --gov-gold-light: #E8D5A3;
+        --gov-dark: #0A192F;
+        --gov-bg: #F8FAFC;
+        --gov-border: #E2E8F0;
+        --gov-radius: 8px;
+        --gov-radius-sm: 4px;
+        --gov-shadow: rgba(11, 58, 96, 0.12);
+    }
 
-        body, html {
-            min-height: 100vh;
-            margin: 0;
-            font-family: 'Inter', system-ui, -apple-system, sans-serif;
-            background-color: var(--gov-bg);
-            color: var(--gov-dark);
-            position: relative;
-        }
-        #canvas-background {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            z-index: 0;
-            pointer-events: none;
-            opacity: 0.3;
-        }
-        .main-wrapper {
-            position: relative;
-            z-index: 1;
-            display: flex;
-            flex-direction: column;
-            min-height: 100vh;
-        }
-
-        /* ===== NAVBAR ===== */
-        .navbar-portal {
-            background: rgba(255, 255, 255, 0.96) !important;
-            backdrop-filter: blur(12px);
-            border-bottom: 3px solid var(--gov-blue);
-            box-shadow: 0 4px 20px rgba(11, 58, 96, 0.04);
-            position: relative;
-            z-index: 1050;
-        }
-        .navbar-nav .nav-link {
-            font-weight: 500;
-            color: var(--gov-dark) !important;
-            padding: 0.5rem 1rem;
-            border-radius: var(--gov-radius-sm);
-            transition: all 0.2s;
-        }
-        .navbar-nav .nav-link:hover,
-        .navbar-nav .nav-link.active {
-            background: rgba(11, 58, 96, 0.06);
-            color: var(--gov-blue) !important;
-        }
-        .navbar-nav .nav-link.active {
-            background: rgba(11, 58, 96, 0.10);
-            font-weight: 600;
-        }
-
-        /* ===== DROPDOWN PERFIL ===== */
-        .profile-dropdown { position: relative !important; }
-        .profile-menu-img {
-            width: 44px;
-            height: 44px;
-            border-radius: 50%;
-            border: 2.5px solid var(--gov-gold);
-            object-fit: cover;
-            cursor: pointer;
-            transition: border-color 0.3s, transform 0.2s;
-        }
-        .profile-menu-img:hover {
-            border-color: var(--gov-blue);
-            transform: scale(1.04);
-        }
-        .custom-profile-menu {
-            background: rgba(255, 255, 255, 0.98) !important;
-            backdrop-filter: blur(12px);
-            border: 1px solid rgba(201, 168, 76, 0.25) !important;
-            border-radius: var(--gov-radius) !important;
-            box-shadow: 0 12px 40px rgba(11, 58, 96, 0.12) !important;
-            padding: 8px !important;
-            z-index: 1060 !important;
-            min-width: 240px;
-        }
-        .custom-profile-menu .dropdown-item {
-            border-radius: var(--gov-radius-sm);
-            padding: 0.6rem 1rem;
-            font-weight: 500;
-            color: var(--gov-dark);
-            transition: all 0.15s;
-        }
-        .custom-profile-menu .dropdown-item:hover {
-            background: rgba(11, 58, 96, 0.05);
-            color: var(--gov-blue);
-        }
-        .custom-profile-menu .dropdown-item i { color: var(--gov-gold); }
-        @media (min-width: 992px) {
-            .custom-profile-menu {
-                position: absolute !important;
-                right: 0 !important;
-                left: auto !important;
-                transform: translateY(8px) !important;
-            }
-            .profile-dropdown:hover .custom-profile-menu {
-                display: block !important;
-                opacity: 1 !important;
-                visibility: visible !important;
-            }
-        }
-        @media (max-width: 991.98px) {
-            .custom-profile-menu {
-                position: absolute !important;
-                left: 50% !important;
-                right: auto !important;
-                transform: translate(-50%, 10px) !important;
-                width: 260px !important;
-                max-width: calc(100vw - 30px) !important;
-            }
-            .profile-dropdown:hover .custom-profile-menu {
-                display: block !important;
-                opacity: 1 !important;
-                visibility: visible !important;
-            }
-        }
-
+    body, html {
+        min-height: 100vh;
+        margin: 0;
+        font-family: 'Inter', system-ui, -apple-system, sans-serif;
+        background-color: var(--gov-bg);
+        color: var(--gov-dark);
+        position: relative;
+    }
     #canvas-background {
         position: fixed;
         top: 0;
@@ -242,7 +136,6 @@ include '../componentes/menu_desempleado.php';
         pointer-events: none;
         opacity: 0.3;
     }
-
     .main-wrapper {
         position: relative;
         z-index: 1;
@@ -251,6 +144,99 @@ include '../componentes/menu_desempleado.php';
         min-height: 100vh;
     }
 
+    /* ===== NAVBAR ===== */
+    .navbar-portal {
+        background: rgba(255, 255, 255, 0.96) !important;
+        backdrop-filter: blur(12px);
+        border-bottom: 3px solid var(--gov-blue);
+        box-shadow: 0 4px 20px rgba(11, 58, 96, 0.04);
+        position: relative;
+        z-index: 1050;
+    }
+    .navbar-nav .nav-link {
+        font-weight: 500;
+        color: var(--gov-dark) !important;
+        padding: 0.5rem 1rem;
+        border-radius: var(--gov-radius-sm);
+        transition: all 0.2s;
+    }
+    .navbar-nav .nav-link:hover,
+    .navbar-nav .nav-link.active {
+        background: rgba(11, 58, 96, 0.06);
+        color: var(--gov-blue) !important;
+    }
+    .navbar-nav .nav-link.active {
+        background: rgba(11, 58, 96, 0.10);
+        font-weight: 600;
+    }
+
+    /* ===== DROPDOWN PERFIL ===== */
+    .profile-dropdown { position: relative !important; }
+    .profile-menu-img {
+        width: 44px;
+        height: 44px;
+        border-radius: 50%;
+        border: 2.5px solid var(--gov-green);
+        object-fit: cover;
+        cursor: pointer;
+        transition: border-color 0.3s, transform 0.2s;
+    }
+    .profile-menu-img:hover {
+        border-color: var(--gov-blue);
+        transform: scale(1.04);
+    }
+    .custom-profile-menu {
+        background: rgba(255, 255, 255, 0.98) !important;
+        backdrop-filter: blur(12px);
+        border: 1px solid rgba(11, 58, 96, 0.15) !important;
+        border-radius: var(--gov-radius) !important;
+        box-shadow: 0 12px 40px var(--gov-shadow) !important;
+        padding: 8px !important;
+        z-index: 1060 !important;
+        min-width: 240px;
+    }
+    .custom-profile-menu .dropdown-item {
+        border-radius: var(--gov-radius-sm);
+        padding: 0.6rem 1rem;
+        font-weight: 500;
+        color: var(--gov-dark);
+        transition: all 0.15s;
+    }
+    .custom-profile-menu .dropdown-item:hover {
+        background: rgba(11, 58, 96, 0.05);
+        color: var(--gov-blue);
+    }
+    .custom-profile-menu .dropdown-item i { color: var(--gov-blue); }
+    @media (min-width: 992px) {
+        .custom-profile-menu {
+            position: absolute !important;
+            right: 0 !important;
+            left: auto !important;
+            transform: translateY(8px) !important;
+        }
+        .profile-dropdown:hover .custom-profile-menu {
+            display: block !important;
+            opacity: 1 !important;
+            visibility: visible !important;
+        }
+    }
+    @media (max-width: 991.98px) {
+        .custom-profile-menu {
+            position: absolute !important;
+            left: 50% !important;
+            right: auto !important;
+            transform: translate(-50%, 10px) !important;
+            width: 260px !important;
+            max-width: calc(100vw - 30px) !important;
+        }
+        .profile-dropdown:hover .custom-profile-menu {
+            display: block !important;
+            opacity: 1 !important;
+            visibility: visible !important;
+        }
+    }
+
+    /* ===== TARJETAS ===== */
     .dashboard-card {
         background: #ffffff;
         border: 1px solid var(--gov-border);
@@ -258,13 +244,14 @@ include '../componentes/menu_desempleado.php';
         box-shadow: 0 4px 12px rgba(11, 58, 96, 0.015);
         transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
     }
-
+    /* === HOVER DORADO === */
     .dashboard-card:hover {
         border-color: var(--gov-gold);
-        box-shadow: 0 10px 25px rgba(11, 58, 96, 0.04);
+        box-shadow: 0 10px 25px rgba(201, 168, 76, 0.15);
         transform: translateY(-1px);
     }
 
+    /* ===== ESTADÍSTICAS ===== */
     .stat-card {
         background: #ffffff;
         border: 1px solid var(--gov-border);
@@ -273,27 +260,24 @@ include '../componentes/menu_desempleado.php';
         transition: all 0.3s;
         text-align: center;
     }
-
+    /* === HOVER DORADO === */
     .stat-card:hover {
         border-color: var(--gov-gold);
         transform: translateY(-3px);
-        box-shadow: 0 8px 20px rgba(11, 58, 96, 0.06);
+        box-shadow: 0 8px 20px rgba(201, 168, 76, 0.15);
     }
-
     .stat-card .stat-icon {
         font-size: 2rem;
         color: var(--gov-blue);
         opacity: 0.7;
         margin-bottom: 0.4rem;
     }
-
     .stat-card .stat-number {
         font-size: 1.8rem;
         font-weight: 700;
         color: var(--gov-dark);
         line-height: 1.2;
     }
-
     .stat-card .stat-label {
         font-size: 0.8rem;
         color: #6b7a8a;
@@ -302,6 +286,7 @@ include '../componentes/menu_desempleado.php';
         font-weight: 500;
     }
 
+    /* ===== BOTONES ===== */
     .btn-gov {
         background-color: var(--gov-blue);
         color: #ffffff;
@@ -310,12 +295,13 @@ include '../componentes/menu_desempleado.php';
         padding: 0.6rem 1.2rem;
         font-weight: 500;
         transition: background-color 0.2s ease, transform 0.15s;
+        box-shadow: 0 4px 12px rgba(11, 58, 96, 0.15);
     }
-
     .btn-gov:hover {
         background-color: var(--gov-blue-light);
         color: #ffffff;
-        transform: translateY(-1px);
+        transform: translateY(-2px);
+        box-shadow: 0 8px 20px rgba(11, 58, 96, 0.20);
     }
 
     .btn-gov-outline {
@@ -327,10 +313,26 @@ include '../componentes/menu_desempleado.php';
         font-weight: 500;
         transition: all 0.2s;
     }
-
     .btn-gov-outline:hover {
         background: var(--gov-blue);
         color: white;
+    }
+
+    .btn-green {
+        background-color: var(--gov-green);
+        color: #ffffff;
+        border: none;
+        border-radius: var(--gov-radius-sm);
+        padding: 0.6rem 1.2rem;
+        font-weight: 500;
+        transition: all 0.2s;
+        box-shadow: 0 4px 12px rgba(30, 126, 52, 0.15);
+    }
+    .btn-green:hover {
+        background-color: var(--gov-green-light);
+        color: white;
+        transform: translateY(-2px);
+        box-shadow: 0 8px 20px rgba(30, 126, 52, 0.20);
     }
 
     .btn-pill-custom {
@@ -340,6 +342,7 @@ include '../componentes/menu_desempleado.php';
         font-weight: 500;
     }
 
+    /* ===== PERFIL ===== */
     .profile-detail-item {
         display: flex;
         justify-content: space-between;
@@ -347,32 +350,69 @@ include '../componentes/menu_desempleado.php';
         font-size: 0.9rem;
         border-bottom: 1px dashed #e9edf2;
     }
-
     .profile-detail-item:last-child {
         border-bottom: none;
     }
-
     .profile-detail-item .label {
         color: #6b7a8a;
     }
-
     .profile-detail-item .value {
         font-weight: 500;
         color: var(--gov-dark);
     }
 
+    /* ===== LISTAS ===== */
     .list-item-custom {
         background-color: #F8FAFC;
         border: 1px solid #F1F5F9;
         border-radius: var(--gov-radius);
         transition: all 0.2s ease;
     }
-
+    /* === HOVER DORADO === */
     .list-item-custom:hover {
         background-color: #F1F5F9;
         border-color: var(--gov-gold);
     }
 
+    /* ===== BADGES ===== */
+    .badge-blue {
+        background: var(--gov-blue);
+        color: white;
+        font-weight: 600;
+        padding: 0.25rem 0.9rem;
+        border-radius: 20px;
+        font-size: 0.7rem;
+        text-transform: uppercase;
+        letter-spacing: 0.3px;
+    }
+    .badge-green {
+        background: var(--gov-green);
+        color: white;
+        font-weight: 600;
+        padding: 0.25rem 0.9rem;
+        border-radius: 20px;
+        font-size: 0.7rem;
+        text-transform: uppercase;
+        letter-spacing: 0.3px;
+    }
+    .badge-soft-blue {
+        background: rgba(11, 58, 96, 0.08);
+        color: var(--gov-blue);
+        font-weight: 500;
+        padding: 0.25rem 0.9rem;
+        border-radius: 20px;
+        font-size: 0.7rem;
+    }
+    .badge-soft-green {
+        background: rgba(30, 126, 52, 0.08);
+        color: var(--gov-green);
+        font-weight: 500;
+        padding: 0.25rem 0.9rem;
+        border-radius: 20px;
+        font-size: 0.7rem;
+    }
+
+    /* ===== ALERTAS ===== */
     .alert-profile-incomplete {
         background-color: #FFF5F5;
         border: 1px solid #FEE2E2;
@@ -382,8 +422,8 @@ include '../componentes/menu_desempleado.php';
     }
 
     .registro-pendiente {
-        background: #f0f7ff;
-        border: 1px solid #cfe2ff;
+        background: var(--gov-blue-soft);
+        border: 1px solid rgba(11, 58, 96, 0.15);
         border-radius: var(--gov-radius);
         padding: 1.2rem 1.5rem;
         display: flex;
@@ -392,22 +432,18 @@ include '../componentes/menu_desempleado.php';
         flex-wrap: wrap;
         margin-bottom: 1.5rem;
     }
-
     .registro-pendiente .icono {
         font-size: 2rem;
         color: var(--gov-blue);
     }
-
     .registro-pendiente .texto {
         flex: 1;
         font-size: 0.95rem;
         color: var(--gov-dark);
     }
-
     .registro-pendiente .texto strong {
         color: var(--gov-blue);
     }
-
     .registro-pendiente .btn-link {
         color: var(--gov-blue);
         font-weight: 600;
@@ -415,11 +451,11 @@ include '../componentes/menu_desempleado.php';
         border-bottom: 2px solid transparent;
         transition: all 0.2s;
     }
-
     .registro-pendiente .btn-link:hover {
-        border-bottom-color: var(--gov-blue);
+        border-bottom-color: var(--gov-gold);
     }
 
+    /* ===== NOTICIAS ===== */
     .news-item {
         padding: 0.8rem 0;
         border-bottom: 1px solid var(--gov-border);
@@ -428,28 +464,25 @@ include '../componentes/menu_desempleado.php';
         padding-left: 0.5rem;
         padding-right: 0.5rem;
     }
-
     .news-item:last-child {
         border-bottom: none;
     }
-
+    /* === HOVER DORADO === */
     .news-item:hover {
         background: #f8fafc;
+        border-color: var(--gov-gold);
     }
-
     .news-item .news-title {
         font-weight: 600;
         color: var(--gov-dark);
         font-size: 0.95rem;
     }
-
     .news-item .news-meta {
         font-size: 0.75rem;
         color: #6b7a8a;
     }
-
     .news-item .news-badge {
-        background: var(--gov-gold);
+        background: var(--gov-green);
         color: white;
         padding: 0.1rem 0.6rem;
         border-radius: 30px;
@@ -458,10 +491,205 @@ include '../componentes/menu_desempleado.php';
         font-weight: 600;
     }
 
+    /* ===== CURSOS ===== */
+    .curso-item {
+        padding: 0.8rem 0;
+        border-bottom: 1px solid var(--gov-border);
+        transition: background 0.2s;
+        border-radius: var(--gov-radius-sm);
+        padding-left: 0.5rem;
+        padding-right: 0.5rem;
+    }
+    .curso-item:last-child {
+        border-bottom: none;
+    }
+    /* === HOVER DORADO === */
+    .curso-item:hover {
+        background: #f8fafc;
+        border-color: var(--gov-gold);
+    }
+    .curso-item .curso-titulo {
+        font-weight: 600;
+        color: var(--gov-dark);
+        font-size: 0.95rem;
+    }
+    .curso-item .curso-meta {
+        font-size: 0.75rem;
+        color: #6b7a8a;
+    }
+    .curso-item .curso-badge {
+        background: var(--gov-green);
+        color: white;
+        padding: 0.1rem 0.6rem;
+        border-radius: 30px;
+        font-size: 0.6rem;
+        text-transform: uppercase;
+        font-weight: 600;
+    }
+
+    /* ===== TIMELINE ===== */
+    .timeline-item {
+        position: relative;
+        padding-left: 24px;
+        border-left: 2px solid var(--gov-border);
+    }
+    .timeline-item::before {
+        content: '';
+        position: absolute;
+        left: -6px;
+        top: 6px;
+        width: 10px;
+        height: 10px;
+        border-radius: 50%;
+        background-color: var(--gov-green);
+    }
+
+    /* ===== FILTROS ===== */
+    .form-control-search {
+        border-radius: var(--gov-radius-sm) !important;
+        border: 1.5px solid var(--gov-border);
+        padding: 0.7rem 1.2rem;
+        font-size: 0.95rem;
+        transition: border-color 0.3s, box-shadow 0.3s;
+        width: 100%;
+    }
+    .form-control-search:focus {
+        border-color: var(--gov-blue);
+        box-shadow: 0 0 0 4px rgba(11, 58, 96, 0.12);
+    }
+    .form-select-custom {
+        border-radius: var(--gov-radius-sm);
+        border: 1.5px solid var(--gov-border);
+        padding: 0.7rem 1.2rem;
+        font-size: 0.95rem;
+        transition: border-color 0.3s;
+    }
+    .form-select-custom:focus {
+        border-color: var(--gov-green);
+        box-shadow: 0 0 0 4px rgba(30, 126, 52, 0.12);
+    }
+
+    /* ===== PAGINACIÓN ===== */
+    .pagination-custom .page-link {
+        border-radius: var(--gov-radius-sm) !important;
+        margin: 0 4px;
+        border: 1px solid var(--gov-border);
+        color: var(--gov-blue);
+        transition: all 0.2s;
+    }
+    /* === HOVER DORADO === */
+    .pagination-custom .page-link:hover {
+        background: var(--gov-gold);
+        color: white;
+        border-color: var(--gov-gold);
+    }
+    .pagination-custom .page-item.active .page-link {
+        background: var(--gov-blue);
+        border-color: var(--gov-blue);
+        color: white;
+    }
+
+    /* ===== MODALES ===== */
+    .modal-content {
+        border-radius: var(--gov-radius);
+        border: none;
+        box-shadow: 0 20px 60px rgba(0, 0, 0, 0.15);
+        overflow: hidden;
+    }
+    .modal-header {
+        border-bottom: 2px solid var(--gov-green-light);
+        background: rgba(255, 255, 255, 0.95);
+        padding: 1.5rem 2rem;
+    }
+    .modal-header .modal-title {
+        font-weight: 700;
+        color: var(--gov-blue);
+    }
+    .modal-body {
+        padding: 2rem;
+        background: #FAFBFC;
+    }
+    .modal-footer {
+        border-top: 1px solid rgba(0, 0, 0, 0.05);
+        background: white;
+        padding: 1.2rem 2rem;
+    }
+    .form-control-custom {
+        border-radius: var(--gov-radius-sm);
+        border: 1.5px solid var(--gov-border);
+        padding: 0.6rem 1rem;
+        transition: border-color 0.3s, box-shadow 0.3s;
+    }
+    .form-control-custom:focus {
+        border-color: var(--gov-blue);
+        box-shadow: 0 0 0 4px rgba(11, 58, 96, 0.10);
+    }
+
+    /* ===== BORDER ===== */
+    .border-green {
+        border-color: var(--gov-green) !important;
+    }
+    .border-blue {
+        border-color: var(--gov-blue) !important;
+    }
+
+    /* ===== TEXTOS ===== */
+    .text-green {
+        color: var(--gov-green) !important;
+    }
+    .text-blue {
+        color: var(--gov-blue) !important;
+    }
+    .bg-green-soft {
+        background-color: var(--gov-green-soft) !important;
+    }
+    .bg-blue-soft {
+        background-color: var(--gov-blue-soft) !important;
+    }
+
     .tracking-wider {
         letter-spacing: 0.05em;
     }
 
+    /* ===== NOTIFICACIONES ===== */
+    .notificacion-item {
+        transition: all 0.2s;
+    }
+    /* === HOVER DORADO === */
+    .notificacion-item:hover {
+        background: #f8fafc;
+        border-color: var(--gov-gold);
+        transform: translateX(4px);
+    }
+    .notificacion-item.no-leida {
+        background: var(--gov-blue-soft);
+        border-left-color: var(--gov-blue);
+    }
+    .notificacion-item .noti-icon {
+        color: var(--gov-blue);
+    }
+    .badge-no-leida {
+        background: var(--gov-blue);
+        color: white;
+    }
+    .badge-estado-pendiente {
+        background: #ffc107;
+        color: #212529;
+    }
+    .badge-estado-en_revision {
+        background: #0dcaf0;
+        color: #212529;
+    }
+    .badge-estado-aprobado {
+        background: var(--gov-green);
+        color: white;
+    }
+    .badge-estado-rechazado {
+        background: #dc3545;
+        color: white;
+    }
+
+    /* ===== RESPONSIVE ===== */
     @media (max-width: 768px) {
         .stat-card .stat-number {
             font-size: 1.4rem;
@@ -471,6 +699,12 @@ include '../componentes/menu_desempleado.php';
     @media (max-width: 576px) {
         .dashboard-card {
             padding: 1.5rem !important;
+        }
+        .modal-body {
+            padding: 1.2rem;
+        }
+        .modal-header {
+            padding: 1.2rem;
         }
     }
 </style>
@@ -559,7 +793,7 @@ include '../componentes/menu_desempleado.php';
                                 <div class="profile-detail-item">
                                     <span class="label">Estado Laboral</span>
                                     <span class="value">
-                                        <span class="badge <?php echo ($buscador['estado_laboral'] ?? 'desempleado') == 'desempleado' ? 'bg-warning' : (($buscador['estado_laboral'] ?? '') == 'contratado' ? 'bg-success' : 'bg-danger'); ?>">
+                                        <span class="badge <?php echo ($buscador['estado_laboral'] ?? 'desempleado') == 'desempleado' ? 'bg-success' : (($buscador['estado_laboral'] ?? '') == 'contratado' ? 'bg-success' : 'bg-danger'); ?>">
                                             <?php echo ucfirst($buscador['estado_laboral'] ?? 'desempleado'); ?>
                                         </span>
                                     </span>

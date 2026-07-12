@@ -33,7 +33,153 @@ $id_usuario     = $_SESSION['id_usuario'];
 $nombre_usuario = $_SESSION['nombre_usuario']; 
 
 require_once '../conexion/conexion.php'; 
+
+
+
+
+
+try {
+    // -------------------------------------------------------------------------
+    // 1. TARJETAS DE ESTADÍSTICAS (KPIs)
+    // -------------------------------------------------------------------------
+    // Desempleados Registrados
+    $stmt = $pdo->query("SELECT COUNT(*) FROM buscadores_empleo WHERE estado_laboral = 'desempleado'");
+    $total_desempleados = $stmt->fetchColumn();
+
+    // Empresas Activas
+    $stmt = $pdo->query("SELECT COUNT(*) FROM empleadores");
+    $total_empresas = $stmt->fetchColumn();
+
+    // Intermediaciones Pendientes
+    $stmt = $pdo->query("SELECT COUNT(*) FROM notificaciones_intermediacion WHERE estado_ministerio = 'pendiente'");
+    $intermediaciones_pendientes = $stmt->fetchColumn();
+
+    // Cursos en Oferta
+    $stmt = $pdo->query("SELECT COUNT(*) FROM cursos WHERE estado = 'activo'");
+    $total_cursos_activos = $stmt->fetchColumn();
+
+
+    // -------------------------------------------------------------------------
+    // 2. TABLA: NOTIFICACIONES DE INTERMEDIACIÓN
+    // -------------------------------------------------------------------------
+    $sql_notificaciones = "
+        SELECT 
+            ni.id,
+            ni.codigo_seguimiento,
+            ni.origen,
+            ni.estado_ministerio,
+            ni.fecha_creacion,
+            ni.mensaje_motivo,
+            u_b.nombre AS buscador_nombre,
+            u_b.apellidos AS buscador_apellidos,
+            u_b.numero_expediente AS buscador_expediente,
+            emp.nombre_empresa,
+            emp.rnc_ruc,
+            o.titulo_puesto,
+            o.salario_ofrecido,
+            b.provincia AS buscador_provincia,
+            b.estado_laboral AS buscador_estado
+        FROM notificaciones_intermediacion ni
+        INNER JOIN buscadores_empleo b ON ni.buscador_id = b.id
+        INNER JOIN usuarios u_b ON b.usuario_id = u_b.id
+        INNER JOIN empleadores emp ON ni.empleador_id = emp.id
+        LEFT JOIN ofertas_empleo o ON ni.oferta_id = o.id
+        ORDER BY ni.fecha_creacion DESC
+        LIMIT 10
+    ";
+    $notificaciones = $pdo->query($sql_notificaciones)->fetchAll();
+
+
+    // -------------------------------------------------------------------------
+    // 3. TABLA: EXPEDIENTES DE BUSCADORES DE EMPLEO
+    // -------------------------------------------------------------------------
+    $sql_buscadores = "
+        SELECT 
+            b.id AS buscador_id,
+            u.numero_expediente,
+            u.nombre,
+            u.apellidos,
+            u.documento_identidad,
+            b.provincia,
+            b.ciudad_municipio,
+            b.estado_laboral,
+            d.copia_dip,
+            d.cv
+        FROM buscadores_empleo b
+        INNER JOIN usuarios u ON b.usuario_id = u.id
+        LEFT JOIN documentos d ON d.usuario_id = u.id
+        ORDER BY b.id DESC
+        LIMIT 10
+    ";
+    $buscadores = $pdo->query($sql_buscadores)->fetchAll();
+
+
+    // -------------------------------------------------------------------------
+    // 4. LISTADO DE CURSOS Y ENTIDADES FORMADORAS
+    // -------------------------------------------------------------------------
+    $sql_cursos = "
+        SELECT 
+            c.id,
+            c.titulo_curso,
+            c.duracion_horas,
+            c.estado,
+            ef.nombre_entidad,
+            COALESCE(ef.siglas, ef.nombre_entidad) AS entidad_mostrar
+        FROM cursos c
+        INNER JOIN entidades_formadoras ef ON c.entidad_id = ef.id
+        ORDER BY c.fecha_creacion DESC
+        LIMIT 5
+    ";
+    $cursos = $pdo->query($sql_cursos)->fetchAll();
+
+    // Obtener lista completa de entidades formadoras activas para el select del Modal
+    $stmt_entidades = $pdo->query("SELECT id, nombre_entidad, siglas FROM entidades_formadoras WHERE estado = 'activo'");
+    $entidades = $stmt_entidades->fetchAll();
+
+
+    // -------------------------------------------------------------------------
+    // 5. DATOS PARA REPORTES / GRÁFICOS (Chart.js)
+    // -------------------------------------------------------------------------
+    // Reporte Circular: Buscadores por Estado Laboral
+    $sql_chart_circular = "
+        SELECT estado_laboral, COUNT(*) as cantidad 
+        FROM buscadores_empleo 
+        GROUP BY estado_laboral
+    ";
+    $raw_circular = $pdo->query($sql_chart_circular)->fetchAll();
+    
+    $labels_circular = [];
+    $data_circular = [];
+    foreach ($raw_circular as $row) {
+        $labels_circular[] = ucfirst($row['estado_laboral']);
+        $data_circular[] = (int)$row['cantidad'];
+    }
+
+    // Reporte de Barras: Intermediaciones por Estado del Ministerio
+    $sql_chart_barras = "
+        SELECT estado_ministerio, COUNT(*) as cantidad 
+        FROM notificaciones_intermediacion 
+        GROUP BY estado_ministerio
+    ";
+    $raw_barras = $pdo->query($sql_chart_barras)->fetchAll();
+    
+    $labels_barras = [];
+    $data_barras = [];
+    foreach ($raw_barras as $row) {
+        $labels_barras[] = ucfirst(str_replace('_', ' ', $row['estado_ministerio']));
+        $data_barras[] = (int)$row['cantidad'];
+    }
+
+} catch (PDOException $e) {
+    error_log("Error al cargar datos del Dashboard: " . $e->getMessage());
+    die("Error al cargar la información del sistema.");
+}
 ?>
+
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+
 <!DOCTYPE html>
 <html lang="es">
 <head>

@@ -1,17 +1,8 @@
 <?php
-session_start();
-$titulo = 'Completar Perfil - Portal de Empleo';
-
-// ===== VERIFICAR SESIÓN =====
-if (!isset($_SESSION['usuario_id'])) {
-    header('Location: ../login_desempleados.php');
-    exit();
-}
-
 include '../componentes/header_desempleado.php';
 include '../conexion/conexion.php';
 
-$usuario_id = $_SESSION['usuario_id'];
+$usuario_id = $id_usuario;
 
 try {
     // Obtener datos del usuario
@@ -33,7 +24,7 @@ try {
     if ($buscador) {
         header('Location: index.php');
         exit();
-    }
+    } 
 
 } catch (PDOException $e) {
     error_log("Error al cargar datos del usuario: " . $e->getMessage());

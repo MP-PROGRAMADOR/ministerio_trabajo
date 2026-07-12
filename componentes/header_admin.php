@@ -1,6 +1,5 @@
 <?php
-
-// php/auth.php
+// php/auth.php (o cabecera de la página)
 
 if (session_status() === PHP_SESSION_NONE) {
     session_start();
@@ -8,7 +7,7 @@ if (session_status() === PHP_SESSION_NONE) {
 
 /**
  * Función para proteger páginas que requieren autenticación.
- * * @param array $rolesPermitidos Lista de roles permitidos. Ejemplo: ['administrador']
+ * @param array $rolesPermitidos Lista de roles permitidos.
  */
 function protegerPagina(array $rolesPermitidos = ['administrador']) {
     // 1. Verificar si el usuario ha iniciado sesión
@@ -21,11 +20,17 @@ function protegerPagina(array $rolesPermitidos = ['administrador']) {
     $rolUsuario = $_SESSION['rol'] ?? '';
 
     if (!in_array($rolUsuario, $rolesPermitidos, true)) {
-        // Si el usuario no es 'administrador' (por ejemplo, si es 'buscador' o 'empleador'), se deniega el acceso
         header('Location: ../index.php?error=acceso_denegado');
         exit();
     }
 }
+
+// ⚠️ ¡AQUÍ ESTÁ LA CLAVE! Llama a la función para ejecutar la validación
+protegerPagina(['administrador']);
+
+// Una vez asegurado que la sesión existe, ya puedes asignar las variables de sesión de forma segura:
+$id_usuario     = $_SESSION['id_usuario'];
+$nombre_usuario = $_SESSION['nombre_usuario']; 
 
 require_once '../conexion/conexion.php'; 
 ?>

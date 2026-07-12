@@ -74,7 +74,7 @@
                             <strong>MIN</strong>
                         </div>
                         <div class="d-none d-md-block text-start">
-                            <span class="d-block fw-semibold text-dark fs-7">Agente Inspector</span>
+                            <span class="d-block fw-semibold text-dark fs-7"><?= $nombre_usuario; ?></span>
                             <small class="text-muted fs-8">Ministerio de Trabajo</small>
                         </div>
                     </a>
@@ -82,7 +82,7 @@
                         <li><a class="dropdown-item" href="#"><i class="bi bi-person me-2"></i> Mi Perfil</a></li>
                         <li><a class="dropdown-item" href="#"><i class="bi bi-gear me-2"></i> Ajustes</a></li>
                         <li><hr class="dropdown-divider"></li>
-                        <li><a class="dropdown-item text-danger" href="#"><i class="bi bi-box-arrow-right me-2"></i> Salir</a></li>
+                        <li><a class="dropdown-item text-danger" href="../php/cerrar_sesionA.php"><i class="bi bi-box-arrow-right me-2"></i> Salir</a></li>
                     </ul>
                 </div>
             </div>

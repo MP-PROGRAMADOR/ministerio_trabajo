@@ -11,7 +11,22 @@
 
         <?php
 
+// Asegurar que exista el ID del empleador
+$empleador_id = $_SESSION['empleador_id'] ?? 0;
 
+try {
+    $stmt = $pdo->prepare("
+        SELECT id, titulo_puesto, provincia, salario_ofrecido, estado, descripcion, requisitos, fecha_publicacion 
+        FROM ofertas_empleo 
+        WHERE empleador_id = :empleador_id 
+        ORDER BY fecha_publicacion DESC
+    ");
+    $stmt->execute([':empleador_id' => $empleador_id]);
+    $ofertas = $stmt->fetchAll(PDO::FETCH_ASSOC);
+} catch (PDOException $e) {
+    $ofertas = [];
+    $error_db = "Error al cargar las ofertas: " . $e->getMessage();
+}
 
         ?>
 
@@ -240,7 +255,7 @@
             
             <div class="modal-header bg-light border-0 px-4 pt-4 pb-3">
                 <div class="d-flex align-items-center gap-3">
-                    <div class="bg-warning bg-opacity-10 text-warning p-3 rounded-circle d-flex align-items-center justify-content-center" style="width: 48px; height: 48px;">
+                    <div class="bg-primary bg-opacity-10 text-primary p-3 rounded-circle d-flex align-items-center justify-content-center" style="width: 48px; height: 48px;">
                         <i class="bi bi-pencil-square fs-4"></i>
                     </div>
                     <div>
@@ -251,7 +266,7 @@
                 <button type="button" class="btn-close align-self-start" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
 
-            <form action="actualizar_oferta.php" method="POST">
+            <form action="../php/actualizar_oferta.php" method="POST">
                 <input type="hidden" name="id" id="edit_id">
 
                 <div class="modal-body p-4">
@@ -322,7 +337,7 @@
                     <button type="button" class="btn btn-outline-secondary px-4 rounded-pill" data-bs-dismiss="modal">
                         Cancelar
                     </button>
-                    <button type="submit" class="btn btn-warning px-4 rounded-pill fw-semibold shadow-sm text-dark">
+                    <button type="submit" class="btn btn-primary px-4 rounded-pill fw-semibold shadow-sm text-dark">
                         <i class="bi bi-save me-1"></i> Guardar Cambios
                     </button>
                 </div>
@@ -332,42 +347,43 @@
     </div>
 </div>
 
-    <script>
-        $(document).ready(function() {
-            // Delegación de eventos en la tabla (funciona con DataTables y paginación)
-            $('#tablaOfertas').on('click', '.btn-editar-oferta', function(e) {
-                e.preventDefault();
 
-                const btn = $(this);
+  <script>
 
-                // Extraer los valores desde los data-attributes
-                const id = btn.attr('data-id');
-                const titulo = btn.attr('data-titulo');
-                const provincia = btn.attr('data-provincia');
-                const salario = btn.attr('data-salario');
-                const estado = btn.attr('data-estado');
-                const descripcion = btn.attr('data-descripcion');
-                const requisitos = btn.attr('data-requisitos');
 
-                // Asignar los valores a los campos del modal de edición
-                $('#edit_id').val(id);
-                $('#edit_titulo_puesto').val(titulo);
-                $('#edit_provincia').val(provincia);
-                $('#edit_salario_ofrecido').val(salario ? salario : '');
-                $('#edit_estado').val(estado);
-                $('#edit_descripcion').val(descripcion);
-                $('#edit_requisitos').val(requisitos);
+    // Delegación de eventos para capturar el botón de edición incluso tras cambiar de página en DataTables
+    $('#tablaOfertas').on('click', '.btn-editar-oferta', function(e) {
+        e.preventDefault();
+        
+        // Obtener el botón exacto (incluso si se hace clic en el icono i)
+        const btn = $(e.target).closest('.btn-editar-oferta');
 
-                // Abrir el modal de forma segura con Bootstrap 5
-                const modalElement = document.getElementById('modalEditarOferta');
-                if (modalElement) {
-                    const modalEditar = bootstrap.Modal.getOrCreateInstance(modalElement);
-                    modalEditar.show();
-                } else {
-                    console.error("El elemento #modalEditarOferta no existe en el DOM.");
-                }
-            });
-        });
+        // Extraer atributos
+        const id          = btn.attr('data-id');
+        const titulo      = btn.attr('data-titulo');
+        const provincia   = btn.attr('data-provincia');
+        const salario     = btn.attr('data-salario');
+        const estado      = btn.attr('data-estado');
+        const descripcion = btn.attr('data-descripcion');
+        const requisitos  = btn.attr('data-requisitos');
+
+        // Asignar a los campos del modal
+        $('#edit_id').val(id);
+        $('#edit_titulo_puesto').val(titulo);
+        $('#edit_provincia').val(provincia);
+        $('#edit_salario_ofrecido').val(salario && salario !== 'null' ? salario : '');
+        $('#edit_estado').val(estado);
+        $('#edit_descripcion').val(descripcion);
+        $('#edit_requisitos').val(requisitos);
+
+        // Abrir modal con Bootstrap 5
+        const elModal = document.getElementById('modalEditarOferta');
+        if (elModal) {
+            const modalEditar = bootstrap.Modal.getOrCreateInstance(elModal);
+            modalEditar.show();
+        }
+    });
+
     </script>
 
 

@@ -461,7 +461,7 @@ function handleLogin(e) {
     // Petición asíncrona al Servidor PHP
     fetch('php/procesar_loginD.php', {
         method: 'POST',
-        headers: {
+        headers: { 
             'Content-Type': 'application/json'
         },
         body: JSON.stringify({ correo: email, password: password })

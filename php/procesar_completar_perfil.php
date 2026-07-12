@@ -3,19 +3,19 @@ session_start();
 include '../conexion/conexion.php';
 
 // Verificar que el usuario haya iniciado sesión
-if (!isset($_SESSION['usuario_id'])) {
+if (!isset($_SESSION['id_usuario'])) {    
     header('Location: ../login_desempleados.php');
     exit();
 }
 
-// Verificar que el formulario fue enviado por POST
+// Verificar que el formulario fue enviado por POST 
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     header('Location: ../desempleado/completar_perfil.php');
     exit();
 }
-
+ 
 // Obtener datos del formulario
-$usuario_id = $_POST['usuario_id'] ?? 0;
+$usuario_id = $_SESSION['id_usuario']?? 0;
 $nombre = trim($_POST['nombre'] ?? '');
 $apellidos = trim($_POST['apellidos'] ?? '');
 $documento_identidad = trim($_POST['documento_identidad'] ?? '');
@@ -27,7 +27,7 @@ $ciudad_municipio = trim($_POST['ciudad_municipio'] ?? '');
 $tiene_experiencia = isset($_POST['tiene_experiencia']) ? 1 : 0;
 
 // Validar que el usuario_id coincida con el de la sesión
-if ($usuario_id != $_SESSION['usuario_id']) {
+if ($usuario_id != $_SESSION['id_usuario']) {
     $_SESSION['mensaje_error'] = "Error: ID de usuario no coincide.";
     header('Location: ../desempleado/completar_perfil.php');
     exit();

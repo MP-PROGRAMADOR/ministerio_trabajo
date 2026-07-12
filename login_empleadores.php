@@ -463,7 +463,7 @@ function goToRegister(event) {
 
     if (!toastEl || !title || !message || !icon) {
         console.error("Error: No se encontraron los IDs del Toast en el HTML. Revisa que coincidan.");
-        window.location.href = 'registro_desempleados.php';
+        window.location.href = 'registro_empleadores.php';
         return;
     }
 

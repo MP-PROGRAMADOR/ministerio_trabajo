@@ -46,7 +46,7 @@ try {
 
         // Definir a dónde enviarlo según su rol (buscador, administrador, etc.)
         $redirigir = 'dashboard_buscador.php';
-        if ($usuario['rol'] === 'admin') {
+        if ($usuario['rol'] === 'admin') { 
             $redirigir = '../desempleado/index.php';
         }
 

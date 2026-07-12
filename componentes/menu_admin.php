@@ -35,7 +35,7 @@
                 <small class="text-uppercase text-muted px-3 font-monospace fs-7">Administración</small>
             </li>
             <li class="nav-item">
-                <a class="nav-link" href="#usuarios"><i class="bi bi-person-gear"></i> Control de Usuarios</a>
+                <a class="nav-link" href="usuarios.php"><i class="bi bi-person-gear"></i> Control de Usuarios</a>
             </li>
             <li class="nav-item">
                 <a class="nav-link text-danger" href="#logout"><i class="bi bi-box-arrow-right"></i> Cerrar Sesión</a>

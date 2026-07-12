@@ -68,43 +68,7 @@ function cerrarAlertaManualmente() {
 </script>
 
 
-  <script>
 
-
-    // Delegación de eventos para capturar el botón de edición incluso tras cambiar de página en DataTables
-    $('#tablaOfertas').on('click', '.btn-editar-oferta', function(e) {
-        e.preventDefault();
-        
-        // Obtener el botón exacto (incluso si se hace clic en el icono i)
-        const btn = $(e.target).closest('.btn-editar-oferta');
-
-        // Extraer atributos
-        const id          = btn.attr('data-id');
-        const titulo      = btn.attr('data-titulo');
-        const provincia   = btn.attr('data-provincia');
-        const salario     = btn.attr('data-salario');
-        const estado      = btn.attr('data-estado');
-        const descripcion = btn.attr('data-descripcion');
-        const requisitos  = btn.attr('data-requisitos');
-
-        // Asignar a los campos del modal
-        $('#edit_id').val(id);
-        $('#edit_titulo_puesto').val(titulo);
-        $('#edit_provincia').val(provincia);
-        $('#edit_salario_ofrecido').val(salario && salario !== 'null' ? salario : '');
-        $('#edit_estado').val(estado);
-        $('#edit_descripcion').val(descripcion);
-        $('#edit_requisitos').val(requisitos);
-
-        // Abrir modal con Bootstrap 5
-        const elModal = document.getElementById('modalEditarOferta');
-        if (elModal) {
-            const modalEditar = bootstrap.Modal.getOrCreateInstance(elModal);
-            modalEditar.show();
-        }
-    });
-
-    </script>
 
 
 </body>

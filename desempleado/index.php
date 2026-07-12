@@ -1,6 +1,5 @@
 <?php
 session_start();
-
 // ===== VERIFICAR SESIÓN - Usando la variable que ya existe en tu login =====
 if (!isset($_SESSION['id_usuario'])) {
     header('Location: ../login_desempleados.php');

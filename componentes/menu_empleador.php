@@ -33,7 +33,7 @@
             </a>
         </li>
         <li class="mt-4 border-top border-secondary pt-3">
-            <a href="../logout.php" class="nav-link text-danger">
+            <a href="../php/cerrar_sesionE.php" class="nav-link text-danger">
                 <i class="bi bi-box-arrow-right"></i>
                 <span>Cerrar Sesión</span>
             </a>

@@ -71,7 +71,7 @@
             z-index: 3;
         }
 
-        /* ===== SEPARADOR CON ROMBO (estilo portada) ===== */
+        /* ===== SEPARADOR CON ROMBO ===== */
         .divider-line {
             width: 3px;
             background: linear-gradient(to bottom, rgba(212, 160, 23, 0) 0%, rgba(212, 160, 23, 0.7) 50%, rgba(212, 160, 23, 0) 100%);
@@ -163,11 +163,6 @@
             color: var(--dorado);
         }
 
-        .bg-azul-soft {
-            background-color: rgba(17, 45, 110, 0.9);
-        }
-
-          /* ===== BOTÓN VOLVER ===== */
         .btn-back {
             color: #ffffff;
             text-decoration: none;
@@ -206,7 +201,7 @@
 <body>
 
     <div class="bg-portal">
-         <header class="text-center py-3 bg-dark bg-opacity-25 border-bottom border-secondary">
+        <header class="text-center py-3 bg-dark bg-opacity-25 border-bottom border-secondary">
             <p class="m-0 small text-uppercase tracking-wider">
                 Portal de Empleo - Área de Empresas e Instituciones
             </p>
@@ -270,25 +265,33 @@
                     <h3 class="h4 fw-normal mb-4 text-center text-md-start text-white">Iniciar sesión</h3>
 
                     <form id="loginForm" onsubmit="handleLogin(event)">
+                        <!-- AGREGADO ID: emailInput -->
                         <div class="input-group custom-input-group">
-                            <input type="text" class="form-control" placeholder="Nombre de usuario / ID de Empresa" required>
+                            <input type="text" id="emailInput" class="form-control" placeholder="Nombre de usuario / ID de Empresa" required>
                             <span class="input-group-text"><i class="bi bi-building"></i></span>
                         </div>
+                        
                         <div class="input-group custom-input-group">
                             <input type="password" id="passwordInput" class="form-control" placeholder="Contraseña" required>
                             <span class="input-group-text" style="cursor: pointer;" onclick="togglePassword()">
                                 <i class="bi bi-eye" id="toggleIcon"></i>
                             </span>
                         </div>
-                        <div class="text-center pt-2 mb-4">
-                            <button type="submit" class="btn btn-connect w-100">Connexion / Connect</button>
+
+                        <!-- AGREGADO ID: btnIngresar -->
+                        <div class="text-center pt-2 mb-2">
+                            <button type="submit" id="btnIngresar" class="btn btn-connect w-100">Connexion / Connect</button>
                         </div>
+
+                        <!-- AGREGADO CONTENEDOR DE ESTADO: loginStatus -->
+                        <div id="loginStatus" class="text-center my-3 min-height-25"></div>
+
                         <div class="text-center">
                             <p class="mb-2 text-white-50 small">¿Tu empresa no tiene cuenta?</p>
                             <a href="#" class="btn-register-outline" onclick="goToRegister(event)">Regístrate aquí de forma gratuita</a>
                         </div>
 
-                          <!-- BOTÓN VOLVER -->
+                        <!-- BOTÓN VOLVER -->
                         <div class="d-flex justify-content-center mt-4 mb-3">
                             <a href="#" class="btn-back" onclick="goBack(event)">
                                 <i class="bi bi-arrow-left"></i> Volver al portal
@@ -299,6 +302,7 @@
 
             </div>
         </main>
+
         <footer class="bg-dark bg-opacity-50 text-center py-3 text-white-50 small">
             <div class="container d-flex flex-column flex-sm-row justify-content-between align-items-center gap-2">
                 <div>&copy; 2026 Ministerio de Trabajo y Empleo. Sección Empresas.</div>
@@ -312,7 +316,7 @@
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
-     <script>
+    <script>
         // 1. CONTROL DE VISIBILIDAD DE CONTRASEÑA
         function togglePassword() {
             const pass = document.getElementById('passwordInput');
@@ -328,172 +332,78 @@
             }
         }
 
-        // =======================================================
-// 1. VALIDACIÓN DE CREDENCIALES REAL (AJAX + SPINNER INFERIOR)
-// =======================================================
-function handleLogin(e) {
-    e.preventDefault();
+        // 2. VALIDACIÓN DE CREDENCIALES
+        function handleLogin(e) {
+            e.preventDefault();
 
-    // Capturar los valores ingresados por el usuario
-    const email = document.getElementById('emailInput').value.trim();
-    const password = document.getElementById('passwordInput').value;
-    const statusContainer = document.getElementById('loginStatus');
-    const btnIngresar = document.getElementById('btnIngresar');
+            const email = document.getElementById('emailInput').value.trim();
+            const password = document.getElementById('passwordInput').value;
+            const statusContainer = document.getElementById('loginStatus');
+            const btnIngresar = document.getElementById('btnIngresar');
 
-    // Elementos del Toast institucional en caso de que existan en el DOM
-    const toastEl = document.getElementById('notificationToast');
-    const title = document.getElementById('toastTitle');
-    const message = document.getElementById('toastMessage');
-    const icon = document.getElementById('toastIcon');
+            // Deshabilitar botón y mostrar Spinner en loginStatus
+            if (btnIngresar) btnIngresar.disabled = true;
+            if (statusContainer) {
+                statusContainer.innerHTML = `
+                    <div class="d-flex align-items-center justify-content-center text-white">
+                        <div class="spinner-border spinner-border-sm text-info me-2" role="status"></div>
+                        <span>Verificando credenciales...</span>
+                    </div>
+                `;
+            }
 
-    // Deshabilitar botón y activar Spinner en la parte inferior del login
-    if (btnIngresar) btnIngresar.disabled = true;
-    if (statusContainer) {
-        statusContainer.innerHTML = `
-            <div class="d-flex align-items-center justify-content-center text-white">
-                <div class="spinner-border spinner-border-sm text-info me-2" role="status"></div>
-                <span>Verificando...</span>
-            </div>
-        `;
-    }
-
-    // Opcional: Si el Toast existe, también le damos feedback institucional concurrente
-    if (toastEl && title && message && icon) {
-        const toast = bootstrap.Toast.getOrCreateInstance(toastEl);
-        title.innerText = 'Validación de Acceso';
-        message.innerHTML = `
-            Comprobando las credenciales de <strong>${email}</strong> en el sistema centralizado del Ministerio...
-            <div class="d-flex justify-content-center mt-3">
-                <div class="spinner-border text-primary" role="status">
-                    <span class="visually-hidden">Procesando...</span>
-                </div>
-            </div>
-        `;
-        icon.className = 'bi bi-shield-lock-fill text-primary fs-3 me-2';
-        toast.show();
-    }
-
-    // Petición asíncrona al Servidor PHP
-    fetch('php/procesar_loginD.php', {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({ correo: email, password: password })
-    })
-    .then(response => response.json())
-    .then(data => {
-        // Retraso controlado para que el flujo visual sea apreciable
-        setTimeout(() => {
-            if (data.status === 'success') {
-                if (statusContainer) {
-                    statusContainer.innerHTML = `<span class="text-success fw-bold"><i class="bi bi-check-circle-fill me-1"></i> ${data.message}</span>`;
+            // Petición AJAX al servidor
+            fetch('php/procesar_loginE.php', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ correo: email, password: password })
+            })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Servidor no disponible o ruta incorrecta');
                 }
-                
+                return response.json();
+            })
+            .then(data => {
                 setTimeout(() => {
-                    // Redirección definitiva al panel de desempleados
-                    window.location.href = 'desempleado/index.php';
+                    if (data.status === 'success') {
+                        if (statusContainer) {
+                            statusContainer.innerHTML = `<span class="text-success fw-bold"><i class="bi bi-check-circle-fill me-1"></i> ${data.message}</span>`;
+                        }
+                        setTimeout(() => {
+                            // Redirección corregida al panel de empresas / empleadores
+                            window.location.href = 'empleador/index.php';
+                        }, 800);
+                    } else {
+                        if (btnIngresar) btnIngresar.disabled = false;
+                        if (statusContainer) {
+                            statusContainer.innerHTML = `<span class="text-danger fw-bold"><i class="bi bi-exclamation-triangle-fill me-1"></i> ${data.message}</span>`;
+                        }
+                    }
                 }, 800);
-            } else {
-                // Si hay error en la base de datos o en la clave
+            })
+            .catch(error => {
+                console.error('Error:', error);
                 if (btnIngresar) btnIngresar.disabled = false;
                 if (statusContainer) {
-                    statusContainer.innerHTML = `<span class="text-danger fw-bold"><i class="bi bi-exclamation-triangle-fill me-1"></i> ${data.message}</span>`;
+                    statusContainer.innerHTML = `<span class="text-danger fw-bold"><i class="bi bi-wifi-off me-1"></i> Error de conexión o respuesta del servidor.</span>`;
                 }
-                
-                // Si el toast está activo, actualizamos el error visualmente ahí también
-                if (toastEl && title && message && icon) {
-                    title.innerText = 'Error de Autenticación';
-                    message.innerHTML = `<span class="text-danger">${data.message}</span>`;
-                    icon.className = 'bi bi-exclamation-triangle-fill text-danger fs-3 me-2';
-                }
-            }
-        }, 1000);
-    })
-    .catch(error => {
-        console.error('Error:', error);
-        if (btnIngresar) btnIngresar.disabled = false;
-        if (statusContainer) {
-            statusContainer.innerHTML = `<span class="text-danger fw-bold"><i class="bi bi-wifi-off me-1"></i> Error de conexión con el servidor.</span>`;
+            });
         }
-    });
-}
 
-// =======================================================
-// 2. PASARELA UNICA DEL ESTADO CON SPINNER
-// =======================================================
-function handleGovLogin() {
-    const toastEl = document.getElementById('notificationToast');
-    const title = document.getElementById('toastTitle');
-    const message = document.getElementById('toastMessage');
-    const icon = document.getElementById('toastIcon');
+        // 3. ASISTENTE DE REGISTRO
+        function goToRegister(event) {
+            event.preventDefault();
+            window.location.href = 'registro_empleadores.php';
+        }
 
-    if (toastEl && title && message && icon) {
-        const toast = bootstrap.Toast.getOrCreateInstance(toastEl);
-        title.innerText = 'Autenticación del Estado';
-        message.innerHTML = `
-            Conectando de forma segura con la pasarela única de identidad nacional...
-            <div class="d-flex justify-content-center mt-3">
-                <div class="spinner-border text-warning" role="status">
-                    <span class="visually-hidden">Redirigiendo...</span>
-                </div>
-            </div>
-        `;
-        icon.className = 'bi bi-building-fill text-warning fs-3 me-2';
-        toast.show();
-
-        setTimeout(() => {
-            window.location.href = 'autenticacion_gob.php';
-        }, 2500);
-    } else {
-        alert('Redirigiendo a la pasarela única de autenticación oficial del Estado...');
-    }
-}
-
-// =======================================================
-// 3. ASISTENTE DE REGISTRO
-// =======================================================
-function goToRegister(event) {
-    event.preventDefault();
-
-    const toastEl = document.getElementById('notificationToast');
-    const title = document.getElementById('toastTitle');
-    const message = document.getElementById('toastMessage');
-    const icon = document.getElementById('toastIcon');
-
-    if (!toastEl || !title || !message || !icon) {
-        console.error("Error: No se encontraron los IDs del Toast en el HTML. Revisa que coincidan.");
-        window.location.href = 'registro_empleadores.php';
-        return;
-    }
-
-    const toast = bootstrap.Toast.getOrCreateInstance(toastEl);
-
-    title.innerText = 'Registro Oficial';
-    message.innerHTML = `
-        Abriendo el asistente de alta para demandantes de empleo. Por favor, prepare su DIP y documentación...
-        <div class="d-flex justify-content-center mt-3">
-            <div class="spinner-border text-info" role="status">
-                <span class="visually-hidden">Preparando entorno...</span>
-            </div>
-        </div>
-    `;
-
-    icon.className = 'bi bi-file-earmark-person-fill text-info fs-3 me-2';
-    toast.show();
-
-    setTimeout(() => {
-        window.location.href = 'registro_empleadores.php';
-    }, 2500);
-}
-
-// =======================================================
-// 4. FUNCIÓN VOLVER
-// =======================================================
-function goBack(event) {
-    event.preventDefault();
-    window.location.href = './index.php';
-}
+        // 4. FUNCIÓN VOLVER
+        function goBack(event) {
+            event.preventDefault();
+            window.location.href = './index.php';
+        }
     </script>
 </body>
 

@@ -19,9 +19,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $estado            = $_POST['estado'] ?? 'activo';
     $descripcion_curso = trim($_POST['descripcion_curso']);
 
-    // Procesamiento de Imagen de Portada
-    $imagen_portada = 'img/cursos/default.jpg';
+    // Ruta base por defecto si no suben imagen
+    $imagen_portada = 'uploads/img/cursos/default.jpg';
 
+    // Procesamiento de Imagen de Portada
     if (isset($_FILES['imagen_portada']) && $_FILES['imagen_portada']['error'] === UPLOAD_ERR_OK) {
         $fileTmpPath   = $_FILES['imagen_portada']['tmp_name'];
         $fileName      = $_FILES['imagen_portada']['name'];
@@ -31,8 +32,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
         if (in_array($fileExtension, $allowedExtensions)) {
             $newFileName   = 'curso_' . time() . '_' . uniqid() . '.' . $fileExtension;
-            $uploadFileDir = '../img/cursos/';
+            
+            // Directorio físico donde se guardarán los archivos
+            $uploadFileDir = '../uploads/img/cursos/';
 
+            // Crea las carpetas recursivamente (uploads/img/cursos) si no existen
             if (!is_dir($uploadFileDir)) {
                 mkdir($uploadFileDir, 0755, true);
             }
@@ -40,7 +44,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $dest_path = $uploadFileDir . $newFileName;
 
             if (move_uploaded_file($fileTmpPath, $dest_path)) {
-                $imagen_portada = 'img/cursos/' . $newFileName;
+                // Ruta relativa guardada en la BD
+                $imagen_portada = 'uploads/img/cursos/' . $newFileName;
             }
         }
     }

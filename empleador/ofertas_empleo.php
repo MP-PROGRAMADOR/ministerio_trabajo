@@ -1,5 +1,210 @@
 <?php include_once '../componentes/header_empleador.php'; ?>
 
+<style>
+    /* ===== ESTILOS UNIFORMES CON LAS OTRAS PÁGINAS ===== */
+    :root {
+        --gov-blue: #0B3A60;
+        --gov-blue-light: #1A4F7A;
+        --gov-blue-soft: #E8EEF3;
+        --gov-blue-bg: #F0F5FA;
+        --gov-green: #1E7E34;
+        --gov-green-light: #2E9B4A;
+        --gov-gold: #C9A84C;
+        --gov-gold-light: #E8D5A3;
+        --gov-dark: #0A192F;
+        --gov-bg: #F0F5FA;
+        --gov-border: #D0DDE8;
+        --gov-radius: 12px;
+        --gov-radius-sm: 8px;
+        --gov-shadow: rgba(11, 58, 96, 0.08);
+    }
+
+    body {
+        background: var(--gov-bg);
+        font-family: 'Inter', system-ui, -apple-system, sans-serif;
+    }
+
+    .custom-card {
+        background: #ffffff;
+        border: none;
+        border-radius: var(--gov-radius);
+        padding: 1.5rem;
+        box-shadow: 0 2px 8px var(--gov-shadow);
+        transition: all 0.3s ease;
+        height: 100%;
+    }
+    .custom-card:hover {
+        box-shadow: 0 8px 25px rgba(11, 58, 96, 0.10);
+    }
+
+    .btn-primary {
+        background: var(--gov-blue);
+        border: none;
+        border-radius: var(--gov-radius-sm);
+        padding: 0.5rem 1.2rem;
+        font-weight: 500;
+        transition: all 0.3s;
+    }
+    .btn-primary:hover {
+        background: var(--gov-blue-light);
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(11, 58, 96, 0.2);
+    }
+    .btn-primary.text-dark {
+        color: #fff !important;
+    }
+
+    .btn-outline-secondary {
+        border: 1px solid var(--gov-border);
+        color: var(--gov-dark);
+        background: transparent;
+        border-radius: var(--gov-radius-sm);
+        padding: 0.5rem 1.2rem;
+        font-weight: 500;
+        transition: all 0.2s;
+    }
+    .btn-outline-secondary:hover {
+        background: var(--gov-blue-bg);
+        border-color: var(--gov-blue);
+        color: var(--gov-blue);
+    }
+
+    .btn-light {
+        background: var(--gov-blue-bg);
+        border: 1px solid var(--gov-border);
+        color: var(--gov-blue);
+        border-radius: var(--gov-radius-sm);
+        padding: 0.25rem 0.6rem;
+        transition: all 0.2s;
+    }
+    .btn-light:hover {
+        background: var(--gov-blue);
+        color: white;
+        border-color: var(--gov-blue);
+    }
+    .btn-light.text-danger {
+        color: #dc3545;
+    }
+    .btn-light.text-danger:hover {
+        background: #dc3545;
+        color: white;
+    }
+
+    .badge.bg-success-subtle {
+        background: #d4edda !important;
+        color: #155724 !important;
+    }
+    .badge.bg-secondary-subtle {
+        background: #e2e3e5 !important;
+        color: #383d41 !important;
+    }
+    .badge.bg-light.text-dark.border {
+        background: var(--gov-blue-bg) !important;
+        border-color: var(--gov-border) !important;
+        color: var(--gov-blue) !important;
+    }
+
+    .table th {
+        font-weight: 600;
+        font-size: 0.75rem;
+        text-transform: uppercase;
+        letter-spacing: 0.3px;
+        color: #6b7a8a;
+        border-bottom: 2px solid var(--gov-border);
+        background: var(--gov-blue-soft);
+    }
+    .table td {
+        vertical-align: middle;
+    }
+    .table tbody tr:hover {
+        background: rgba(11, 58, 96, 0.03);
+    }
+
+    .modal-content {
+        border: none;
+        border-radius: var(--gov-radius);
+        box-shadow: 0 20px 60px rgba(0, 0, 0, 0.15);
+    }
+    .modal-header {
+        border-bottom: 2px solid var(--gov-border);
+        background: var(--gov-blue-bg);
+    }
+    .modal-header .modal-title {
+        font-weight: 700;
+        color: var(--gov-blue);
+    }
+    .modal-footer {
+        border-top: 1px solid var(--gov-border);
+        background: var(--gov-blue-bg);
+    }
+    .form-control, .form-select {
+        border-radius: var(--gov-radius-sm);
+        border: 1.5px solid var(--gov-border);
+        padding: 0.6rem 1rem;
+        transition: all 0.3s;
+    }
+    .form-control:focus, .form-select:focus {
+        border-color: var(--gov-blue);
+        box-shadow: 0 0 0 3px rgba(11, 58, 96, 0.10);
+    }
+    .form-label {
+        font-weight: 600;
+        font-size: 0.85rem;
+        color: var(--gov-dark);
+    }
+    .input-group-text {
+        background: var(--gov-blue-bg);
+        border: 1.5px solid var(--gov-border);
+        color: #6b7a8a;
+    }
+
+    .rounded-pill {
+        border-radius: 50px !important;
+    }
+
+    .alert {
+        border-radius: var(--gov-radius);
+        border: none;
+    }
+    .alert-success {
+        background: #d4edda;
+        color: #155724;
+    }
+    .alert-danger {
+        background: #f8d7da;
+        color: #721c24;
+    }
+
+    @media (max-width: 768px) {
+        .custom-card {
+            padding: 1rem;
+        }
+        .table td, .table th {
+            padding: 0.5rem 0.75rem;
+            font-size: 0.85rem;
+        }
+    }
+    @media (max-width: 576px) {
+        .custom-card {
+            padding: 0.8rem;
+        }
+        .table td, .table th {
+            padding: 0.3rem 0.5rem;
+            font-size: 0.75rem;
+        }
+        .btn-sm {
+            padding: 0.15rem 0.4rem;
+            font-size: 0.7rem;
+        }
+        .modal-body {
+            padding: 1rem !important;
+        }
+        .modal-header {
+            padding: 1rem !important;
+        }
+    }
+</style>
+
 <body>
 
     <?php include_once '../componentes/menu_empleador.php'; ?>

@@ -140,7 +140,7 @@
             <div class="text-center mb-5">
                 <div class="mb-3">
                     <div class="logo-escudo">
-                        <img src="./img/logo.png" alt="Escudo del Ministerio">
+                        <img src="src/img/logo_ministerio.png" alt="Escudo del Ministerio">
                     </div>
                 </div>
                 <h1 class="h2 text-uppercase fw-extrabold m-0 tracking-wide text-white">Ministerio de Trabajo</h1>

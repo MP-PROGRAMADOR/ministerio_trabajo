@@ -1,590 +1,847 @@
-<?php include_once '../componentes/header_admin.php'; ?>
-<div class="d-flex" id="wrapper">
+<?php
+session_start();
 
+// ===== VERIFICAR SESIÓN ADMINISTRATIVA =====
+if (!isset($_SESSION['id_usuario']) || !in_array($_SESSION['rol'] ?? '', ['administrador', 'ministerio'])) {
+    header('Location: ../login_admin.php');
+    exit();
+}
 
-    <?php include_once '../componentes/menu_admin.php'; ?>
+$titulo = 'Cursos y Capacitaciones - Panel de Administración';
+include_once '../componentes/header_admin.php';
+include_once '../conexion/conexion.php';
 
-    <div class="container-fluid p-4">
+// ===== INICIALIZAR VARIABLES =====
+$cursos = [];
+$entidades = [];
+$total_cursos = 0;
+$cursos_activos = 0;
+$cursos_proximamente = 0;
+$cursos_finalizados = 0;
 
-        <div class="d-flex justify-content-end mb-3">
-            <button class="btn btn-primary d-flex align-items-center gap-2 shadow-sm" data-bs-toggle="modal"
-                data-bs-target="#modalCrearCurso">
-                <i class="bi bi-plus-lg"></i>
-                <span>Añadir</span>
-            </button>
-        </div>
-
-       
-        <?php
-// Consulta para obtener los cursos relacionando la entidad formadora
 try {
-    $sql_cursos = "SELECT 
-    c.id,
-    c.codigo_curso,
-    c.titulo_curso,
-    c.descripcion_curso,
-    c.duracion_horas,
-    c.modalidad,
-    c.fecha_inicio,
-    c.fecha_fin,
-    c.cupos_maximos,
-    c.estado,
-    e.id AS entidad_id,        -- Asignamos alias claro a la ID de la entidad
-    e.nombre_entidad,
-    e.siglas
-FROM cursos c
-INNER JOIN entidades_formadoras e ON c.entidad_id = e.id
-ORDER BY c.id DESC";
-                   
-    $stmt_cursos = $pdo->query($sql_cursos);
-    $cursos = $stmt_cursos->fetchAll(PDO::FETCH_ASSOC);
+    // ===== CONTAR ESTADÍSTICAS =====
+    $stmt = $pdo->query("SELECT COUNT(*) as total FROM cursos");
+    $total_cursos = $stmt->fetch(PDO::FETCH_ASSOC)['total'] ?? 0;
+
+    $stmt = $pdo->query("SELECT COUNT(*) as total FROM cursos WHERE estado = 'activo'");
+    $cursos_activos = $stmt->fetch(PDO::FETCH_ASSOC)['total'] ?? 0;
+
+    $stmt = $pdo->query("SELECT COUNT(*) as total FROM cursos WHERE estado = 'proximamente'");
+    $cursos_proximamente = $stmt->fetch(PDO::FETCH_ASSOC)['total'] ?? 0;
+
+    $stmt = $pdo->query("SELECT COUNT(*) as total FROM cursos WHERE estado = 'finalizado'");
+    $cursos_finalizados = $stmt->fetch(PDO::FETCH_ASSOC)['total'] ?? 0;
+
+    // ===== OBTENER ENTIDADES PARA EL SELECT =====
+    $stmt = $pdo->query("SELECT id, nombre_entidad, siglas FROM entidades_formadoras WHERE estado = 'activo' ORDER BY nombre_entidad");
+    $entidades = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+    // ===== OBTENER TODOS LOS CURSOS =====
+    $stmt = $pdo->query("
+        SELECT 
+            c.id,
+            c.codigo_curso,
+            c.titulo_curso,
+            c.descripcion_curso,
+            c.duracion_horas,
+            c.modalidad,
+            c.fecha_inicio,
+            c.fecha_fin,
+            c.cupos_maximos,
+            c.estado,
+            c.imagen_portada,
+            e.id AS entidad_id,
+            e.nombre_entidad,
+            e.siglas
+        FROM cursos c
+        INNER JOIN entidades_formadoras e ON c.entidad_id = e.id
+        ORDER BY c.id DESC
+    ");
+    $cursos = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
 } catch (PDOException $e) {
-    error_log("Error al consultar cursos: " . $e->getMessage());
+    error_log("Error en capacitaciones: " . $e->getMessage());
     $cursos = [];
 }
 ?>
 
-<div class="card mb-4 shadow-sm border-0">
-    <div class="card-header bg-white py-3 d-flex align-items-center justify-content-between border-bottom-0">
-        <div>
-            <h6 class="mb-0 fw-bold">Catálogo Oficial de Cursos y Capacitaciones</h6>
-            <small class="text-muted">Oferta formativa estatal para mejorar la empleabilidad nacional</small>
+<style>
+    :root {
+        --gov-blue: #0B3A60;
+        --gov-blue-light: #1A4F7A;
+        --gov-green: #1E7E34;
+        --gov-green-light: #2E9B4A;
+        --gov-gold: #C9A84C;
+        --gov-dark: #0A192F;
+        --gov-bg: #F0F5FA;
+        --gov-border: #D0DDE8;
+        --gov-radius: 12px;
+        --gov-radius-sm: 8px;
+        --gov-shadow: rgba(11, 58, 96, 0.08);
+    }
+
+    body {
+        background: var(--gov-bg);
+        font-family: 'Inter', system-ui, -apple-system, sans-serif;
+    }
+
+    .custom-card {
+        background: #ffffff;
+        border: none;
+        border-radius: var(--gov-radius);
+        padding: 1.5rem;
+        box-shadow: 0 2px 8px var(--gov-shadow);
+        transition: all 0.3s ease;
+        height: 100%;
+    }
+    .custom-card:hover {
+        box-shadow: 0 8px 25px rgba(11, 58, 96, 0.10);
+    }
+
+    .stat-card {
+        background: #ffffff;
+        border: none;
+        border-radius: var(--gov-radius);
+        padding: 1.25rem 1.5rem;
+        box-shadow: 0 2px 8px var(--gov-shadow);
+        transition: all 0.3s ease;
+        height: 100%;
+    }
+    .stat-card:hover {
+        transform: translateY(-4px);
+        box-shadow: 0 8px 25px rgba(11, 58, 96, 0.12);
+    }
+    .stat-card .stat-number {
+        font-size: 1.8rem;
+        font-weight: 700;
+        color: var(--gov-dark);
+        line-height: 1.2;
+    }
+    .stat-card .stat-label {
+        font-size: 0.8rem;
+        color: #6b7a8a;
+        font-weight: 500;
+        text-transform: uppercase;
+        letter-spacing: 0.3px;
+    }
+    .stat-card .stat-icon {
+        width: 48px;
+        height: 48px;
+        border-radius: 8px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.4rem;
+    }
+    .bg-primary-subtle { background: rgba(11, 58, 96, 0.08); }
+    .text-primary { color: var(--gov-blue) !important; }
+    .bg-success-subtle { background: rgba(30, 126, 52, 0.08); }
+    .text-success { color: var(--gov-green) !important; }
+    .bg-warning-subtle { background: rgba(255, 193, 7, 0.12); }
+    .text-warning { color: #ffc107 !important; }
+    .bg-danger-subtle { background: rgba(220, 53, 69, 0.08); }
+    .text-danger { color: #dc3545 !important; }
+    .bg-info-subtle { background: rgba(13, 202, 240, 0.12); }
+    .text-info { color: #0dcaf0 !important; }
+
+    .badge-estado {
+        font-weight: 500;
+        padding: 0.3rem 0.8rem;
+        border-radius: 20px;
+        font-size: 0.7rem;
+        text-transform: uppercase;
+        letter-spacing: 0.3px;
+    }
+    .badge-estado.activo {
+        background: #d4edda;
+        color: #155724;
+    }
+    .badge-estado.proximamente {
+        background: #fff3cd;
+        color: #856404;
+    }
+    .badge-estado.finalizado {
+        background: #e2e3e5;
+        color: #383d41;
+    }
+
+    .badge-modalidad {
+        font-weight: 500;
+        padding: 0.25rem 0.7rem;
+        border-radius: 20px;
+        font-size: 0.65rem;
+        text-transform: uppercase;
+        letter-spacing: 0.3px;
+    }
+    .badge-modalidad.presencial {
+        background: #cce5ff;
+        color: #004085;
+    }
+    .badge-modalidad.online {
+        background: #d1ecf1;
+        color: #0c5460;
+    }
+    .badge-modalidad.hibrido {
+        background: #fff3cd;
+        color: #856404;
+    }
+
+    .table-wrap {
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+        max-height: none;
+        overflow-y: visible;
+    }
+
+    .table {
+        min-width: 100%;
+        margin-bottom: 0;
+    }
+    .table th {
+        font-weight: 600;
+        font-size: 0.75rem;
+        text-transform: uppercase;
+        letter-spacing: 0.3px;
+        color: #6b7a8a;
+        border-bottom: 2px solid var(--gov-border);
+        background: var(--gov-bg);
+        white-space: nowrap;
+        padding: 0.75rem 1rem;
+    }
+    .table td {
+        vertical-align: middle;
+        padding: 0.75rem 1rem;
+        word-wrap: break-word;
+        max-width: 200px;
+    }
+    .table tbody tr:hover {
+        background: rgba(11, 58, 96, 0.02);
+    }
+
+    .btn-outline-secondary {
+        border: 1px solid var(--gov-border);
+        color: var(--gov-dark);
+        border-radius: var(--gov-radius-sm);
+        padding: 0.3rem 0.7rem;
+        font-size: 0.8rem;
+        transition: all 0.2s;
+    }
+    .btn-outline-secondary:hover {
+        background: var(--gov-bg);
+        border-color: var(--gov-blue);
+        color: var(--gov-blue);
+    }
+
+    .btn-primary {
+        background: var(--gov-blue);
+        border: none;
+        border-radius: var(--gov-radius-sm);
+        padding: 0.5rem 1.2rem;
+        font-weight: 500;
+        transition: all 0.3s;
+    }
+    .btn-primary:hover {
+        background: var(--gov-blue-light);
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(11, 58, 96, 0.2);
+    }
+
+    .btn-outline-primary {
+        border: 1px solid var(--gov-blue);
+        color: var(--gov-blue);
+        border-radius: var(--gov-radius-sm);
+        padding: 0.3rem 0.7rem;
+        font-size: 0.8rem;
+        transition: all 0.2s;
+    }
+    .btn-outline-primary:hover {
+        background: var(--gov-blue);
+        color: white;
+    }
+
+    .btn-outline-danger {
+        border: 1px solid #dc3545;
+        color: #dc3545;
+        border-radius: var(--gov-radius-sm);
+        padding: 0.3rem 0.7rem;
+        font-size: 0.8rem;
+        transition: all 0.2s;
+    }
+    .btn-outline-danger:hover {
+        background: #dc3545;
+        color: white;
+    }
+
+    .btn-light {
+        background: var(--gov-bg);
+        border: 1px solid var(--gov-border);
+        color: var(--gov-blue);
+        border-radius: var(--gov-radius-sm);
+        padding: 0.3rem 0.7rem;
+        font-size: 0.8rem;
+        transition: all 0.2s;
+    }
+    .btn-light:hover {
+        background: var(--gov-blue);
+        color: white;
+        border-color: var(--gov-blue);
+    }
+
+    .modal-content {
+        border: none;
+        border-radius: var(--gov-radius);
+        box-shadow: 0 20px 60px rgba(0, 0, 0, 0.15);
+    }
+    .modal-header {
+        border-bottom: 2px solid var(--gov-border);
+        background: var(--gov-bg);
+    }
+    .modal-header .modal-title {
+        font-weight: 700;
+        color: var(--gov-blue);
+    }
+    .modal-footer {
+        border-top: 1px solid var(--gov-border);
+        background: var(--gov-bg);
+    }
+    .form-control, .form-select {
+        border-radius: var(--gov-radius-sm);
+        border: 1.5px solid var(--gov-border);
+        padding: 0.6rem 1rem;
+        transition: all 0.3s;
+    }
+    .form-control:focus, .form-select:focus {
+        border-color: var(--gov-blue);
+        box-shadow: 0 0 0 3px rgba(11, 58, 96, 0.10);
+    }
+    .form-label {
+        font-weight: 600;
+        font-size: 0.85rem;
+        color: var(--gov-dark);
+    }
+
+    .list-group-item {
+        border: none;
+        border-bottom: 1px solid var(--gov-border);
+        padding: 0.75rem 0;
+    }
+    .list-group-item:last-child {
+        border-bottom: none;
+    }
+
+    @media (max-width: 768px) {
+        .stat-card .stat-number {
+            font-size: 1.4rem;
+        }
+        .custom-card {
+            padding: 1rem;
+        }
+        .table td, .table th {
+            padding: 0.5rem 0.75rem;
+            font-size: 0.85rem;
+        }
+        .table td {
+            max-width: 120px;
+        }
+    }
+    @media (max-width: 576px) {
+        .stat-card {
+            padding: 0.8rem;
+        }
+        .stat-card .stat-number {
+            font-size: 1.2rem;
+        }
+        .table td, .table th {
+            padding: 0.3rem 0.5rem;
+            font-size: 0.75rem;
+        }
+        .table td {
+            max-width: 80px;
+        }
+    }
+</style>
+
+<div class="d-flex" id="wrapper">
+    <?php include_once '../componentes/menu_admin.php'; ?>
+
+    <div class="container-fluid p-4">
+
+        <!-- ===== ESTADÍSTICAS ===== -->
+        <div class="row g-3 mb-4">
+            <div class="col-12 col-sm-6 col-xl-3">
+                <div class="stat-card">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <span class="stat-label">Total Cursos</span>
+                            <h3 class="stat-number"><?php echo number_format($total_cursos); ?></h3>
+                            <small class="text-muted">Registrados en el sistema</small>
+                        </div>
+                        <div class="stat-icon bg-primary-subtle text-primary">
+                            <i class="bi bi-journal-bookmark"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-12 col-sm-6 col-xl-3">
+                <div class="stat-card">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <span class="stat-label">Activos</span>
+                            <h3 class="stat-number text-success"><?php echo number_format($cursos_activos); ?></h3>
+                            <small class="text-success">Disponibles para inscripción</small>
+                        </div>
+                        <div class="stat-icon bg-success-subtle text-success">
+                            <i class="bi bi-check-circle"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-12 col-sm-6 col-xl-3">
+                <div class="stat-card">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <span class="stat-label">Próximamente</span>
+                            <h3 class="stat-number text-warning"><?php echo number_format($cursos_proximamente); ?></h3>
+                            <small class="text-warning">Próxima apertura</small>
+                        </div>
+                        <div class="stat-icon bg-warning-subtle text-warning">
+                            <i class="bi bi-clock-history"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-12 col-sm-6 col-xl-3">
+                <div class="stat-card">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <span class="stat-label">Finalizados</span>
+                            <h3 class="stat-number text-danger"><?php echo number_format($cursos_finalizados); ?></h3>
+                            <small class="text-danger">Capacitaciones completadas</small>
+                        </div>
+                        <div class="stat-icon bg-danger-subtle text-danger">
+                            <i class="bi bi-check-all"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
         </div>
-        <button class="btn btn-outline-primary btn-sm rounded-pill">
-            <i class="bi bi-download me-1"></i> Exportar Cursos
-        </button>
-    </div>
 
-    <div class="card-body px-0 pt-0">
-        <div class="table-responsive px-3">
-            <table id="tablaNotificaciones" class="table table-hover align-middle mb-0 w-100">
-                <thead class="table-light">
-                    <tr>
-                        <th>Cód. Curso</th>
-                        <th>Título del Curso</th>
-                        <th>Entidad Formadora</th>
-                        <th>Modalidad / Horas</th>
-                        <th>Período</th>
-                        <th>Estado</th>
-                        <th class="text-end">Acciones</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <?php if (!empty($cursos)): ?>
-                        <?php foreach ($cursos as $curso): ?>
-                            <?php
-                            // Badges para modalidad
-                            $badgeModalidad = match($curso['modalidad']) {
-                                'presencial' => 'bg-primary-subtle text-primary border border-primary-subtle',
-                                'online'     => 'bg-info-subtle text-info border border-info-subtle',
-                                'hibrido'    => 'bg-warning-subtle text-warning border border-warning-subtle',
-                                default      => 'bg-secondary-subtle text-secondary'
-                            };
+        <!-- ===== TABLA DE CURSOS ===== -->
+        <div class="row">
+            <div class="col-12">
+                <div class="custom-card">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <h5 class="fw-bold m-0">
+                            <i class="bi bi-list-ul me-2"></i>
+                            Catálogo de Cursos
+                            <span class="badge bg-light text-dark border ms-2"><?php echo count($cursos); ?> total</span>
+                        </h5>
+                        <button class="btn btn-primary btn-sm" data-bs-toggle="modal" data-bs-target="#modalCrearCurso">
+                            <i class="bi bi-plus-lg me-1"></i> Añadir Curso
+                        </button>
+                    </div>
 
-                            // Badges para estado del curso
-                            $badgeEstado = match($curso['estado']) {
-                                'activo'       => 'bg-success',
-                                'proximamente' => 'bg-warning text-dark',
-                                'finalizado'   => 'bg-secondary',
-                                default        => 'bg-light text-dark border'
-                            };
-                            ?>
-                            <tr>
-                                <td>
-                                    <span class="font-monospace fw-bold text-primary">
-                                        <?= htmlspecialchars($curso['codigo_curso']); ?>
-                                    </span>
-                                </td>
-
-                                <td>
-                                    <div class="fw-semibold"><?= htmlspecialchars($curso['titulo_curso']); ?></div>
-                                    <small class="text-muted">
-                                        <i class="bi bi-people me-1"></i>Cupos: <?= (int)$curso['cupos_maximos']; ?>
-                                    </small>
-                                </td>
-
-                                <td>
-                                    <div><?= htmlspecialchars($curso['nombre_entidad']); ?></div>
-                                    <?php if (!empty($curso['siglas'])): ?>
-                                        <span class="badge bg-light text-dark border">
-                                            <?= htmlspecialchars($curso['siglas']); ?>
-                                        </span>
-                                    <?php endif; ?>
-                                </td>
-
-                                <td>
-                                    <span class="badge <?= $badgeModalidad; ?> text-capitalize mb-1 d-inline-block">
-                                        <?= htmlspecialchars($curso['modalidad']); ?>
-                                    </span>
-                                    <div class="small text-muted">
-                                        <i class="bi bi-clock me-1"></i><?= (int)$curso['duracion_horas']; ?> hrs
-                                    </div>
-                                </td>
-
-                                <td>
-                                    <div class="small fw-semibold">
-                                        <?= $curso['fecha_inicio'] ? date('d/m/Y', strtotime($curso['fecha_inicio'])) : 'Por definir'; ?>
-                                    </div>
-                                    <div class="small text-muted">
-                                        al <?= $curso['fecha_fin'] ? date('d/m/Y', strtotime($curso['fecha_fin'])) : 'Por definir'; ?>
-                                    </div>
-                                </td>
-
-                                <td>
-                                    <span class="badge <?= $badgeEstado; ?> text-capitalize">
-                                        <?= htmlspecialchars($curso['estado']); ?>
-                                    </span>
-                                </td>
-
-                                <td class="text-end">
-                                    <button class="btn btn-sm btn-outline-primary rounded-circle me-1 btn-editar-curso" 
-        title="Editar Curso" 
-        data-bs-toggle="modal" 
-        data-bs-target="#modalEditarCurso"
-        data-id="<?= $curso['id']; ?>"
-        data-codigo="<?= htmlspecialchars($curso['codigo_curso']); ?>"
-        data-titulo="<?= htmlspecialchars($curso['titulo_curso']); ?>"
-        data-entidad="<?= $curso['entidad_id']; ?>"
-        data-modalidad="<?= htmlspecialchars($curso['modalidad']); ?>"
-        data-duracion="<?= $curso['duracion_horas']; ?>"
-        data-cupos="<?= $curso['cupos_maximos']; ?>"
-        data-f-inicio="<?= $curso['fecha_inicio']; ?>"
-        data-f-fin="<?= $curso['fecha_fin']; ?>"
-        data-estado="<?= htmlspecialchars($curso['estado']); ?>"
-        data-descripcion="<?= htmlspecialchars($curso['descripcion_curso']); ?>"
-        data-portada="<?= htmlspecialchars($curso['imagen_portada'] ?? 'img/cursos/default.jpg'); ?>">
-    <i class="bi bi-pencil"></i>
-</button>
-
-                                   <button class="btn btn-sm btn-light rounded-circle me-1 btn-ver-detalle" 
-        title="Ver Detalle / Inscritos" 
-        data-bs-toggle="modal" 
-        data-bs-target="#modalDetalleCurso"
-        data-id="<?= $curso['id']; ?>"
-        data-codigo="<?= htmlspecialchars($curso['codigo_curso']); ?>"
-        data-titulo="<?= htmlspecialchars($curso['titulo_curso']); ?>">
-    <i class="bi bi-eye"></i>
-</button>
-
-                                    <button class="btn btn-sm btn-outline-danger rounded-circle" 
-                                            title="Eliminar / Finalizar" 
-                                            data-bs-toggle="tooltip">
-                                        <i class="bi bi-trash"></i>
-                                    </button>
-                                </td>
-                            </tr>
-                        <?php endforeach; ?>
-                    <?php else: ?>
-                        <tr>
-                            <td colspan="7" class="text-center py-4 text-muted">
-                                <i class="bi bi-journal-x fs-3 d-block mb-2"></i>
-                                No hay cursos o capacitaciones registradas actualmente.
-                            </td>
-                        </tr>
-                    <?php endif; ?>
-                </tbody>
-            </table>
+                    <div class="table-wrap">
+                        <table class="table table-hover align-middle" id="tablaCursos">
+                            <thead>
+                                <tr>
+                                    <th style="min-width: 100px;">Código</th>
+                                    <th style="min-width: 160px;">Título</th>
+                                    <th style="min-width: 150px;">Entidad</th>
+                                    <th style="min-width: 100px;">Modalidad</th>
+                                    <th style="min-width: 80px;">Horas</th>
+                                    <th style="min-width: 100px;">Periodo</th>
+                                    <th style="min-width: 90px;">Estado</th>
+                                    <th style="min-width: 140px;" class="text-end">Acciones</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <?php if (empty($cursos)): ?>
+                                    <tr>
+                                        <td colspan="8" class="text-center text-muted py-4">
+                                            <i class="bi bi-journal-x fs-2 d-block mb-2"></i>
+                                            No hay cursos registrados.
+                                        </td>
+                                    </tr>
+                                <?php else: ?>
+                                    <?php foreach ($cursos as $curso): ?>
+                                        <tr>
+                                            <td>
+                                                <span class="font-monospace fw-bold text-primary">
+                                                    <?php echo htmlspecialchars($curso['codigo_curso']); ?>
+                                                </span>
+                                            </td>
+                                            <td>
+                                                <div class="fw-semibold" style="font-size: 0.9rem;">
+                                                    <?php echo htmlspecialchars($curso['titulo_curso']); ?>
+                                                </div>
+                                                <small class="text-muted" style="font-size: 0.7rem;">
+                                                    <i class="bi bi-people me-1"></i><?php echo (int)$curso['cupos_maximos']; ?> cupos
+                                                </small>
+                                            </td>
+                                            <td>
+                                                <div style="font-size: 0.85rem;">
+                                                    <?php echo htmlspecialchars($curso['nombre_entidad']); ?>
+                                                </div>
+                                                <?php if (!empty($curso['siglas'])): ?>
+                                                    <span class="badge bg-light text-dark border">
+                                                        <?php echo htmlspecialchars($curso['siglas']); ?>
+                                                    </span>
+                                                <?php endif; ?>
+                                            </td>
+                                            <td>
+                                                <span class="badge-modalidad <?php echo $curso['modalidad']; ?>">
+                                                    <?php echo ucfirst($curso['modalidad']); ?>
+                                                </span>
+                                            </td>
+                                            <td style="font-size: 0.85rem;">
+                                                <?php echo (int)$curso['duracion_horas']; ?> hrs
+                                            </td>
+                                            <td style="font-size: 0.8rem;">
+                                                <?php if ($curso['fecha_inicio']): ?>
+                                                    <?php echo date('d/m/Y', strtotime($curso['fecha_inicio'])); ?>
+                                                    <?php if ($curso['fecha_fin']): ?>
+                                                        - <?php echo date('d/m/Y', strtotime($curso['fecha_fin'])); ?>
+                                                    <?php endif; ?>
+                                                <?php else: ?>
+                                                    <span class="text-muted">Por definir</span>
+                                                <?php endif; ?>
+                                            </td>
+                                            <td>
+                                                <span class="badge-estado <?php echo $curso['estado']; ?>">
+                                                    <?php echo ucfirst($curso['estado']); ?>
+                                                </span>
+                                            </td>
+                                            <td class="text-end">
+                                                <div class="d-flex gap-1 justify-content-end">
+                                                    <button class="btn btn-outline-secondary btn-sm btn-editar-curso"
+                                                            data-id="<?php echo $curso['id']; ?>"
+                                                            data-codigo="<?php echo htmlspecialchars($curso['codigo_curso']); ?>"
+                                                            data-titulo="<?php echo htmlspecialchars($curso['titulo_curso']); ?>"
+                                                            data-entidad="<?php echo $curso['entidad_id']; ?>"
+                                                            data-modalidad="<?php echo htmlspecialchars($curso['modalidad']); ?>"
+                                                            data-duracion="<?php echo $curso['duracion_horas']; ?>"
+                                                            data-cupos="<?php echo $curso['cupos_maximos']; ?>"
+                                                            data-f-inicio="<?php echo $curso['fecha_inicio']; ?>"
+                                                            data-f-fin="<?php echo $curso['fecha_fin']; ?>"
+                                                            data-estado="<?php echo htmlspecialchars($curso['estado']); ?>"
+                                                            data-descripcion="<?php echo htmlspecialchars($curso['descripcion_curso']); ?>"
+                                                            data-portada="<?php echo htmlspecialchars($curso['imagen_portada'] ?? 'img/cursos/default.jpg'); ?>"
+                                                            data-bs-toggle="modal"
+                                                            data-bs-target="#modalEditarCurso"
+                                                            title="Editar">
+                                                        <i class="bi bi-pencil"></i>
+                                                    </button>
+                                                    <button class="btn btn-outline-secondary btn-sm btn-ver-detalle"
+                                                            data-id="<?php echo $curso['id']; ?>"
+                                                            data-codigo="<?php echo htmlspecialchars($curso['codigo_curso']); ?>"
+                                                            data-titulo="<?php echo htmlspecialchars($curso['titulo_curso']); ?>"
+                                                            data-bs-toggle="modal"
+                                                            data-bs-target="#modalDetalleCurso"
+                                                            title="Ver detalles">
+                                                        <i class="bi bi-eye"></i>
+                                                    </button>
+                                                    <button class="btn btn-outline-secondary btn-sm text-danger" title="Eliminar">
+                                                        <i class="bi bi-trash"></i>
+                                                    </button>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    <?php endforeach; ?>
+                                <?php endif; ?>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
         </div>
-    </div>
-</div>
-
-
 
     </div>
 </div>
-</div>
 
-
-
-
-<div class="modal fade" id="modalCrearCurso" tabindex="-1" aria-labelledby="modalCrearCursoLabel" aria-hidden="true">
+<!-- ===== MODAL CREAR CURSO ===== -->
+<div class="modal fade" id="modalCrearCurso" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered modal-lg">
-        <div class="modal-content border-0 shadow">
-            
+        <div class="modal-content">
             <div class="modal-header bg-primary text-white">
-                <h5 class="modal-title fw-bold fs-6" id="modalCrearCursoLabel">
+                <h5 class="modal-title fw-bold">
                     <i class="bi bi-journal-plus me-2"></i>Registrar Nuevo Curso
                 </h5>
-                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
             </div>
-
-            <form action="../php/procesar_curso.php" method="POST" enctype="multipart/form-data" id="formCrearCurso">
+            <form action="../php/procesar_curso.php" method="POST" enctype="multipart/form-data">
                 <div class="modal-body p-4">
-                    
-                    <div class="row g-4">
-                        <div class="col-lg-8">
-                            
-                            <div class="mb-3">
-                                <label for="titulo_curso" class="form-label fw-semibold fs-7">Título del Curso <span class="text-danger">*</span></label>
-                                <input type="text" class="form-control" id="titulo_curso" name="titulo_curso" placeholder="Ej: Especialización en Redes Nube" required>
-                            </div>
-
-
-                            <?php
-// Consulta para cargar el desplegable de Entidades Formadoras
-try {
-    $stmt_entidades = $pdo->query("SELECT id, nombre_entidad, siglas FROM entidades_formadoras WHERE estado = 'activo' ORDER BY nombre_entidad ASC");
-    $entidades = $stmt_entidades->fetchAll(PDO::FETCH_ASSOC);
-} catch (PDOException $e) {
-    error_log("Error al consultar entidades formadoras: " . $e->getMessage());
-    $entidades = [];
-}
-?>
-
-
-                            <div class="mb-3">
-                                <label for="entidad_id" class="form-label fw-semibold fs-7">Entidad Impartidora <span class="text-danger">*</span></label>
-                                <select class="form-select" id="entidad_id" name="entidad_id" required>
-                                    <option value="" selected disabled>-- Seleccionar Entidad Formadora --</option>
-                                    <?php if (!empty($entidades)): ?>
-                                        <?php foreach ($entidades as $entidad): ?>
-                                            <option value="<?= $entidad['id']; ?>">
-                                                <?= htmlspecialchars($entidad['nombre_entidad']); ?> <?= !empty($entidad['siglas']) ? '('.htmlspecialchars($entidad['siglas']).')' : ''; ?>
-                                            </option>
-                                        <?php endforeach; ?>
-                                    <?php else: ?>
-                                        <option value="" disabled>No hay entidades registradas</option>
-                                    <?php endif; ?>
-                                </select>
-                            </div>
-
-                            <div class="row g-3 mb-3">
-                                <div class="col-md-4">
-                                    <label for="modalidad" class="form-label fw-semibold fs-7">Modalidad <span class="text-danger">*</span></label>
-                                    <select class="form-select" id="modalidad" name="modalidad" required>
-                                        <option value="presencial" selected>Presencial</option>
-                                        <option value="online">Online</option>
-                                        <option value="hibrido">Híbrido</option>
-                                    </select>
-                                </div>
-                                <div class="col-md-4">
-                                    <label for="duracion_horas" class="form-label fw-semibold fs-7">Duración (Horas) <span class="text-danger">*</span></label>
-                                    <input type="number" class="form-control" id="duracion_horas" name="duracion_horas" min="1" placeholder="40" required>
-                                </div>
-                                <div class="col-md-4">
-                                    <label for="cupos_maximos" class="form-label fw-semibold fs-7">Cupos Máx. <span class="text-danger">*</span></label>
-                                    <input type="number" class="form-control" id="cupos_maximos" name="cupos_maximos" value="30" min="1" required>
-                                </div>
-                            </div>
-
-                            <div class="row g-3 mb-3">
-                                <div class="col-md-4">
-                                    <label for="fecha_inicio" class="form-label fw-semibold fs-7">Fecha Inicio</label>
-                                    <input type="date" class="form-control" id="fecha_inicio" name="fecha_inicio">
-                                </div>
-                                <div class="col-md-4">
-                                    <label for="fecha_fin" class="form-label fw-semibold fs-7">Fecha Fin</label>
-                                    <input type="date" class="form-control" id="fecha_fin" name="fecha_fin">
-                                </div>
-                                <div class="col-md-4">
-                                    <label for="estado" class="form-label fw-semibold fs-7">Estado</label>
-                                    <select class="form-select" id="estado" name="estado">
-                                        <option value="proximamente">Próximamente</option>
-                                        <option value="activo" selected>Activo</option>
-                                        <option value="finalizado">Finalizado</option>
-                                    </select>
-                                </div>
-                            </div>
-
-                            <div class="mb-2">
-                                <label for="descripcion_curso" class="form-label fw-semibold fs-7">Descripción del Curso <span class="text-danger">*</span></label>
-                                <textarea class="form-control" id="descripcion_curso" name="descripcion_curso" rows="3" placeholder="Detalles de los módulos o temarios..." required></textarea>
-                            </div>
-
+                    <div class="row g-3">
+                        <div class="col-12">
+                            <label class="form-label fw-semibold">Título del Curso *</label>
+                            <input type="text" name="titulo_curso" class="form-control" placeholder="Ej: Especialización en Redes" required>
                         </div>
-
-                        <div class="col-lg-4 border-start ps-lg-4 d-flex flex-column justify-content-between">
-                            <div>
-                                <label class="form-label fw-semibold fs-7 mb-2 d-block">Imagen de Portada</label>
-                                
-                                <div class="card border-dashed bg-light text-center p-2 mb-3 position-relative" style="border: 2px dashed #dee2e6; min-height: 200px;">
-                                    <img id="previewPortada" src="img/cursos/default.jpg" alt="Previsualización" class="img-fluid rounded shadow-sm w-100 h-100 object-fit-cover" style="max-height: 210px; display: block;" onerror="this.src='https://placehold.co/600x400?text=Portada+Curso';">
-                                </div>
-
-                                <div class="mb-3">
-                                    <input class="form-control form-control-sm" type="file" id="imagen_portada" name="imagen_portada" accept="image/png, image/jpeg, image/webp">
-                                    <small class="text-muted d-block mt-1">Formatos: JPG, PNG, WEBP (Máx. 2MB)</small>
-                                </div>
-                            </div>
-
-                            <div class="alert alert-info py-2 px-3 small mb-0">
-                                <i class="bi bi-info-circle me-1"></i> El código del curso se autogenerará al guardar.
-                            </div>
+                        <div class="col-12">
+                            <label class="form-label fw-semibold">Entidad Formadora *</label>
+                            <select name="entidad_id" class="form-select" required>
+                                <option value="" disabled selected>-- Seleccionar Entidad --</option>
+                                <?php foreach ($entidades as $entidad): ?>
+                                    <option value="<?php echo $entidad['id']; ?>">
+                                        <?php echo htmlspecialchars($entidad['nombre_entidad']); ?>
+                                        <?php echo !empty($entidad['siglas']) ? '(' . htmlspecialchars($entidad['siglas']) . ')' : ''; ?>
+                                    </option>
+                                <?php endforeach; ?>
+                            </select>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label fw-semibold">Modalidad *</label>
+                            <select name="modalidad" class="form-select" required>
+                                <option value="presencial">Presencial</option>
+                                <option value="online">Online</option>
+                                <option value="hibrido">Híbrido</option>
+                            </select>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label fw-semibold">Duración (Horas) *</label>
+                            <input type="number" name="duracion_horas" class="form-control" placeholder="40" min="1" required>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label fw-semibold">Cupos Máximos *</label>
+                            <input type="number" name="cupos_maximos" class="form-control" value="30" min="1" required>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label fw-semibold">Fecha Inicio</label>
+                            <input type="date" name="fecha_inicio" class="form-control">
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label fw-semibold">Fecha Fin</label>
+                            <input type="date" name="fecha_fin" class="form-control">
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label fw-semibold">Estado</label>
+                            <select name="estado" class="form-select">
+                                <option value="activo">Activo</option>
+                                <option value="proximamente">Próximamente</option>
+                                <option value="finalizado">Finalizado</option>
+                            </select>
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label fw-semibold">Descripción *</label>
+                            <textarea name="descripcion_curso" class="form-control" rows="3" placeholder="Detalles del curso..." required></textarea>
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label fw-semibold">Imagen de Portada</label>
+                            <input type="file" name="imagen_portada" class="form-control" accept="image/*">
+                            <small class="text-muted">Formatos: JPG, PNG, WEBP (Máx. 2MB)</small>
                         </div>
                     </div>
-
                 </div>
-
-                <div class="modal-footer bg-light px-4 py-3">
-                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">
-                        <i class="bi bi-x-lg me-1"></i>Cancelar
-                    </button>
-                    <button type="submit" class="btn btn-primary px-4">
-                        <i class="bi bi-floppy-fill me-1"></i>Guardar Curso
+                <div class="modal-footer d-flex justify-content-end gap-2">
+                    <button type="button" class="btn btn-light" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="bi bi-check2-circle me-1"></i> Guardar Curso
                     </button>
                 </div>
             </form>
-
         </div>
     </div>
 </div>
 
-
-
-
-<div class="modal fade" id="modalEditarCurso" tabindex="-1" aria-labelledby="modalEditarCursoLabel" aria-hidden="true">
+<!-- ===== MODAL EDITAR CURSO ===== -->
+<div class="modal fade" id="modalEditarCurso" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered modal-lg">
-        <div class="modal-content border-0 shadow">
-            
+        <div class="modal-content">
             <div class="modal-header bg-primary text-white">
-                <h5 class="modal-title fw-bold fs-6" id="modalEditarCursoLabel">
+                <h5 class="modal-title fw-bold">
                     <i class="bi bi-pencil-square me-2"></i>Editar Curso
                 </h5>
-                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
             </div>
-
-            <form action="../php/actualizar_curso.php" method="POST" enctype="multipart/form-data" id="formEditarCurso">
+            <form action="../php/actualizar_curso.php" method="POST" enctype="multipart/form-data">
                 <input type="hidden" id="edit_id" name="id">
                 <input type="hidden" id="edit_imagen_actual" name="imagen_actual">
-
                 <div class="modal-body p-4">
-                    <div class="row g-4">
-                        
-                        <div class="col-lg-8">
-                            
-                            <div class="row g-3 mb-3">
-                                <div class="col-md-4">
-                                    <label for="edit_codigo_curso" class="form-label fw-semibold fs-7">Cód. Curso</label>
-                                    <input type="text" class="form-control font-monospace bg-light" id="edit_codigo_curso" readonly>
-                                </div>
-                                <div class="col-md-8">
-                                    <label for="edit_titulo_curso" class="form-label fw-semibold fs-7">Título del Curso <span class="text-danger">*</span></label>
-                                    <input type="text" class="form-control" id="edit_titulo_curso" name="titulo_curso" required>
-                                </div>
-                            </div>
-
-                            <div class="mb-3">
-                                <label for="edit_entidad_id" class="form-label fw-semibold fs-7">Entidad Impartidora <span class="text-danger">*</span></label>
-                                <select class="form-select" id="edit_entidad_id" name="entidad_id" required>
-                                    <option value="" disabled>-- Seleccionar Entidad Formadora --</option>
-                                    <?php foreach ($entidades as $entidad): ?>
-                                        <option value="<?= $entidad['id']; ?>">
-                                            <?= htmlspecialchars($entidad['nombre_entidad']); ?> <?= !empty($entidad['siglas']) ? '('.htmlspecialchars($entidad['siglas']).')' : ''; ?>
-                                        </option>
-                                    <?php endforeach; ?>
-                                </select>
-                            </div>
-
-                            <div class="row g-3 mb-3">
-                                <div class="col-md-4">
-                                    <label for="edit_modalidad" class="form-label fw-semibold fs-7">Modalidad <span class="text-danger">*</span></label>
-                                    <select class="form-select" id="edit_modalidad" name="modalidad" required>
-                                        <option value="presencial">Presencial</option>
-                                        <option value="online">Online</option>
-                                        <option value="hibrido">Híbrido</option>
-                                    </select>
-                                </div>
-                                <div class="col-md-4">
-                                    <label for="edit_duracion_horas" class="form-label fw-semibold fs-7">Duración (Horas) <span class="text-danger">*</span></label>
-                                    <input type="number" class="form-control" id="edit_duracion_horas" name="duracion_horas" min="1" required>
-                                </div>
-                                <div class="col-md-4">
-                                    <label for="edit_cupos_maximos" class="form-label fw-semibold fs-7">Cupos Máx. <span class="text-danger">*</span></label>
-                                    <input type="number" class="form-control" id="edit_cupos_maximos" name="cupos_maximos" min="1" required>
-                                </div>
-                            </div>
-
-                            <div class="row g-3 mb-3">
-                                <div class="col-md-4">
-                                    <label for="edit_fecha_inicio" class="form-label fw-semibold fs-7">Fecha Inicio</label>
-                                    <input type="date" class="form-control" id="edit_fecha_inicio" name="fecha_inicio">
-                                </div>
-                                <div class="col-md-4">
-                                    <label for="edit_fecha_fin" class="form-label fw-semibold fs-7">Fecha Fin</label>
-                                    <input type="date" class="form-control" id="edit_fecha_fin" name="fecha_fin">
-                                </div>
-                                <div class="col-md-4">
-                                    <label for="edit_estado" class="form-label fw-semibold fs-7">Estado</label>
-                                    <select class="form-select" id="edit_estado" name="estado">
-                                        <option value="proximamente">Próximamente</option>
-                                        <option value="activo">Activo</option>
-                                        <option value="finalizado">Finalizado</option>
-                                    </select>
-                                </div>
-                            </div>
-
-                            <div class="mb-2">
-                                <label for="edit_descripcion_curso" class="form-label fw-semibold fs-7">Descripción del Curso <span class="text-danger">*</span></label>
-                                <textarea class="form-control" id="edit_descripcion_curso" name="descripcion_curso" rows="3" required></textarea>
-                            </div>
-
+                    <div class="row g-3">
+                        <div class="col-md-4">
+                            <label class="form-label fw-semibold">Código</label>
+                            <input type="text" id="edit_codigo_curso" class="form-control font-monospace bg-light" readonly>
                         </div>
-
-                        <div class="col-lg-4 border-start ps-lg-4 d-flex flex-column justify-content-between">
-                            <div>
-                                <label class="form-label fw-semibold fs-7 mb-2 d-block">Cambiar Portada</label>
-                                
-                                <div class="card border-dashed bg-light text-center p-2 mb-3 position-relative" style="border: 2px dashed #dee2e6; min-height: 200px;">
-                                    <img id="edit_previewPortada" src="img/cursos/default.jpg" alt="Previsualización" class="img-fluid rounded shadow-sm w-100 h-100 object-fit-cover" style="max-height: 210px; display: block;" onerror="this.src='https://placehold.co/600x400?text=Portada+Curso';">
-                                </div>
-
-                                <div class="mb-3">
-                                    <input class="form-control form-control-sm" type="file" id="edit_imagen_portada" name="imagen_portada" accept="image/png, image/jpeg, image/webp">
-                                    <small class="text-muted d-block mt-1">Deja vacío para mantener la imagen actual.</small>
-                                </div>
-                            </div>
-
-                            <div class="alert alert-warning py-2 px-3 small mb-0">
-                                <i class="bi bi-exclamation-triangle me-1"></i> Si subes una nueva imagen se reemplazará la anterior.
+                        <div class="col-md-8">
+                            <label class="form-label fw-semibold">Título *</label>
+                            <input type="text" id="edit_titulo_curso" name="titulo_curso" class="form-control" required>
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label fw-semibold">Entidad Formadora *</label>
+                            <select id="edit_entidad_id" name="entidad_id" class="form-select" required>
+                                <?php foreach ($entidades as $entidad): ?>
+                                    <option value="<?php echo $entidad['id']; ?>">
+                                        <?php echo htmlspecialchars($entidad['nombre_entidad']); ?>
+                                        <?php echo !empty($entidad['siglas']) ? '(' . htmlspecialchars($entidad['siglas']) . ')' : ''; ?>
+                                    </option>
+                                <?php endforeach; ?>
+                            </select>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label fw-semibold">Modalidad *</label>
+                            <select id="edit_modalidad" name="modalidad" class="form-select" required>
+                                <option value="presencial">Presencial</option>
+                                <option value="online">Online</option>
+                                <option value="hibrido">Híbrido</option>
+                            </select>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label fw-semibold">Duración (Horas) *</label>
+                            <input type="number" id="edit_duracion_horas" name="duracion_horas" class="form-control" min="1" required>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label fw-semibold">Cupos Máximos *</label>
+                            <input type="number" id="edit_cupos_maximos" name="cupos_maximos" class="form-control" min="1" required>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label fw-semibold">Fecha Inicio</label>
+                            <input type="date" id="edit_fecha_inicio" name="fecha_inicio" class="form-control">
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label fw-semibold">Fecha Fin</label>
+                            <input type="date" id="edit_fecha_fin" name="fecha_fin" class="form-control">
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label fw-semibold">Estado</label>
+                            <select id="edit_estado" name="estado" class="form-select">
+                                <option value="activo">Activo</option>
+                                <option value="proximamente">Próximamente</option>
+                                <option value="finalizado">Finalizado</option>
+                            </select>
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label fw-semibold">Descripción *</label>
+                            <textarea id="edit_descripcion_curso" name="descripcion_curso" class="form-control" rows="3" required></textarea>
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label fw-semibold">Cambiar Imagen de Portada</label>
+                            <input type="file" id="edit_imagen_portada" name="imagen_portada" class="form-control" accept="image/*">
+                            <small class="text-muted">Deja vacío para mantener la imagen actual.</small>
+                            <div class="mt-2">
+                                <img id="edit_previewPortada" src="img/cursos/default.jpg" alt="Portada" style="max-height: 100px; border-radius: 8px;">
                             </div>
                         </div>
                     </div>
                 </div>
-
-                <div class="modal-footer bg-light px-4 py-3">
-                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">
-                        <i class="bi bi-x-lg me-1"></i>Cancelar
-                    </button>
-                    <button type="submit" class="btn btn-primary px-4">
-                        <i class="bi bi-floppy-fill me-1"></i>Actualizar Curso
+                <div class="modal-footer d-flex justify-content-end gap-2">
+                    <button type="button" class="btn btn-light" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="bi bi-check2-circle me-1"></i> Actualizar Curso
                     </button>
                 </div>
             </form>
-
         </div>
     </div>
 </div>
 
-
-
-
-
-<div class="modal fade" id="modalDetalleCurso" tabindex="-1" aria-labelledby="modalDetalleCursoLabel" aria-hidden="true">
+<!-- ===== MODAL DETALLE CURSO ===== -->
+<div class="modal fade" id="modalDetalleCurso" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered modal-lg">
-        <div class="modal-content border-0 shadow">
-            
-            <div class="modal-header bg-dark text-white py-3">
-                <h5 class="modal-title fw-bold fs-6" id="modalDetalleCursoLabel">
-                    <i class="bi bi-journal-text me-2 text-primary"></i>Ficha Técnica del Curso
+        <div class="modal-content">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title fw-bold">
+                    <i class="bi bi-journal-text me-2"></i>Detalle del Curso
                 </h5>
-                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
             </div>
-
             <div class="modal-body p-4" id="contenedorDetalleCurso">
+                <div class="text-center py-4">
+                    <div class="spinner-border text-primary" role="status"></div>
+                    <p class="text-muted mt-2 mb-0">Cargando información...</p>
                 </div>
-
-            <div class="modal-footer bg-light py-2">
-                <button type="button" class="btn btn-sm btn-secondary" data-bs-dismiss="modal">
-                    <i class="bi bi-x-lg me-1"></i>Cerrar
-                </button>
             </div>
-
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
+            </div>
         </div>
     </div>
 </div>
 
-
-
-
+<script src="https://cdn.datatables.net/1.13.7/js/jquery.dataTables.min.js"></script>
 <script>
-document.addEventListener("DOMContentLoaded", function () {
-    const inputImagen = document.getElementById('imagen_portada');
-    const imgPreview = document.getElementById('previewPortada');
-
-    if (inputImagen && imgPreview) {
-        inputImagen.addEventListener('change', function (e) {
-            const file = e.target.files[0];
-
-            if (file) {
-                // Validar que el archivo sea una imagen
-                if (!file.type.match('image.*')) {
-                    alert('Por favor selecciona un archivo de imagen válido (PNG, JPG, WEBP).');
-                    inputImagen.value = '';
-                    return;
-                }
-
-                // Cargar imagen con FileReader
-                const reader = new FileReader();
-                reader.onload = function (e) {
-                    imgPreview.src = e.target.result;
-                };
-                reader.readAsDataURL(file);
-            }
-        });
+document.addEventListener('DOMContentLoaded', function() {
+    // ===== INICIALIZAR DATATABLE =====
+    const tabla = document.getElementById('tablaCursos');
+    if (tabla && tabla.querySelector('tbody tr') && tabla.querySelector('tbody tr').cells.length > 1) {
+        if (typeof $.fn.DataTable !== 'undefined') {
+            $(tabla).DataTable({
+                language: {
+                    url: 'https://cdn.datatables.net/plug-ins/1.13.7/i18n/es-ES.json'
+                },
+                pageLength: 10,
+                order: [[0, 'desc']],
+                responsive: true,
+                columnDefs: [
+                    { orderable: false, targets: 7 }
+                ],
+                scrollX: false,
+                autoWidth: true,
+                scrollY: false,
+                scrollCollapse: false
+            });
+        }
     }
-});
-</script>
 
-
-<script>
-   
-document.addEventListener("DOMContentLoaded", function () {
-    const editButtons = document.querySelectorAll('.btn-editar-curso');
-    const inputEditImagen = document.getElementById('edit_imagen_portada');
-    const imgEditPreview = document.getElementById('edit_previewPortada');
-
-    // 1. Cargar datos de la fila al Modal de Edición
-    editButtons.forEach(button => {
-        button.addEventListener('click', function () {
-            document.getElementById('edit_id').value                = this.dataset.id;
-            document.getElementById('edit_codigo_curso').value     = this.dataset.codigo;
-            document.getElementById('edit_titulo_curso').value     = this.dataset.titulo;
-            document.getElementById('edit_entidad_id').value       = this.dataset.entidad;
-            document.getElementById('edit_modalidad').value        = this.dataset.modalidad;
-            document.getElementById('edit_duracion_horas').value   = this.dataset.duracion;
-            document.getElementById('edit_cupos_maximos').value    = this.dataset.cupos;
-            document.getElementById('edit_fecha_inicio').value     = this.dataset.fInicio || '';
-            document.getElementById('edit_fecha_fin').value        = this.dataset.fFin || '';
-            document.getElementById('edit_estado').value           = this.dataset.estado;
-            document.getElementById('edit_descripcion_curso').value= this.dataset.descripcion;
+    // ===== EDITAR CURSO =====
+    document.querySelectorAll('.btn-editar-curso').forEach(button => {
+        button.addEventListener('click', function() {
+            document.getElementById('edit_id').value = this.dataset.id || '';
+            document.getElementById('edit_codigo_curso').value = this.dataset.codigo || '';
+            document.getElementById('edit_titulo_curso').value = this.dataset.titulo || '';
+            document.getElementById('edit_entidad_id').value = this.dataset.entidad || '';
+            document.getElementById('edit_modalidad').value = this.dataset.modalidad || 'presencial';
+            document.getElementById('edit_duracion_horas').value = this.dataset.duracion || '';
+            document.getElementById('edit_cupos_maximos').value = this.dataset.cupos || '';
+            document.getElementById('edit_fecha_inicio').value = this.dataset.fInicio || '';
+            document.getElementById('edit_fecha_fin').value = this.dataset.fFin || '';
+            document.getElementById('edit_estado').value = this.dataset.estado || 'activo';
+            document.getElementById('edit_descripcion_curso').value = this.dataset.descripcion || '';
             
-            // Imagen actual
-            const rutaPortada = this.dataset.portada || 'img/cursos/default.jpg';
-            document.getElementById('edit_imagen_actual').value  = rutaPortada;
-            imgEditPreview.src = rutaPortada;
+            const portada = this.dataset.portada || 'img/cursos/default.jpg';
+            document.getElementById('edit_imagen_actual').value = portada;
+            document.getElementById('edit_previewPortada').src = portada;
         });
     });
 
-    // 2. Previsualización dinámica de la nueva imagen si se selecciona una
-    if (inputEditImagen && imgEditPreview) {
-        inputEditImagen.addEventListener('change', function (e) {
-            const file = e.target.files[0];
-            if (file) {
-                if (!file.type.match('image.*')) {
-                    alert('Por favor selecciona un archivo de imagen válido.');
-                    inputEditImagen.value = '';
-                    return;
-                }
-                const reader = new FileReader();
-                reader.onload = function (e) {
-                    imgEditPreview.src = e.target.result;
-                };
-                reader.readAsDataURL(file);
-            }
-        });
-    }
-});
+    // ===== PREVISUALIZACIÓN DE IMAGEN EN EDICIÓN =====
+    document.getElementById('edit_imagen_portada')?.addEventListener('change', function(e) {
+        const file = e.target.files[0];
+        if (file) {
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                document.getElementById('edit_previewPortada').src = e.target.result;
+            };
+            reader.readAsDataURL(file);
+        }
+    });
 
-</script>
+    // ===== PREVISUALIZACIÓN DE IMAGEN EN CREACIÓN =====
+    document.getElementById('imagen_portada')?.addEventListener('change', function(e) {
+        const file = e.target.files[0];
+        if (file) {
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                document.getElementById('previewPortada')?.setAttribute('src', e.target.result);
+            };
+            reader.readAsDataURL(file);
+        }
+    });
 
-
-<script>
-document.addEventListener("DOMContentLoaded", function () {
-    const btnsDetalle = document.querySelectorAll('.btn-ver-detalle');
-
-    btnsDetalle.forEach(button => {
-        button.addEventListener('click', function () {
+    // ===== VER DETALLE CURSO =====
+    document.querySelectorAll('.btn-ver-detalle').forEach(button => {
+        button.addEventListener('click', function() {
             const cursoId = this.dataset.id;
             const contenedor = document.getElementById('contenedorDetalleCurso');
 
-            // Estado de carga
             contenedor.innerHTML = `
-                <div class="text-center py-5">
+                <div class="text-center py-4">
                     <div class="spinner-border text-primary" role="status"></div>
-                    <p class="text-muted mt-2 mb-0">Cargando información del curso...</p>
+                    <p class="text-muted mt-2 mb-0">Cargando información...</p>
                 </div>`;
 
-            // Consultar datos de la base de datos
             fetch(`../php/obtener_detalle_curso.php?id=${cursoId}`)
                 .then(response => response.json())
                 .then(data => {
@@ -594,14 +851,15 @@ document.addEventListener("DOMContentLoaded", function () {
                     }
 
                     const c = data.curso;
-
-                    // Badges de estado y modalidad
-                    let badgeEstado = c.estado === 'activo' ? 'bg-success' : (c.estado === 'proximamente' ? 'bg-warning text-dark' : 'bg-secondary');
-                    let badgeModalidad = c.modalidad === 'presencial' ? 'bg-primary' : (c.modalidad === 'online' ? 'bg-info text-dark' : 'bg-warning text-dark');
+                    
+                    const badgeEstado = c.estado === 'activo' ? 'bg-success' : 
+                                       (c.estado === 'proximamente' ? 'bg-warning text-dark' : 'bg-secondary');
+                    const badgeModalidad = c.modalidad === 'presencial' ? 'bg-primary' : 
+                                          (c.modalidad === 'online' ? 'bg-info text-dark' : 'bg-warning text-dark');
 
                     contenedor.innerHTML = `
-                        <div class="position-relative mb-4 rounded overflow-hidden shadow-sm" style="max-height: 250px;">
-                            <img src="../${c.imagen_portada}" class="w-100 h-100 object-fit-cover" style="object-position: center;" onerror="this.src='https://placehold.co/800x300?text=Portada+Curso';">
+                        <div class="position-relative mb-4 rounded overflow-hidden shadow-sm" style="max-height: 200px;">
+                            <img src="../${c.imagen_portada || 'img/cursos/default.jpg'}" class="w-100 object-fit-cover" style="max-height: 200px; object-position: center;" onerror="this.src='https://placehold.co/800x300?text=Portada+Curso';">
                             <span class="position-absolute top-0 end-0 m-3 badge ${badgeEstado} fs-7 text-capitalize shadow-sm">
                                 ${c.estado}
                             </span>
@@ -612,7 +870,7 @@ document.addEventListener("DOMContentLoaded", function () {
                                 ${c.codigo_curso}
                             </span>
                             <span class="badge ${badgeModalidad} text-capitalize fs-7">
-                                Modalidad: ${c.modalidad}
+                                ${c.modalidad}
                             </span>
                         </div>
 
@@ -630,51 +888,51 @@ document.addEventListener("DOMContentLoaded", function () {
                                         </div>
                                     </div>
                                 </div>
-
                                 <div class="col-md-6">
                                     <div class="d-flex align-items-center">
                                         <i class="bi bi-geo-alt fs-5 text-primary me-2"></i>
                                         <div>
-                                            <span class="text-muted d-block fs-8">Sede / Provincia</span>
+                                            <span class="text-muted d-block fs-8">Provincia</span>
                                             <strong class="text-dark">${c.provincia || 'Bioko Norte'}</strong>
                                         </div>
                                     </div>
                                 </div>
-
                                 <div class="col-md-4">
                                     <div class="d-flex align-items-center">
                                         <i class="bi bi-clock fs-5 text-primary me-2"></i>
                                         <div>
                                             <span class="text-muted d-block fs-8">Duración</span>
-                                            <strong class="text-dark">${c.duracion_horas} Horas lectivas</strong>
+                                            <strong class="text-dark">${c.duracion_horas} Horas</strong>
                                         </div>
                                     </div>
                                 </div>
-
                                 <div class="col-md-4">
                                     <div class="d-flex align-items-center">
                                         <i class="bi bi-people fs-5 text-primary me-2"></i>
                                         <div>
-                                            <span class="text-muted d-block fs-8">Cupos Máximos</span>
+                                            <span class="text-muted d-block fs-8">Cupos</span>
                                             <strong class="text-dark">${c.cupos_maximos} Alumnos</strong>
                                         </div>
                                     </div>
                                 </div>
-
                                 <div class="col-md-4">
                                     <div class="d-flex align-items-center">
                                         <i class="bi bi-calendar-range fs-5 text-primary me-2"></i>
                                         <div>
-                                            <span class="text-muted d-block fs-8">Período</span>
-                                            <strong class="text-dark">${c.fecha_inicio ? c.fecha_inicio : 'Por definir'} al ${c.fecha_fin ? c.fecha_fin : 'Por definir'}</strong>
+                                            <span class="text-muted d-block fs-8">Periodo</span>
+                                            <strong class="text-dark">${c.fecha_inicio || 'Por definir'} - ${c.fecha_fin || 'Por definir'}</strong>
                                         </div>
                                     </div>
                                 </div>
                             </div>
-                        </div>`;
+                        </div>
+                        <div class="text-muted small">
+                            <i class="bi bi-info-circle me-1"></i> Código: ${c.codigo_curso}
+                        </div>
+                    `;
                 })
                 .catch(error => {
-                    contenedor.innerHTML = `<div class="alert alert-danger mb-0"><i class="bi bi-exclamation-triangle-fill me-2"></i>Error al cargar los datos del curso.</div>`;
+                    contenedor.innerHTML = `<div class="alert alert-danger mb-0">Error al cargar los datos.</div>`;
                 });
         });
     });

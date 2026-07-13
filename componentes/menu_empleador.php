@@ -122,6 +122,7 @@ $expediente = $empresa_data['rnc_ruc'] ?? $empresa_data['numero_expediente'] ?? 
         transition: all 0.3s ease;
         z-index: 1040;
         box-shadow: 2px 0 12px rgba(7, 42, 69, 0.15);
+        border-right: 1px solid rgba(255,255,255,0.05);
     }
     .sidebar::-webkit-scrollbar {
         width: 3px;
@@ -233,15 +234,19 @@ $expediente = $empresa_data['rnc_ruc'] ?? $empresa_data['numero_expediente'] ?? 
         margin: 0;
     }
 
-    /* ===== TOP NAVBAR ===== */
+    /* ===== TOP NAVBAR - CON MÁRGEN Y SEPARACIÓN ===== */
     .top-navbar {
         background: #ffffff;
-        padding: 0.6rem 1.5rem;
+        padding: 0.8rem 2rem;
         border-bottom: 1px solid var(--gov-border);
         flex-shrink: 0;
         box-shadow: 0 1px 4px rgba(11, 58, 96, 0.04);
         width: 100%;
         margin: 0;
+        border-radius: 0;
+        /* Eliminamos cualquier borde izquierdo que pueda juntarse con el aside */
+        margin-left: 0;
+        border-left: none;
     }
     .top-navbar h5 {
         font-size: 1rem;
@@ -258,7 +263,7 @@ $expediente = $empresa_data['rnc_ruc'] ?? $empresa_data['numero_expediente'] ?? 
     /* ===== CONTENIDO DE LA PÁGINA ===== */
     .page-content {
         flex: 1;
-        padding: 1.2rem 1.5rem;
+        padding: 1.5rem 2rem;
         width: 100%;
         max-width: 100%;
         margin: 0;
@@ -269,7 +274,7 @@ $expediente = $empresa_data['rnc_ruc'] ?? $empresa_data['numero_expediente'] ?? 
         width: 38px;
         height: 38px;
         border-radius: 50%;
-        background: var(--gov-green);
+        background: var(--gov-blue);
         color: #ffffff;
         display: flex;
         align-items: center;
@@ -347,10 +352,10 @@ $expediente = $empresa_data['rnc_ruc'] ?? $empresa_data['numero_expediente'] ?? 
             left: 0;
         }
         .top-navbar {
-            padding: 0.5rem 0.8rem;
+            padding: 0.6rem 1rem;
         }
         .page-content {
-            padding: 0.8rem;
+            padding: 1rem;
         }
         .sidebar-overlay {
             display: none;
@@ -380,10 +385,10 @@ $expediente = $empresa_data['rnc_ruc'] ?? $empresa_data['numero_expediente'] ?? 
             font-size: 0.7rem;
         }
         .top-navbar {
-            padding: 0.4rem 0.6rem;
+            padding: 0.5rem 0.8rem;
         }
         .page-content {
-            padding: 0.6rem;
+            padding: 0.8rem;
         }
         .sidebar {
             width: 240px;
@@ -457,7 +462,7 @@ $expediente = $empresa_data['rnc_ruc'] ?? $empresa_data['numero_expediente'] ?? 
     <!-- ===== MAIN CONTENT ===== -->
     <main class="main-content">
 
-        <!-- ===== TOP NAVBAR ===== -->
+        <!-- ===== TOP NAVBAR (CON SEPARACIÓN Y MÁRGEN) ===== -->
         <header class="top-navbar d-flex justify-content-between align-items-center">
             <div class="d-flex align-items-center gap-3">
                 <button class="btn btn-light d-lg-none" id="toggleSidebar">
@@ -504,7 +509,7 @@ $expediente = $empresa_data['rnc_ruc'] ?? $empresa_data['numero_expediente'] ?? 
                         <?php endif; ?>
                         <li><hr class="dropdown-divider"></li>
                         <li>
-                            <a class="dropdown-item text-center small text-muted" href="candidatos.php">
+                            <a class="dropdown-item text-center small text-muted" href="alertas.php">
                                 Ver todas las alertas
                             </a>
                         </li>

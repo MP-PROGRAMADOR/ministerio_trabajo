@@ -265,19 +265,6 @@ include_once '../componentes/menu_empleador.php';
     }
 </style>
 
-<!-- ===== TÍTULO ===== -->
-<div class="row mb-4">
-    <div class="col-12">
-        <div class="d-flex align-items-center gap-3">
-            <i class="bi bi-building fs-1" style="color: var(--gov-blue);"></i>
-            <div>
-                <h1 class="h3 fw-bold m-0" style="color: var(--gov-dark);">Datos de la Empresa</h1>
-                <p class="text-muted m-0">Información corporativa y datos de acceso a tu cuenta</p>
-            </div>
-        </div>
-        <hr class="mb-0 mt-3">
-    </div>
-</div>
 
 <!-- ===== ALERTAS CON AUTO CIERRE ===== -->
 <?php if (isset($_SESSION['mensaje_exito'])): ?>

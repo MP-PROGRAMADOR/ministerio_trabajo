@@ -1,6 +1,6 @@
 <?php
 session_start();
-// ===== VERIFICAR SESIÓN - Usando la variable que ya existe en tu login =====
+// ===== VERIFICAR SESIÓN =====
 if (!isset($_SESSION['id_usuario'])) {
     header('Location: ../login_desempleados.php');
     exit();
@@ -10,7 +10,7 @@ $titulo = 'Dashboard - Portal de Empleo';
 include '../componentes/header_desempleado.php';
 include '../conexion/conexion.php';
 
-$id_usuario = $_SESSION['id_usuario'];  // <--- Esta es la que usa tu login
+$id_usuario = $_SESSION['id_usuario'];
 $nombre_completo = $_SESSION['nombre_completo'] ?? '';
 
 // ===== VERIFICAR PERFIL EN BBDD =====
@@ -27,11 +27,9 @@ try {
     $stmt_doc = $pdo->prepare("SELECT id FROM documentos WHERE usuario_id = ?");
     $stmt_doc->execute([$id_usuario]);
     $documentos = $stmt_doc->fetch();
-    
-    // Perfil completo si tiene ambos
     $perfil_completo = ($buscador && $documentos);
 
-    // ===== ESTADÍSTICAS =====
+    // ===== ESTADÍSTICAS REALES (sin rand) =====
     $postulaciones = 0;
     if ($buscador) {
         $stmt = $pdo->prepare("SELECT COUNT(*) as total FROM favoritos WHERE buscador_id = ?");
@@ -40,11 +38,20 @@ try {
         $postulaciones = $result['total'] ?? 0;
     }
 
-    $ofertas_vistas = rand(5, 50);
-    $cursos_inscritos = rand(0, 8);
-    $notificaciones = rand(0, 10);
+    // === Ofertas Vistas = Total de ofertas activas (no cambia con recarga) ===
+    $stmt = $pdo->prepare("SELECT COUNT(*) as total FROM ofertas_empleo WHERE estado = 'abierta'");
+    $stmt->execute();
+    $ofertas_vistas = $stmt->fetch(PDO::FETCH_ASSOC)['total'] ?? 0;
 
-    // ===== OFERTAS =====
+    // === Cursos Inscritos = Total de cursos activos (no cambia con recarga) ===
+    $stmt = $pdo->prepare("SELECT COUNT(*) as total FROM cursos WHERE estado = 'activo'");
+    $stmt->execute();
+    $cursos_inscritos = $stmt->fetch(PDO::FETCH_ASSOC)['total'] ?? 0;
+
+    // === Notificaciones (simuladas o se pueden obtener de BBDD) ===
+    $notificaciones = rand(0, 10); // Puedes reemplazar con una consulta real si tienes tabla de notificaciones
+
+    // ===== OFERTAS RECOMENDADAS (con estado de postulación) =====
     $stmt = $pdo->prepare("
         SELECT o.*, e.nombre_empresa 
         FROM ofertas_empleo o 
@@ -56,30 +63,43 @@ try {
     $stmt->execute();
     $ofertas = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
+    // Obtener IDs de ofertas a las que ya postuló el usuario
+    $postulados_ids = [];
+    if ($buscador) {
+        $stmt = $pdo->prepare("SELECT oferta_id FROM favoritos WHERE buscador_id = ?");
+        $stmt->execute([$buscador['id']]);
+        $postulados_ids = $stmt->fetchAll(PDO::FETCH_COLUMN);
+    }
+
     // ===== CURSOS =====
     $stmt = $pdo->prepare("
-        SELECT c.*, ef.nombre_entidad, ef.siglas 
-        FROM cursos c 
-        JOIN entidades_formadoras ef ON c.entidad_id = ef.id 
-        WHERE c.estado = 'activo' 
-        ORDER BY c.fecha_creacion DESC 
+        SELECT * 
+        FROM cursos 
+        WHERE estado = 'activo' 
+        ORDER BY fecha_creacion DESC 
         LIMIT 4
     ");
     $stmt->execute();
     $cursos = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
-    // ===== NOTICIAS =====
+    // ===== NOTICIAS (estáticas) =====
     $noticias = [
         ['titulo' => 'Nueva convocatoria de empleo público', 'fecha' => '15/07/2026', 'badge' => 'Nuevo'],
         ['titulo' => 'Curso gratuito de inglés técnico', 'fecha' => '12/07/2026', 'badge' => 'Próximo'],
         ['titulo' => 'Feria de empleo en Malabo', 'fecha' => '20/07/2026', 'badge' => 'Evento']
     ];
 
+    // ===== NOTIFICACIONES DE OFICINA (estáticas) =====
     $notificaciones_lista = [
         ['mensaje' => 'Nueva oferta en tu sector: Técnico de Soporte TI', 'fecha' => 'Hace 2 horas'],
         ['mensaje' => 'Tu postulación a GETESA está en revisión', 'fecha' => 'Hace 1 día'],
         ['mensaje' => 'Nuevo curso disponible: Administración de Redes', 'fecha' => 'Hace 3 días']
     ];
+
+    // Obtener datos del usuario para mostrar en perfil
+    $stmt = $pdo->prepare("SELECT numero_expediente FROM usuarios WHERE id = ?");
+    $stmt->execute([$id_usuario]);
+    $usuario = $stmt->fetch(PDO::FETCH_ASSOC);
 
 } catch (PDOException $e) {
     error_log("Error en dashboard: " . $e->getMessage());
@@ -91,150 +111,15 @@ try {
     $notificaciones = 0;
     $ofertas = [];
     $cursos = [];
+    $postulados_ids = [];
+    $usuario = ['numero_expediente' => 'EG-00000'];
 }
 
 // ===== INCLUIR MENÚ =====
 include '../componentes/menu_desempleado.php';
 ?>
 
-<!-- EL RESTO DEL HTML (igual que antes) -->
 <style>
-    /* ===== PALETA INSTITUCIONAL UNIFICADA ===== */
-    :root {
-        --gov-blue: #0B3A60;
-        --gov-blue-light: #1A4F7A;
-        --gov-blue-dark: #072A45;
-        --gov-blue-soft: #E8EEF3;
-        --gov-green: #1E7E34;
-        --gov-green-light: #2E9B4A;
-        --gov-green-soft: #E6F3E8;
-        --gov-gold: #C9A84C;
-        --gov-gold-light: #E8D5A3;
-        --gov-dark: #0A192F;
-        --gov-bg: #F8FAFC;
-        --gov-border: #E2E8F0;
-        --gov-radius: 8px;
-        --gov-radius-sm: 4px;
-        --gov-shadow: rgba(11, 58, 96, 0.12);
-    }
-
-    body, html {
-        min-height: 100vh;
-        margin: 0;
-        font-family: 'Inter', system-ui, -apple-system, sans-serif;
-        background-color: var(--gov-bg);
-        color: var(--gov-dark);
-        position: relative;
-    }
-    #canvas-background {
-        position: fixed;
-        top: 0;
-        left: 0;
-        width: 100%;
-        height: 100%;
-        z-index: 0;
-        pointer-events: none;
-        opacity: 0.3;
-    }
-    .main-wrapper {
-        position: relative;
-        z-index: 1;
-        display: flex;
-        flex-direction: column;
-        min-height: 100vh;
-    }
-
-    /* ===== NAVBAR ===== */
-    .navbar-portal {
-        background: rgba(255, 255, 255, 0.96) !important;
-        backdrop-filter: blur(12px);
-        border-bottom: 3px solid var(--gov-blue);
-        box-shadow: 0 4px 20px rgba(11, 58, 96, 0.04);
-        position: relative;
-        z-index: 1050;
-    }
-    .navbar-nav .nav-link {
-        font-weight: 500;
-        color: var(--gov-dark) !important;
-        padding: 0.5rem 1rem;
-        border-radius: var(--gov-radius-sm);
-        transition: all 0.2s;
-    }
-    .navbar-nav .nav-link:hover,
-    .navbar-nav .nav-link.active {
-        background: rgba(11, 58, 96, 0.06);
-        color: var(--gov-blue) !important;
-    }
-    .navbar-nav .nav-link.active {
-        background: rgba(11, 58, 96, 0.10);
-        font-weight: 600;
-    }
-
-    /* ===== DROPDOWN PERFIL ===== */
-    .profile-dropdown { position: relative !important; }
-    .profile-menu-img {
-        width: 44px;
-        height: 44px;
-        border-radius: 50%;
-        border: 2.5px solid var(--gov-green);
-        object-fit: cover;
-        cursor: pointer;
-        transition: border-color 0.3s, transform 0.2s;
-    }
-    .profile-menu-img:hover {
-        border-color: var(--gov-blue);
-        transform: scale(1.04);
-    }
-    .custom-profile-menu {
-        background: rgba(255, 255, 255, 0.98) !important;
-        backdrop-filter: blur(12px);
-        border: 1px solid rgba(11, 58, 96, 0.15) !important;
-        border-radius: var(--gov-radius) !important;
-        box-shadow: 0 12px 40px var(--gov-shadow) !important;
-        padding: 8px !important;
-        z-index: 1060 !important;
-        min-width: 240px;
-    }
-    .custom-profile-menu .dropdown-item {
-        border-radius: var(--gov-radius-sm);
-        padding: 0.6rem 1rem;
-        font-weight: 500;
-        color: var(--gov-dark);
-        transition: all 0.15s;
-    }
-    .custom-profile-menu .dropdown-item:hover {
-        background: rgba(11, 58, 96, 0.05);
-        color: var(--gov-blue);
-    }
-    .custom-profile-menu .dropdown-item i { color: var(--gov-blue); }
-    @media (min-width: 992px) {
-        .custom-profile-menu {
-            position: absolute !important;
-            right: 0 !important;
-            left: auto !important;
-            transform: translateY(8px) !important;
-        }
-        .profile-dropdown:hover .custom-profile-menu {
-            display: block !important;
-            opacity: 1 !important;
-            visibility: visible !important;
-        }
-    }
-    @media (max-width: 991.98px) {
-        .custom-profile-menu {
-            position: absolute !important;
-            left: 50% !important;
-            right: auto !important;
-            transform: translate(-50%, 10px) !important;
-            width: 260px !important;
-            max-width: calc(100vw - 30px) !important;
-        }
-        .profile-dropdown:hover .custom-profile-menu {
-            display: block !important;
-            opacity: 1 !important;
-            visibility: visible !important;
-        }
-    }
 
     /* ===== TARJETAS ===== */
     .dashboard-card {
@@ -336,7 +221,7 @@ include '../componentes/menu_desempleado.php';
     }
 
     .btn-pill-custom {
-        border-radius: 20px;
+        border-radius: 5px;
         padding: 0.4rem 1.2rem;
         font-size: 0.85rem;
         font-weight: 500;
@@ -714,6 +599,7 @@ include '../componentes/menu_desempleado.php';
     <div class="main-wrapper">
         <main class="container py-5 flex-grow-1">
             <?php if (!$perfil_completo): ?>
+                <!-- Alerta de perfil incompleto (igual) -->
                 <div id="incompleteProfileBanner" class="alert alert-profile-incomplete p-4 mb-4">
                     <div class="d-flex flex-column flex-md-row align-items-md-center justify-content-between gap-3">
                         <div class="d-flex align-items-start gap-3">
@@ -771,6 +657,7 @@ include '../componentes/menu_desempleado.php';
 
                 <div class="row g-4">
                     <div class="col-xl-4 col-lg-5">
+                        <!-- Perfil (igual) -->
                         <div class="card dashboard-card p-4 text-center mb-4">
                             <?php 
                                 $foto = $buscador['foto_carnet'] ?? '';
@@ -814,10 +701,14 @@ include '../componentes/menu_desempleado.php';
 
                             <div class="d-grid gap-2">
                                 <button class="btn btn-gov btn-sm fw-semibold"><i class="bi bi-qr-code me-2"></i> Descargar Tarjeta Demandante</button>
-                                <button class="btn btn-gov-outline btn-sm fw-semibold"><i class="bi bi-pencil-square me-2"></i> Editar Perfil</button>
+                                <div>
+                                <a href="./perfil.php" class="btn btn-gov-outline btn-sm fw-semibold"><i class="bi bi-pencil-square me-2"></i> Editar Perfil</a>
+
+                                </div>
                             </div>
                         </div>
 
+                        <!-- Notificaciones de Oficina (igual) -->
                         <div class="card dashboard-card p-4 mb-4">
                             <h5 class="fw-bold mb-3 h6 text-uppercase tracking-wider text-muted"><i class="bi bi-chat-left-text text-primary me-2" style="color: var(--gov-blue) !important;"></i>Notificaciones de Oficina</h5>
                             <div class="d-flex flex-column gap-2">
@@ -830,6 +721,7 @@ include '../componentes/menu_desempleado.php';
                             </div>
                         </div>
 
+                        <!-- Noticias (igual) -->
                         <div class="card dashboard-card p-4">
                             <h5 class="fw-bold mb-3 h6 text-uppercase tracking-wider text-muted"><i class="bi bi-newspaper me-2" style="color: var(--gov-gold);"></i>Noticias y Eventos</h5>
                             <?php foreach ($noticias as $noticia): ?>
@@ -865,7 +757,15 @@ include '../componentes/menu_desempleado.php';
                                                         <?php endif; ?>
                                                     </p>
                                                 </div>
-                                                <button class="btn btn-sm btn-gov btn-pill-custom">Postularme</button>
+                                                <div>
+                                                    <?php if (in_array($oferta['id'], $postulados_ids)): ?>
+                                                        <span class="badge bg-success" style="padding: 0.5rem 1rem;">
+                                                            <i class="bi bi-check-circle me-1"></i> Ya postulado
+                                                        </span>
+                                                    <?php else: ?>
+                                                        <button class="btn btn-sm btn-gov btn-pill-custom">Postularme</button>
+                                                    <?php endif; ?>
+                                                </div>
                                             </div>
                                         <?php endforeach; ?>
                                     <?php endif; ?>
@@ -873,6 +773,7 @@ include '../componentes/menu_desempleado.php';
                             </div>
                         </div>
 
+                        <!-- Cursos -->
                         <div class="card dashboard-card p-4 mb-4">
                             <h5 class="fw-bold mb-3 h6 text-uppercase tracking-wider text-muted"><i class="bi bi-journal-bookmark me-2" style="color: var(--gov-green);"></i>Planes Estatales de Capacitación</h5>
                             <?php if (empty($cursos)): ?>
@@ -881,20 +782,21 @@ include '../componentes/menu_desempleado.php';
                                 <?php foreach ($cursos as $curso): ?>
                                     <div class="p-3 rounded list-item-custom d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3 mb-3">
                                         <div>
-                                            <span class="badge bg-green" style="background: var(--gov-green); color: white;"><?php echo htmlspecialchars($curso['siglas'] ?? $curso['nombre_entidad']); ?></span>
+                                            <span class="badge bg-green" style="background: var(--gov-green); color: white;"><?php echo htmlspecialchars($curso['estado'] ?? 'Activo'); ?></span>
                                             <h6 class="fw-bold m-0 text-dark mt-1"><?php echo htmlspecialchars($curso['titulo_curso']); ?></h6>
                                             <p class="m-0 small text-muted">
                                                 <i class="bi bi-clock me-1"></i><?php echo $curso['duracion_horas']; ?> horas · 
-                                                <i class="bi bi-people me-1"></i><?php echo ucfirst($curso['modalidad']); ?> · 
+                                                <i class="bi bi-people me-1"></i><?php echo ucfirst($curso['modalidad'] ?? 'Presencial'); ?> · 
                                                 <i class="bi bi-calendar me-1"></i><?php echo $curso['fecha_inicio'] ? date('d/m/Y', strtotime($curso['fecha_inicio'])) : 'Por definir'; ?>
                                             </p>
                                         </div>
-                                        <a href="#" class="btn btn-sm btn-green btn-pill-custom text-nowrap">Solicitar Plaza</a>
+                                        <a href="" class="btn btn-sm btn-green btn-pill-custom text-nowrap">Solicitar Plaza</a>
                                     </div>
                                 <?php endforeach; ?>
                             <?php endif; ?>
                         </div>
 
+                        <!-- Estado de candidaturas -->
                         <div class="card dashboard-card p-4 mb-4">
                             <h5 class="fw-bold mb-3 h6 text-uppercase tracking-wider text-muted">Estado de mis Candidaturas</h5>
                             <div class="d-flex flex-column gap-3 mt-2">

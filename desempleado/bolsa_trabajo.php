@@ -1,7 +1,6 @@
 <?php
 session_start();
 
-// ===== VERIFICAR SESIÓN =====
 if (!isset($_SESSION['id_usuario'])) {
     header('Location: ../login_desempleados.php');
     exit();
@@ -14,46 +13,75 @@ include '../conexion/conexion.php';
 $id_usuario = $_SESSION['id_usuario'];
 $nombre_completo = $_SESSION['nombre_completo'] ?? '';
 
-// ===== VERIFICAR PERFIL EN BBDD =====
 try {
     $perfil_completo = false;
     $buscador = null;
 
-    // Verificar buscadores_empleo
     $stmt = $pdo->prepare("SELECT * FROM buscadores_empleo WHERE usuario_id = ?");
     $stmt->execute([$id_usuario]);
     $buscador = $stmt->fetch(PDO::FETCH_ASSOC);
 
-    // Verificar documentos
     $stmt_doc = $pdo->prepare("SELECT id FROM documentos WHERE usuario_id = ?");
     $stmt_doc->execute([$id_usuario]);
     $documentos = $stmt_doc->fetch();
-    
     $perfil_completo = ($buscador && $documentos);
 
-    // ===== OBTENER OFERTAS DE EMPLEO DESDE BBDD =====
-    $stmt = $pdo->prepare("
-        SELECT 
-            o.*, 
-            e.nombre_empresa,
-            e.sector_industrial,
-            u.nombre,
-            u.apellidos
-        FROM ofertas_empleo o
-        JOIN empleadores e ON o.empleador_id = e.id
-        JOIN usuarios u ON e.usuario_id = u.id
-        WHERE o.estado = 'abierta'
-        ORDER BY o.fecha_publicacion DESC
-    ");
-    $stmt->execute();
+    // Obtener IDs de ofertas a las que ya postuló este usuario
+    $postulados_ids = [];
+    if ($buscador) {
+        $stmt = $pdo->prepare("SELECT oferta_id FROM favoritos WHERE buscador_id = ?");
+        $stmt->execute([$buscador['id']]);
+        $postulados = $stmt->fetchAll(PDO::FETCH_COLUMN);
+        $postulados_ids = array_map('intval', $postulados);
+    }
+
+    // Obtener ofertas activas EXCLUYENDO aquellas en las que ya postuló
+    if (!empty($postulados_ids)) {
+        $placeholders = implode(',', array_fill(0, count($postulados_ids), '?'));
+        $sql = "
+            SELECT o.*, e.nombre_empresa, e.sector_industrial
+            FROM ofertas_empleo o
+            JOIN empleadores e ON o.empleador_id = e.id
+            WHERE o.estado = 'abierta'
+            AND o.id NOT IN ($placeholders)
+            ORDER BY o.fecha_publicacion DESC
+        ";
+        $stmt = $pdo->prepare($sql);
+        $stmt->execute($postulados_ids);
+    } else {
+        $stmt = $pdo->prepare("
+            SELECT o.*, e.nombre_empresa, e.sector_industrial
+            FROM ofertas_empleo o
+            JOIN empleadores e ON o.empleador_id = e.id
+            WHERE o.estado = 'abierta'
+            ORDER BY o.fecha_publicacion DESC
+        ");
+        $stmt->execute();
+    }
     $ofertas_bd = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
-    // ===== OBTENER SECTORES ÚNICOS PARA FILTROS =====
+    // === OBTENER ÚLTIMAS POSTULACIONES ===
+    $ultimas_postulaciones = [];
+    if ($buscador) {
+        $stmt = $pdo->prepare("
+            SELECT f.fecha_guardado, o.titulo_puesto, e.nombre_empresa, f.oferta_id
+            FROM favoritos f
+            JOIN ofertas_empleo o ON f.oferta_id = o.id
+            JOIN empleadores e ON o.empleador_id = e.id
+            WHERE f.buscador_id = ?
+            ORDER BY f.fecha_guardado DESC
+            LIMIT 5
+        ");
+        $stmt->execute([$buscador['id']]);
+        $ultimas_postulaciones = $stmt->fetchAll(PDO::FETCH_ASSOC);
+    }
+
+    // Sectores para filtros
     $stmt = $pdo->prepare("SELECT DISTINCT sector_industrial FROM empleadores ORDER BY sector_industrial");
     $stmt->execute();
     $sectores = $stmt->fetchAll(PDO::FETCH_COLUMN);
 
-    // ===== OBTENER CIUDADES ÚNICAS PARA FILTROS =====
+    // Ciudades para filtros
     $stmt = $pdo->prepare("SELECT DISTINCT ciudad_municipio FROM buscadores_empleo ORDER BY ciudad_municipio");
     $stmt->execute();
     $ciudades = $stmt->fetchAll(PDO::FETCH_COLUMN);
@@ -61,18 +89,18 @@ try {
 } catch (PDOException $e) {
     error_log("Error en bolsa de trabajo: " . $e->getMessage());
     $perfil_completo = false;
-    $buscador = null;
     $ofertas_bd = [];
     $sectores = [];
     $ciudades = [];
+    $postulados_ids = [];
+    $ultimas_postulaciones = [];
 }
 
-// ===== INCLUIR MENÚ =====
 include '../componentes/menu_desempleado.php';
 ?>
 
 <style>
-    /* ===== PALETA INSTITUCIONAL UNIFICADA ===== */
+    /* ===== PALETA INSTITUCIONAL ===== */
     :root {
         --gov-blue: #0B3A60;
         --gov-blue-light: #165285;
@@ -145,7 +173,6 @@ include '../componentes/menu_desempleado.php';
         width: 44px;
         height: 44px;
         border-radius: 50%;
-        border: 2.5px solid var(--gov-gold);
         object-fit: cover;
         cursor: pointer;
         transition: border-color 0.3s, transform 0.2s;
@@ -218,6 +245,9 @@ include '../componentes/menu_desempleado.php';
         box-shadow: 0 10px 25px rgba(11, 58, 96, 0.04);
         transform: translateY(-1px);
     }
+    .dashboard-card-compact {
+        padding: 0.8rem 1rem !important;
+    }
 
     /* ===== TARJETAS DE OFERTA ===== */
     .job-card {
@@ -245,7 +275,6 @@ include '../componentes/menu_desempleado.php';
     .job-card .card-accent.blue { background: var(--gov-blue); }
     .job-card .card-accent.gold { background: var(--gov-gold); }
     .job-card .card-accent.green { background: var(--gov-green); }
-
     .job-card .job-title {
         font-size: 1.1rem;
         font-weight: 700;
@@ -314,6 +343,53 @@ include '../componentes/menu_desempleado.php';
         font-size: 0.75rem;
     }
 
+    /* ===== BADGES DE ESTADO (SOFT) ===== */
+    .badge-soft-warning {
+        background-color: #fff3cd;
+        color: #856404;
+        border: 1px solid #ffc107;
+        font-weight: 500;
+        padding: 0.3rem 0.8rem;
+        border-radius: 30px;
+        font-size: 0.75rem;
+    }
+    .badge-soft-success {
+        background-color: #d4edda;
+        color: #155724;
+        border: 1px solid #28a745;
+        font-weight: 500;
+        padding: 0.3rem 0.8rem;
+        border-radius: 30px;
+        font-size: 0.75rem;
+    }
+    .badge-soft-info {
+        background-color: #cce5ff;
+        color: #004085;
+        border: 1px solid #0dcaf0;
+        font-weight: 500;
+        padding: 0.3rem 0.8rem;
+        border-radius: 30px;
+        font-size: 0.75rem;
+    }
+    .badge-soft-danger {
+        background-color: #f8d7da;
+        color: #721c24;
+        border: 1px solid #dc3545;
+        font-weight: 500;
+        padding: 0.3rem 0.8rem;
+        border-radius: 30px;
+        font-size: 0.75rem;
+    }
+    .badge-soft-secondary {
+        background-color: #e2e3e5;
+        color: #383d41;
+        border: 1px solid #6c757d;
+        font-weight: 500;
+        padding: 0.3rem 0.8rem;
+        border-radius: 30px;
+        font-size: 0.75rem;
+    }
+
     /* ===== BOTONES ===== */
     .btn-blue {
         background: var(--gov-blue);
@@ -331,37 +407,19 @@ include '../componentes/menu_desempleado.php';
         box-shadow: 0 8px 20px rgba(11, 58, 96, 0.20);
         color: white;
     }
-    .btn-gold {
+    .btn-gold-outline {
+        border: 2px solid var(--gov-gold);
+        color: var(--gov-gold);
+        background: transparent;
+        border-radius: var(--gov-radius-sm);
+        font-weight: 600;
+        transition: all 0.25s;
+    }
+    .btn-gold-outline:hover {
         background: var(--gov-gold);
-        border: none;
         color: white;
-        border-radius: var(--gov-radius-sm);
-        padding: 0.6rem 1.8rem;
-        font-weight: 600;
-        transition: all 0.25s;
-        box-shadow: 0 4px 12px rgba(201, 168, 76, 0.15);
-    }
-    .btn-gold:hover {
-        background: #B8953A;
         transform: translateY(-2px);
-        box-shadow: 0 8px 20px rgba(201, 168, 76, 0.20);
-        color: white;
-    }
-    .btn-green {
-        background: var(--gov-green);
-        border: none;
-        color: white;
-        border-radius: var(--gov-radius-sm);
-        padding: 0.6rem 1.8rem;
-        font-weight: 600;
-        transition: all 0.25s;
-        box-shadow: 0 4px 12px rgba(30, 126, 52, 0.15);
-    }
-    .btn-green:hover {
-        background: var(--gov-green-light);
-        transform: translateY(-2px);
-        box-shadow: 0 8px 20px rgba(30, 126, 52, 0.20);
-        color: white;
+        box-shadow: 0 6px 16px rgba(201, 168, 76, 0.30);
     }
     .btn-outline-secondary {
         border: 2px solid var(--gov-border);
@@ -421,43 +479,7 @@ include '../componentes/menu_desempleado.php';
         color: white;
     }
 
-    /* ===== MODALES ===== */
-    .modal-content {
-        border-radius: var(--gov-radius);
-        border: none;
-        box-shadow: 0 20px 60px rgba(0, 0, 0, 0.15);
-        overflow: hidden;
-    }
-    .modal-header {
-        border-bottom: 2px solid var(--gov-gold-light);
-        background: rgba(255, 255, 255, 0.95);
-        padding: 1.5rem 2rem;
-    }
-    .modal-header .modal-title {
-        font-weight: 700;
-        color: var(--gov-blue);
-    }
-    .modal-body {
-        padding: 2rem;
-        background: #FAFBFC;
-    }
-    .modal-footer {
-        border-top: 1px solid rgba(0, 0, 0, 0.05);
-        background: white;
-        padding: 1.2rem 2rem;
-    }
-    .form-control-custom {
-        border-radius: var(--gov-radius-sm);
-        border: 1.5px solid var(--gov-border);
-        padding: 0.6rem 1rem;
-        transition: border-color 0.3s, box-shadow 0.3s;
-    }
-    .form-control-custom:focus {
-        border-color: var(--gov-blue);
-        box-shadow: 0 0 0 4px rgba(11, 58, 96, 0.10);
-    }
-
-    /* ALERTA */
+    /* ===== ALERTAS ===== */
     .alert-profile-incomplete {
         background-color: #FFF5F5;
         border: 1px solid #FEE2E2;
@@ -505,11 +527,39 @@ include '../componentes/menu_desempleado.php';
         border-top: 1px solid rgba(201, 168, 76, 0.15);
     }
 
+    /* ===== TABLA MEJORADA ===== */
+    .table-custom {
+        border-collapse: separate;
+        border-spacing: 0;
+        border-radius: var(--gov-radius);
+        overflow: hidden;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.02);
+    }
+    .table-custom thead th {
+        border-bottom: 2px solid var(--gov-border);
+        font-weight: 600;
+        color: var(--gov-dark);
+        padding: 0.6rem 0.8rem;
+        font-size: 0.8rem;
+        text-transform: uppercase;
+        letter-spacing: 0.3px;
+        background-color: var(--gov-bg);
+    }
+    .table-custom tbody td {
+        padding: 0.6rem 0.8rem;
+        vertical-align: middle;
+        font-size: 0.9rem;
+    }
+    .table-custom tbody tr {
+        transition: background 0.15s;
+    }
+    .table-custom tbody tr:hover {
+        background-color: rgba(11, 58, 96, 0.03);
+    }
+
     @media (max-width: 576px) {
         .dashboard-card { padding: 1.5rem !important; }
         .job-card { padding: 1rem !important; }
-        .modal-body { padding: 1.2rem; }
-        .modal-header { padding: 1.2rem; }
     }
 </style>
 
@@ -519,7 +569,17 @@ include '../componentes/menu_desempleado.php';
 
         <main class="container py-5 flex-grow-1">
 
-            <!-- ALERTA EXPEDIENTE INCOMPLETO -->
+            <!-- ===== MENSAJES FLASH ===== -->
+            <?php if (isset($_SESSION['mensaje'])): ?>
+                <div id="flashMessage" class="alert alert-<?php echo $_SESSION['mensaje_tipo']; ?> alert-dismissible fade show" role="alert">
+                    <i class="bi bi-<?php echo $_SESSION['mensaje_tipo'] == 'success' ? 'check-circle-fill' : ($_SESSION['mensaje_tipo'] == 'danger' ? 'x-circle-fill' : 'info-circle-fill'); ?> me-2"></i>
+                    <?php echo htmlspecialchars($_SESSION['mensaje']); ?>
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                </div>
+                <?php unset($_SESSION['mensaje']); unset($_SESSION['mensaje_tipo']); ?>
+            <?php endif; ?>
+
+            <!-- ===== ALERTA PERFIL INCOMPLETO ===== -->
             <?php if (!$perfil_completo): ?>
                 <div id="incompleteProfileBanner" class="alert alert-profile-incomplete p-4 mb-4">
                     <div class="d-flex flex-column flex-md-row align-items-md-center justify-content-between gap-3">
@@ -535,27 +595,27 @@ include '../componentes/menu_desempleado.php';
                         </a>
                     </div>
                 </div>
-
                 <div class="registro-pendiente mb-4">
                     <div class="icono"><i class="bi bi-info-circle-fill"></i></div>
                     <div class="texto">
-                        <strong>¡Atención!</strong> Para acceder a todas las funcionalidades del portal (postulaciones, ofertas personalizadas, cursos, etc.) debe completar su registro en el <a href="completar_perfil.php" class="btn-link">Sistema Nacional de Empleo</a>.
+                        <strong>¡Atención!</strong> Para acceder a todas las funcionalidades del portal debe completar su registro en el <a href="completar_perfil.php" class="btn-link">Sistema Nacional de Empleo</a>.
                     </div>
                     <a href="completar_perfil.php" class="btn btn-gov btn-sm rounded-pill px-4">Completar registro</a>
                 </div>
             <?php endif; ?>
 
-            <!-- ===== CONTENIDO PRINCIPAL ===== -->
+            <!-- ===== CONTENIDO PRINCIPAL (solo si perfil completo) ===== -->
             <?php if ($perfil_completo): ?>
                 <div class="row g-4">
-                    <!-- FILTROS DE BÚSQUEDA -->
+
+                    <!-- FILTROS -->
                     <div class="col-12">
                         <div class="card dashboard-card p-4">
                             <h5 class="fw-bold mb-3 h6 text-uppercase tracking-wider text-muted"><i class="bi bi-funnel me-2"></i>Filtros de Búsqueda</h5>
                             <form id="filterForm">
                                 <div class="row g-3">
                                     <div class="col-md-4">
-                                        <input type="text" id="searchInput" class="form-control form-control-search" placeholder="Buscar por título o empresa..." value="">
+                                        <input type="text" id="searchInput" class="form-control form-control-search" placeholder="Buscar por título o empresa...">
                                     </div>
                                     <div class="col-md-3">
                                         <select id="sectorSelect" class="form-select form-select-custom">
@@ -583,103 +643,99 @@ include '../componentes/menu_desempleado.php';
                         </div>
                     </div>
 
-                    <!-- SECCIÓN DE OFERTAS DE EMPLEO -->
+                    <!-- OFERTAS (compacto) -->
                     <div class="col-12">
-                        <div class="card dashboard-card p-4">
-                            <div class="d-flex justify-content-between align-items-center mb-3">
-                                <h5 class="fw-bold m-0 h6 text-uppercase tracking-wider text-muted"><i class="bi bi-briefcase me-2"></i>Ofertas de Empleo (<span id="jobCount"><?php echo count($ofertas_bd); ?></span>)</h5>
-                                <span class="badge-soft-blue">Últimos 30 días</span>
+                        <div class="card dashboard-card dashboard-card-compact">
+                            <div class="d-flex justify-content-between align-items-center mb-2">
+                                <h6 class="fw-bold m-0 text-uppercase tracking-wider text-muted" style="font-size: 0.75rem;">
+                                    <i class="bi bi-briefcase me-2"></i>Ofertas de Empleo (<span id="jobCount"><?php echo count($ofertas_bd); ?></span>)
+                                </h6>
+                                <span class="badge-soft-blue" style="font-size: 0.65rem;">Últimos 30 días</span>
                             </div>
                             <div id="jobList" class="row g-3">
-                                <!-- Las tarjetas se generan con JavaScript -->
+                                <!-- Generado por JavaScript -->
                             </div>
-                            <nav class="mt-4">
+                            <nav class="mt-3">
                                 <ul class="pagination justify-content-center pagination-custom" id="paginationControls"></ul>
                             </nav>
                         </div>
                     </div>
-                </div>
-            <?php endif; ?>
 
-        </main>
-
-        <!-- MODAL POSTULACIÓN -->
-        <div class="modal fade" id="postulacionModal" tabindex="-1" aria-hidden="true">
-            <div class="modal-dialog modal-dialog-centered">
-                <div class="modal-content">
-                    <div class="modal-header">
-                        <h5 class="modal-title"><i class="bi bi-pencil-square me-2" style="color: var(--gov-green);"></i>Postularse a: <span id="postulacionTitulo">Oferta</span></h5>
-                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                    </div>
-                    <div class="modal-body">
-                        <p class="text-muted small mb-3"><i class="bi bi-building me-1"></i>Empresa: <strong id="postulacionEmpresa">-</strong></p>
-                        <form id="postulacionForm">
-                            <div class="mb-3">
-                                <label class="form-label fw-semibold">Nombre completo *</label>
-                                <input type="text" id="postulacionNombre" class="form-control form-control-custom" placeholder="Ej: Juan Carlos Nsue" required>
+                    <!-- ÚLTIMAS POSTULACIONES (mejorado) -->
+                    <div class="col-12">
+                        <div class="card dashboard-card p-3">
+                            <div class="d-flex justify-content-between align-items-center mb-3">
+                                <h6 class="fw-bold m-0 text-uppercase tracking-wider text-muted" style="font-size: 0.75rem;">
+                                    <i class="bi bi-clock-history me-2"></i>Últimas postulaciones
+                                </h6>
+                                <a href="historial_laboral.php" class="btn btn-sm btn-gold-outline" style="font-size: 0.75rem; padding: 0.2rem 1rem; border-radius: 30px;">
+                                    Ver todos <i class="bi bi-chevron-right ms-1"></i>
+                                </a>
                             </div>
-                            <div class="mb-3">
-                                <label class="form-label fw-semibold">Documento de Identidad (DIP) *</label>
-                                <input type="text" id="postulacionDIP" class="form-control form-control-custom" placeholder="Ej: 123456789" required>
-                            </div>
-                            <div class="mb-3">
-                                <label class="form-label fw-semibold">Teléfono *</label>
-                                <input type="tel" id="postulacionTelefono" class="form-control form-control-custom" placeholder="Ej: 555-123456" required>
-                            </div>
-                            <div class="mb-3">
-                                <label class="form-label fw-semibold">Correo electrónico *</label>
-                                <input type="email" id="postulacionEmail" class="form-control form-control-custom" placeholder="ejemplo@correo.gq" required>
-                            </div>
-                            <div class="mb-3">
-                                <label class="form-label fw-semibold">Mensaje / Carta de presentación</label>
-                                <textarea id="postulacionMensaje" class="form-control form-control-custom" rows="3" placeholder="Cuéntenos por qué es el candidato ideal..."></textarea>
-                            </div>
-                            <p class="text-muted small">* Campos obligatorios</p>
-                        </form>
-                    </div>
-                    <div class="modal-footer">
-                        <button type="button" class="btn btn-green" id="enviarPostulacionBtn"><i class="bi bi-send me-2"></i>Enviar postulación</button>
-                        <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancelar</button>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- MODAL CONFIRMACIÓN -->
-        <div class="modal fade" id="confirmacionPostulacionModal" tabindex="-1" aria-hidden="true">
-            <div class="modal-dialog modal-dialog-centered">
-                <div class="modal-content">
-                    <div class="modal-header" style="border-bottom-color: var(--gov-green);">
-                        <h5 class="modal-title"><i class="bi bi-check-circle-fill me-2" style="color: var(--gov-green);"></i>Postulación enviada</h5>
-                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                    </div>
-                    <div class="modal-body text-center py-4">
-                        <i class="bi bi-hourglass-split" style="font-size: 4rem; color: var(--gov-gold);"></i>
-                        <h5 class="mt-3 fw-bold">¡Su postulación ha sido recibida!</h5>
-                        <p class="text-muted">La empresa recibirá sus datos y se pondrá en contacto en caso de ser seleccionado. Recibirá notificaciones sobre el estado de su candidatura.</p>
-                        <div class="alert alert-info mt-3" role="alert">
-                            <i class="bi bi-info-circle me-2"></i> Puede hacer seguimiento de sus postulaciones desde el <strong>Panel General</strong>.
+                            <?php if (empty($ultimas_postulaciones)): ?>
+                                <div class="text-center py-4 text-muted">
+                                    <i class="bi bi-inbox fs-2 d-block mb-2"></i>
+                                    <p class="m-0">Aún no has realizado ninguna postulación.</p>
+                                </div>
+                            <?php else: ?>
+                                <div class="table-responsive">
+                                    <table class="table table-custom table-striped">
+                                        <thead>
+                                            <tr>
+                                                <th><i class="bi bi-briefcase me-1"></i> Puesto</th>
+                                                <th><i class="bi bi-building me-1"></i> Empresa</th>
+                                                <th><i class="bi bi-calendar3 me-1"></i> Fecha</th>
+                                                <th><i class="bi bi-info-circle me-1"></i> Estado</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            <?php 
+                                            // Estados simulados para demostración (reemplazar con datos reales si tienes)
+                                            $estados = [
+                                                'En revisión' => 'badge-soft-warning',
+                                                'Preseleccionado' => 'badge-soft-success',
+                                                'Entrevista' => 'badge-soft-info',
+                                                'Descartado' => 'badge-soft-danger',
+                                                'Finalizado' => 'badge-soft-secondary'
+                                            ];
+                                            $estados_keys = array_keys($estados);
+                                            shuffle($estados_keys);
+                                            ?>
+                                            <?php foreach ($ultimas_postulaciones as $index => $post): ?>
+                                                <?php 
+                                                $estado_key = $estados_keys[$index % count($estados_keys)];
+                                                $badge_class = $estados[$estado_key];
+                                                ?>
+                                                <tr>
+                                                    <td><strong><?php echo htmlspecialchars($post['titulo_puesto']); ?></strong></td>
+                                                    <td><?php echo htmlspecialchars($post['nombre_empresa']); ?></td>
+                                                    <td><?php echo date('d/m/Y', strtotime($post['fecha_guardado'])); ?></td>
+                                                    <td><span class="badge <?php echo $badge_class; ?>"><?php echo $estado_key; ?></span></td>
+                                                </tr>
+                                            <?php endforeach; ?>
+                                        </tbody>
+                                    </table>
+                                </div>
+                                <div class="mt-2 text-end">
+                                    <small class="text-muted">Mostrando las últimas <?php echo min(5, count($ultimas_postulaciones)); ?> postulaciones</small>
+                                </div>
+                            <?php endif; ?>
                         </div>
                     </div>
-                    <div class="modal-footer">
-                        <button class="btn btn-blue" data-bs-dismiss="modal">Entendido</button>
-                    </div>
                 </div>
-            </div>
-        </div>
+            <?php endif; ?>
+        </main>
 
         <?php include '../componentes/footer_desempleado.php'; ?>
 
         <script>
-            // ===== DATOS DE OFERTAS DESDE PHP =====
+            // ===== DATOS DE OFERTAS DESDE PHP (solo no postuladas) =====
             const jobs = <?php 
                 $jobs_array = [];
                 foreach ($ofertas_bd as $oferta) {
-                    // Determinar color de acento según sector
                     $colors = ['blue', 'gold', 'green'];
                     $color = $colors[array_rand($colors)];
                     
-                    // Badge según antigüedad
                     $badge = null;
                     $badgeColor = null;
                     $fecha = new DateTime($oferta['fecha_publicacion']);
@@ -718,45 +774,6 @@ include '../componentes/menu_desempleado.php';
             const itemsPerPage = 6;
             let filteredJobs = [...jobs];
 
-            // ===== FUNCIÓN POSTULAR =====
-            function abrirPostulacion(titulo, empresa) {
-                document.getElementById('postulacionTitulo').textContent = titulo;
-                document.getElementById('postulacionEmpresa').textContent = empresa;
-                document.getElementById('postulacionNombre').value = '';
-                document.getElementById('postulacionDIP').value = '';
-                document.getElementById('postulacionTelefono').value = '';
-                document.getElementById('postulacionEmail').value = '';
-                document.getElementById('postulacionMensaje').value = '';
-                const modal = new bootstrap.Modal(document.getElementById('postulacionModal'));
-                modal.show();
-            }
-
-            // ===== ENVIAR POSTULACIÓN =====
-            document.getElementById('enviarPostulacionBtn').addEventListener('click', function() {
-                const nombre = document.getElementById('postulacionNombre').value.trim();
-                const dip = document.getElementById('postulacionDIP').value.trim();
-                const telefono = document.getElementById('postulacionTelefono').value.trim();
-                const email = document.getElementById('postulacionEmail').value.trim();
-
-                if (!nombre || !dip || !telefono || !email) {
-                    alert('Por favor, complete todos los campos obligatorios (*).');
-                    return;
-                }
-
-                const postulacionModal = bootstrap.Modal.getInstance(document.getElementById('postulacionModal'));
-                postulacionModal.hide();
-
-                const confirmacionModal = new bootstrap.Modal(document.getElementById('confirmacionPostulacionModal'));
-                confirmacionModal.show();
-
-                console.log('Postulación enviada:', {
-                    nombre, dip, telefono, email,
-                    mensaje: document.getElementById('postulacionMensaje').value.trim(),
-                    titulo: document.getElementById('postulacionTitulo').textContent,
-                    empresa: document.getElementById('postulacionEmpresa').textContent
-                });
-            });
-
             // ===== RENDERIZAR TARJETAS =====
             function renderJobs() {
                 const start = (currentPage - 1) * itemsPerPage;
@@ -767,7 +784,7 @@ include '../componentes/menu_desempleado.php';
                 document.getElementById('jobCount').textContent = filteredJobs.length;
 
                 if (filteredJobs.length === 0) {
-                    container.innerHTML = `<div class="col-12 text-center py-5 text-muted"><i class="bi bi-inbox fs-1 d-block mb-2"></i>No se encontraron ofertas que coincidan con los filtros.</div>`;
+                    container.innerHTML = `<div class="col-12 text-center py-3 text-muted"><i class="bi bi-inbox fs-1 d-block mb-2"></i>No se encontraron ofertas que coincidan con los filtros.</div>`;
                     document.getElementById('paginationControls').innerHTML = '';
                     return;
                 }
@@ -800,7 +817,7 @@ include '../componentes/menu_desempleado.php';
                                     <p class="m-0 job-meta"><i class="bi bi-geo-alt"></i>${job.city}</p>
                                     <p class="m-0 job-meta"><i class="bi bi-calendar-event"></i>${job.date} · ${job.jornada}</p>
                                     <div class="mt-3 d-flex flex-wrap gap-2 align-items-center">
-                                        <button class="btn btn-blue btn-sm px-3" onclick="abrirPostulacion('${job.title.replace(/'/g, "\\'")}', '${job.company.replace(/'/g, "\\'")}')">Postular</button>
+                                        <a href="postular.php?oferta_id=${job.id}" class="btn btn-blue btn-sm px-3">Postular</a>
                                         ${salarioHtml}
                                     </div>
                                 </div>
@@ -876,6 +893,17 @@ include '../componentes/menu_desempleado.php';
 
             // ===== INICIALIZAR =====
             renderJobs();
+
+            // ===== AUTO-CERRAR ALERTAS FLASH EXISTENTES =====
+            document.addEventListener('DOMContentLoaded', function() {
+                const flash = document.getElementById('flashMessage');
+                if (flash) {
+                    setTimeout(() => {
+                        flash.classList.remove('show');
+                        setTimeout(() => flash.remove(), 300);
+                    }, 4000);
+                }
+            });
         </script>
 
     </div> <!-- .main-wrapper -->

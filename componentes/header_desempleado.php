@@ -18,16 +18,28 @@ if (!isset($_SESSION['rol']) || $_SESSION['rol'] !== 'buscador') {
 
 require_once '../conexion/conexion.php';
 
-$nombre_completo=$_SESSION['nombre_completo'];
-$id_usuario=$_SESSION['id_usuario']
+$nombre_completo = $_SESSION['nombre_completo'];
+$id_usuario = $_SESSION['id_usuario']
 // Si pasa los dos filtros anteriores, el usuario es un buscador válido y puede ver la página
 ?>
 
 <!DOCTYPE html>
 <html lang="es">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Panel de Control - Portal de Empleo</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
+    <style>
+        .modal-backdrop {
+            display: none !important;
+        }
+
+        /* Opcional: si quieres que el modal siga siendo desplazable sin fondo */
+        body.modal-open {
+            overflow: auto !important;
+            padding-right: 0 !important;
+        }
+    </style>

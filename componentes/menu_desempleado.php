@@ -62,9 +62,52 @@ try {
     error_log("Error en menú: " . $e->getMessage());
 }
 ?>
-<!-- ===== ESTILOS DEL MENÚ ===== -->
+
 <style>
     /* ===== ESTILOS DEL MENÚ ===== */
+    :root {
+        --gov-blue: #0B3A60;
+        --gov-blue-light: #1A4F7A;
+        --gov-blue-dark: #072A45;
+        --gov-blue-soft: #E8EEF3;
+        --gov-green: #1E7E34;
+        --gov-green-light: #2E9B4A;
+        --gov-green-soft: #E6F3E8;
+        --gov-gold: #C9A84C;
+        --gov-gold-light: #E8D5A3;
+        --gov-dark: #0A192F;
+        --gov-bg: #F8FAFC;
+        --gov-border: #E2E8F0;
+        --gov-radius: 8px;
+        --gov-radius-sm: 4px;
+        --gov-shadow: rgba(11, 58, 96, 0.12);
+    }
+     body, html {
+        min-height: 100vh;
+        margin: 0;
+        font-family: 'Inter', system-ui, -apple-system, sans-serif;
+        background-color: var(--gov-bg);
+        color: var(--gov-dark);
+        position: relative;
+    }
+    #canvas-background {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        z-index: 0;
+        pointer-events: none;
+        opacity: 0.3;
+    }
+    .main-wrapper {
+        position: relative;
+        z-index: 1;
+        display: flex;
+        flex-direction: column;
+        min-height: 100vh;
+    }
+
     .navbar-portal {
         background: rgba(255, 255, 255, 0.96) !important;
         backdrop-filter: blur(12px);
@@ -89,13 +132,13 @@ try {
         background: rgba(11, 58, 96, 0.10);
         font-weight: 600;
     }
+    /* ===== DROPDOWN PERFIL ===== */
 
     .profile-dropdown { position: relative !important; }
     .profile-menu-img {
         width: 44px;
         height: 44px;
         border-radius: 50%;
-        border: 2.5px solid var(--gov-green);
         object-fit: cover;
         cursor: pointer;
         transition: border-color 0.3s, transform 0.2s;
@@ -126,6 +169,7 @@ try {
         color: var(--gov-blue);
     }
     .custom-profile-menu .dropdown-item i { color: var(--gov-blue); }
+    
 
     @media (min-width: 992px) {
         .custom-profile-menu {
@@ -159,14 +203,13 @@ try {
 
 <nav class="navbar navbar-expand-lg navbar-light navbar-portal py-2">
     <div class="container">
-        <a class="navbar-brand fw-bold d-flex align-items-center gap-3" href="index.php">
+      
             <img src="../src/img/logo_,ministerio.png" alt="Escudo de Guinea Ecuatorial" style="height: 45px; width: auto; object-fit: contain;" onerror="this.src='https://placehold.co/45x50?text=Logo'">
             <div class="d-flex flex-column lh-1 border-start ps-3 border-secondary border-opacity-25">
-                <span style="color: var(--gov-dark); font-size: 1.15rem; letter-spacing: -0.3px; font-weight: 700;">PortalEmpleo</span>
+                <span style="color: var(--gov-dark); font-size: 1.15rem; letter-spacing: -0.3px; font-weight: 700; margin-bottom: 3px;">PortalEmpleo</span>
                 <span class="text-muted" style="font-size: 0.62rem; text-transform: uppercase; letter-spacing: 0.5px; font-weight: 600;">Min. de Trabajo, Fomento del Empleo y Seguridad Social</span>
             </div>
-        </a>
-
+        
         <div class="d-flex align-items-center order-lg-last gap-3">
             <a href="notificaciones.php" class="text-muted position-relative me-1" title="Notificaciones">
                 <i class="bi bi-bell fs-5" style="color: var(--gov-blue);"></i>

@@ -32,7 +32,7 @@ try {
     // ===== ESTADÍSTICAS REALES =====
     $postulaciones = 0;
     if ($buscador) {
-        $stmt = $pdo->prepare("SELECT COUNT(*) as total FROM favoritos WHERE buscador_id = ?");
+        $stmt = $pdo->prepare("SELECT COUNT(*) as total FROM postulaciones WHERE buscador_id = ?");
         $stmt->execute([$buscador['id']]);
         $result = $stmt->fetch(PDO::FETCH_ASSOC);
         $postulaciones = $result['total'] ?? 0;
@@ -48,10 +48,10 @@ try {
     $stmt->execute();
     $cursos_inscritos = $stmt->fetch(PDO::FETCH_ASSOC)['total'] ?? 0;
 
-    // Notificaciones (simuladas)
+    // Notificaciones (simuladas – reemplazar si existe tabla)
     $notificaciones = rand(0, 10);
 
-    // ===== OFERTAS RECOMENDADAS =====
+    // ===== OFERTAS RECOMENDADAS (solo abiertas, con estado visible) =====
     $stmt = $pdo->prepare("
         SELECT o.*, e.nombre_empresa 
         FROM ofertas_empleo o 
@@ -63,12 +63,12 @@ try {
     $stmt->execute();
     $ofertas = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
-    // Obtener IDs de ofertas a las que ya postuló el usuario
-    $postulados_ids = [];
+    // Obtener postulaciones del usuario (oferta_id => estado)
+    $postulaciones_usuario = [];
     if ($buscador) {
-        $stmt = $pdo->prepare("SELECT oferta_id FROM favoritos WHERE buscador_id = ?");
+        $stmt = $pdo->prepare("SELECT oferta_id, estado FROM postulaciones WHERE buscador_id = ?");
         $stmt->execute([$buscador['id']]);
-        $postulados_ids = $stmt->fetchAll(PDO::FETCH_COLUMN);
+        $postulaciones_usuario = $stmt->fetchAll(PDO::FETCH_KEY_PAIR); // clave = oferta_id, valor = estado
     }
 
     // ===== CURSOS CON ESTADO DE SOLICITUD =====
@@ -124,7 +124,7 @@ try {
     $notificaciones = 0;
     $ofertas = [];
     $cursos = [];
-    $postulados_ids = [];
+    $postulaciones_usuario = [];
     $solicitudes_cursos = [];
     $usuario = ['numero_expediente' => 'EG-00000'];
 }
@@ -307,8 +307,46 @@ include '../componentes/menu_desempleado.php';
         font-size: 0.7rem;
     }
 
-    /* ===== BADGES DE ESTADO PARA CURSOS ===== */
+    /* ===== BADGES DE ESTADO PARA POSTULACIONES ===== */
     .badge-pendiente {
+        background-color: #fff3cd;
+        color: #856404;
+        border: 1px solid #ffc107;
+        padding: 0.3rem 0.8rem;
+        border-radius: 20px;
+        font-size: 0.75rem;
+        font-weight: 500;
+    }
+    .badge-revisado {
+        background-color: #cce5ff;
+        color: #004085;
+        border: 1px solid #0dcaf0;
+        padding: 0.3rem 0.8rem;
+        border-radius: 20px;
+        font-size: 0.75rem;
+        font-weight: 500;
+    }
+    .badge-interesado {
+        background-color: #d4edda;
+        color: #155724;
+        border: 1px solid #28a745;
+        padding: 0.3rem 0.8rem;
+        border-radius: 20px;
+        font-size: 0.75rem;
+        font-weight: 500;
+    }
+    .badge-rechazado {
+        background-color: #f8d7da;
+        color: #721c24;
+        border: 1px solid #dc3545;
+        padding: 0.3rem 0.8rem;
+        border-radius: 20px;
+        font-size: 0.75rem;
+        font-weight: 500;
+    }
+
+    /* ===== BADGES DE ESTADO PARA CURSOS ===== */
+    .badge-pendiente-curso {
         background-color: #fff3cd;
         color: #856404;
         border: 1px solid #ffc107;
@@ -326,7 +364,7 @@ include '../componentes/menu_desempleado.php';
         font-size: 0.75rem;
         font-weight: 500;
     }
-    .badge-rechazado {
+    .badge-rechazado-curso {
         background-color: #f8d7da;
         color: #721c24;
         border: 1px solid #dc3545;
@@ -334,6 +372,30 @@ include '../componentes/menu_desempleado.php';
         border-radius: 20px;
         font-size: 0.75rem;
         font-weight: 500;
+    }
+
+    /* ===== BADGES DE ESTADO DE OFERTA (NUEVO) ===== */
+    .badge-oferta-abierta {
+        background-color: #d4edda;
+        color: #155724;
+        border: 1px solid #28a745;
+        padding: 0.2rem 0.7rem;
+        border-radius: 20px;
+        font-size: 0.65rem;
+        font-weight: 500;
+        display: inline-block;
+        margin-bottom: 0.25rem;
+    }
+    .badge-oferta-cerrada {
+        background-color: #f8d7da;
+        color: #721c24;
+        border: 1px solid #dc3545;
+        padding: 0.2rem 0.7rem;
+        border-radius: 20px;
+        font-size: 0.65rem;
+        font-weight: 500;
+        display: inline-block;
+        margin-bottom: 0.25rem;
     }
 
     /* ===== ALERTAS ===== */
@@ -691,7 +753,7 @@ include '../componentes/menu_desempleado.php';
 
                 <div class="row g-4">
                     <div class="col-xl-4 col-lg-5">
-                        <!-- Perfil -->
+                        <!-- Perfil (sin cambios) -->
                         <div class="card dashboard-card p-4 text-center mb-4">
                             <?php 
                                 $foto = $buscador['foto_carnet'] ?? '';
@@ -739,7 +801,7 @@ include '../componentes/menu_desempleado.php';
                             </div>
                         </div>
 
-                        <!-- Notificaciones de Oficina -->
+                        <!-- Notificaciones de Oficina (sin cambios) -->
                         <div class="card dashboard-card p-4 mb-4">
                             <h5 class="fw-bold mb-3 h6 text-uppercase tracking-wider text-muted"><i class="bi bi-chat-left-text text-primary me-2" style="color: var(--gov-blue) !important;"></i>Notificaciones de Oficina</h5>
                             <div class="d-flex flex-column gap-2">
@@ -752,7 +814,7 @@ include '../componentes/menu_desempleado.php';
                             </div>
                         </div>
 
-                        <!-- Noticias -->
+                        <!-- Noticias (sin cambios) -->
                         <div class="card dashboard-card p-4">
                             <h5 class="fw-bold mb-3 h6 text-uppercase tracking-wider text-muted"><i class="bi bi-newspaper me-2" style="color: var(--gov-gold);"></i>Noticias y Eventos</h5>
                             <?php foreach ($noticias as $noticia): ?>
@@ -778,7 +840,13 @@ include '../componentes/menu_desempleado.php';
                                         <?php foreach ($ofertas as $oferta): ?>
                                             <div class="list-item-custom p-3 d-flex flex-column flex-sm-row justify-content-between align-items-sm-center gap-3">
                                                 <div>
-                                                    <span class="badge bg-gold" style="background: var(--gov-gold); color: white;"><?php echo ($oferta['estado'] ?? 'abierta') == 'abierta' ? 'Disponible' : 'Cerrada'; ?></span>
+                                                    <!-- BADGE DE ESTADO DE LA OFERTA (MEJORADO) -->
+                                                    <?php if ($oferta['estado'] === 'abierta'): ?>
+                                                        <span class="badge-oferta-abierta">🟢 Disponible</span>
+                                                    <?php else: ?>
+                                                        <span class="badge-oferta-cerrada">🔴 Cerrada</span>
+                                                    <?php endif; ?>
+                                                    
                                                     <h6 class="fw-bold m-0 text-dark mt-1"><?php echo htmlspecialchars($oferta['titulo_puesto']); ?></h6>
                                                     <p class="m-0 small text-muted">
                                                         <i class="bi bi-building me-1"></i><?php echo htmlspecialchars($oferta['nombre_empresa']); ?> · 
@@ -787,10 +855,29 @@ include '../componentes/menu_desempleado.php';
                                                             · <i class="bi bi-coin me-1"></i><?php echo number_format($oferta['salario_ofrecido'], 0, ',', '.'); ?> FCFA
                                                         <?php endif; ?>
                                                     </p>
+                                                    <p class="m-0 small text-muted">
+                                                        <i class="bi bi-calendar3 me-1"></i> Publicado: <?php echo date('d/m/Y', strtotime($oferta['fecha_publicacion'])); ?>
+                                                    </p>
                                                 </div>
                                                 <div>
-                                                    <?php if (in_array($oferta['id'], $postulados_ids)): ?>
-                                                        <span class="badge" style="padding: 0.5rem 1rem; background: #d19003cb"> ⏳ Pendiente de confirmación </span>
+                                                    <?php if (isset($postulaciones_usuario[$oferta['id']])): 
+                                                        $estado = $postulaciones_usuario[$oferta['id']];
+                                                        $clases = [
+                                                            'pendiente' => 'badge-pendiente',
+                                                            'revisado'  => 'badge-revisado',
+                                                            'interesado'=> 'badge-interesado',
+                                                            'rechazado' => 'badge-rechazado'
+                                                        ];
+                                                        $textos = [
+                                                            'pendiente' => '⏳ Pendiente',
+                                                            'revisado'  => '🔍 En revisión',
+                                                            'interesado'=> '✅ Interesado',
+                                                            'rechazado' => '❌ Rechazado'
+                                                        ];
+                                                        $clase = $clases[$estado] ?? 'badge-pendiente';
+                                                        $texto = $textos[$estado] ?? '⏳ Pendiente';
+                                                    ?>
+                                                        <span class="badge <?php echo $clase; ?>" style="padding: 0.4rem 1rem; font-size: 0.75rem;"><?php echo $texto; ?></span>
                                                     <?php else: ?>
                                                         <a href="postular.php?oferta_id=<?php echo $oferta['id']; ?>" class="btn btn-sm btn-gov btn-pill-custom">Postularme</a>
                                                     <?php endif; ?>
@@ -802,7 +889,7 @@ include '../componentes/menu_desempleado.php';
                             </div>
                         </div>
 
-                        <!-- Cursos -->
+                        <!-- Cursos (sin cambios) -->
                         <div class="card dashboard-card p-4 mb-4">
                             <h5 class="fw-bold mb-3 h6 text-uppercase tracking-wider text-muted"><i class="bi bi-journal-bookmark me-2" style="color: var(--gov-green);"></i>Planes Estatales de Capacitación</h5>
                             <?php if (empty($cursos)): ?>
@@ -824,13 +911,13 @@ include '../componentes/menu_desempleado.php';
                                             $estado_solicitud = isset($solicitudes_cursos[$curso['id']]) ? $solicitudes_cursos[$curso['id']] : null;
                                             if ($estado_solicitud) {
                                                 if ($estado_solicitud == 'pendiente') {
-                                                    echo '<span class="badge-pendiente">⏳ Pendiente de confirmación</span>';
+                                                    echo '<span class="badge-pendiente-curso">⏳ Pendiente de confirmación</span>';
                                                 } elseif ($estado_solicitud == 'confirmado') {
                                                     echo '<span class="badge-confirmado">✅ Confirmado</span>';
                                                 } elseif ($estado_solicitud == 'rechazado') {
-                                                    echo '<span class="badge-rechazado">❌ Rechazado</span>';
+                                                    echo '<span class="badge-rechazado-curso">❌ Rechazado</span>';
                                                 } else {
-                                                    echo '<span class="badge-pendiente">Solicitado</span>';
+                                                    echo '<span class="badge-pendiente-curso">Solicitado</span>';
                                                 }
                                             } else {
                                                 echo '<a href="solicitar_plaza.php?curso_id=' . $curso['id'] . '" class="btn btn-sm btn-green btn-pill-custom text-nowrap">Solicitar Plaza</a>';

@@ -26,16 +26,16 @@ try {
     $documentos = $stmt_doc->fetch();
     $perfil_completo = ($buscador && $documentos);
 
-    // Obtener IDs de ofertas a las que ya postuló este usuario
+    // === Obtener IDs de ofertas a las que YA postuló (desde `postulaciones`) ===
     $postulados_ids = [];
     if ($buscador) {
-        $stmt = $pdo->prepare("SELECT oferta_id FROM favoritos WHERE buscador_id = ?");
+        $stmt = $pdo->prepare("SELECT oferta_id FROM postulaciones WHERE buscador_id = ?");
         $stmt->execute([$buscador['id']]);
         $postulados = $stmt->fetchAll(PDO::FETCH_COLUMN);
         $postulados_ids = array_map('intval', $postulados);
     }
 
-    // Obtener ofertas activas EXCLUYENDO aquellas en las que ya postuló
+    // === Obtener ofertas activas EXCLUYENDO aquellas en las que ya postuló ===
     if (!empty($postulados_ids)) {
         $placeholders = implode(',', array_fill(0, count($postulados_ids), '?'));
         $sql = "
@@ -60,16 +60,24 @@ try {
     }
     $ofertas_bd = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
-    // === OBTENER ÚLTIMAS POSTULACIONES ===
+    // === OBTENER ÚLTIMAS POSTULACIONES (con estado real) ===
     $ultimas_postulaciones = [];
     if ($buscador) {
         $stmt = $pdo->prepare("
-            SELECT f.fecha_guardado, o.titulo_puesto, e.nombre_empresa, f.oferta_id
-            FROM favoritos f
-            JOIN ofertas_empleo o ON f.oferta_id = o.id
+            SELECT 
+                p.fecha_postulacion,
+                o.titulo_puesto,
+                e.nombre_empresa,
+                o.id AS oferta_id,
+                p.estado AS estado_postulacion,
+                n.estado_ministerio,
+                n.numero_credencial
+            FROM postulaciones p
+            JOIN ofertas_empleo o ON p.oferta_id = o.id
             JOIN empleadores e ON o.empleador_id = e.id
-            WHERE f.buscador_id = ?
-            ORDER BY f.fecha_guardado DESC
+            LEFT JOIN notificaciones_intermediacion n ON n.postulacion_id = p.id
+            WHERE p.buscador_id = ?
+            ORDER BY p.fecha_postulacion DESC
             LIMIT 5
         ");
         $stmt->execute([$buscador['id']]);
@@ -408,18 +416,18 @@ include '../componentes/menu_desempleado.php';
         color: white;
     }
     .btn-gold-outline {
-        border: 2px solid var(--gov-gold);
-        color: var(--gov-gold);
+        border: 2px solid var(--gov-blue);
+        color: var(--gov-blue );
         background: transparent;
         border-radius: var(--gov-radius-sm);
         font-weight: 600;
         transition: all 0.25s;
     }
     .btn-gold-outline:hover {
-        background: var(--gov-gold);
+        background: var(--gov-blue);
         color: white;
         transform: translateY(-2px);
-        box-shadow: 0 6px 16px rgba(201, 168, 76, 0.30);
+        box-shadow: 0 6px 16px rgba(76, 109, 201, 0.3);
     }
     .btn-outline-secondary {
         border: 2px solid var(--gov-border);
@@ -648,7 +656,7 @@ include '../componentes/menu_desempleado.php';
                         <div class="card dashboard-card dashboard-card-compact">
                             <div class="d-flex justify-content-between align-items-center mb-2">
                                 <h6 class="fw-bold m-0 text-uppercase tracking-wider text-muted" style="font-size: 0.75rem;">
-                                    <i class="bi bi-briefcase me-2"></i>Ofertas de Empleo (<span id="jobCount"><?php echo count($ofertas_bd); ?></span>)
+                                    <i class="bi bi-briefcase me-2"></i>Ofertas de Empleo por Postular (<span id="jobCount"><?php echo count($ofertas_bd); ?></span>)
                                 </h6>
                                 <span class="badge-soft-blue" style="font-size: 0.65rem;">Últimos 30 días</span>
                             </div>
@@ -668,7 +676,7 @@ include '../componentes/menu_desempleado.php';
                                 <h6 class="fw-bold m-0 text-uppercase tracking-wider text-muted" style="font-size: 0.75rem;">
                                     <i class="bi bi-clock-history me-2"></i>Últimas postulaciones
                                 </h6>
-                                <a href="historial_laboral.php" class="btn btn-sm btn-gold-outline" style="font-size: 0.75rem; padding: 0.2rem 1rem; border-radius: 30px;">
+                                <a href="historial_laboral.php" class="btn btn-sm btn-gold-outline" style="font-size: 0.75rem; padding: 0.2rem 1rem; border-radius: 5px;">
                                     Ver todos <i class="bi bi-chevron-right ms-1"></i>
                                 </a>
                             </div>
@@ -690,27 +698,47 @@ include '../componentes/menu_desempleado.php';
                                         </thead>
                                         <tbody>
                                             <?php 
-                                            // Estados simulados para demostración (reemplazar con datos reales si tienes)
-                                            $estados = [
-                                                'En revisión' => 'badge-soft-warning',
-                                                'Preseleccionado' => 'badge-soft-success',
-                                                'Entrevista' => 'badge-soft-info',
-                                                'Descartado' => 'badge-soft-danger',
-                                                'Finalizado' => 'badge-soft-secondary'
+                                            // Mapeo de estados a badges
+                                            $estado_map = [
+                                                'pendiente' => 'badge-soft-warning',
+                                                'revisado'  => 'badge-soft-info',
+                                                'interesado'=> 'badge-soft-success',
+                                                'rechazado' => 'badge-soft-danger'
                                             ];
-                                            $estados_keys = array_keys($estados);
-                                            shuffle($estados_keys);
+                                            $estado_texto = [
+                                                'pendiente' => '⏳ Pendiente',
+                                                'revisado'  => '🔍 En revisión',
+                                                'interesado'=> '✅ Interesado',
+                                                'rechazado' => '❌ Rechazado'
+                                            ];
                                             ?>
-                                            <?php foreach ($ultimas_postulaciones as $index => $post): ?>
+                                            <?php foreach ($ultimas_postulaciones as $post): ?>
                                                 <?php 
-                                                $estado_key = $estados_keys[$index % count($estados_keys)];
-                                                $badge_class = $estados[$estado_key];
+                                                $estado = $post['estado_postulacion'] ?? 'pendiente';
+                                                $badge_class = $estado_map[$estado] ?? 'badge-soft-secondary';
+                                                $estado_label = $estado_texto[$estado] ?? ucfirst($estado);
+                                                // Estado ministerial (si existe)
+                                                $ministerio_badge = '';
+                                                if (!empty($post['estado_ministerio'])) {
+                                                    $ministerio_labels = [
+                                                        'pendiente' => 'badge-soft-warning',
+                                                        'en_revision' => 'badge-soft-info',
+                                                        'aprobado' => 'badge-soft-success',
+                                                        'rechazado' => 'badge-soft-danger'
+                                                    ];
+                                                    $m_class = $ministerio_labels[$post['estado_ministerio']] ?? 'badge-soft-secondary';
+                                                    $m_text = ucfirst(str_replace('_', ' ', $post['estado_ministerio']));
+                                                    $ministerio_badge = "<span class='badge {$m_class} ms-1' style='font-size:0.6rem;'>Ministerio: {$m_text}</span>";
+                                                }
                                                 ?>
                                                 <tr>
                                                     <td><strong><?php echo htmlspecialchars($post['titulo_puesto']); ?></strong></td>
                                                     <td><?php echo htmlspecialchars($post['nombre_empresa']); ?></td>
-                                                    <td><?php echo date('d/m/Y', strtotime($post['fecha_guardado'])); ?></td>
-                                                    <td><span class="badge <?php echo $badge_class; ?>"><?php echo $estado_key; ?></span></td>
+                                                    <td><?php echo date('d/m/Y', strtotime($post['fecha_postulacion'])); ?></td>
+                                                    <td>
+                                                        <span class="badge <?php echo $badge_class; ?>"><?php echo $estado_label; ?></span>
+                                                        <?php echo $ministerio_badge; ?>
+                                                    </td>
                                                 </tr>
                                             <?php endforeach; ?>
                                         </tbody>
@@ -784,7 +812,7 @@ include '../componentes/menu_desempleado.php';
                 document.getElementById('jobCount').textContent = filteredJobs.length;
 
                 if (filteredJobs.length === 0) {
-                    container.innerHTML = `<div class="col-12 text-center py-3 text-muted"><i class="bi bi-inbox fs-1 d-block mb-2"></i>No se encontraron ofertas que coincidan con los filtros.</div>`;
+                    container.innerHTML = `<div class="col-12 text-center py-3 text-muted"><i class="bi bi-inbox fs-1 d-block mb-2"></i> No se encontraron ofertas disponibles.</div>`;
                     document.getElementById('paginationControls').innerHTML = '';
                     return;
                 }

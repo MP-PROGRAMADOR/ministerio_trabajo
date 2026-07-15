@@ -28,57 +28,130 @@ try {
     
     $perfil_completo = ($buscador && $documentos);
 
-    // ===== OBTENER EXPERIENCIA LABORAL DESDE BBDD =====
-    $experiencia = [];
+    // ============================================================
+    // 1. OBTENER POSTULACIONES REALES DESDE BBDD
+    // ============================================================
+    $postulaciones = [];
     if ($buscador) {
         $stmt = $pdo->prepare("
-            SELECT * FROM experiencia_laboral 
+            SELECT 
+                p.id,
+                p.oferta_id,
+                p.fecha_postulacion,
+                p.estado AS estado_postulacion,
+                p.mensaje_presentacion,
+                o.titulo_puesto,
+                e.nombre_empresa,
+                o.descripcion AS oferta_descripcion
+            FROM postulaciones p
+            JOIN ofertas_empleo o ON p.oferta_id = o.id
+            JOIN empleadores e ON o.empleador_id = e.id
+            WHERE p.buscador_id = ?
+            ORDER BY p.fecha_postulacion DESC
+        ");
+        $stmt->execute([$buscador['id']]);
+        $postulaciones = $stmt->fetchAll(PDO::FETCH_ASSOC);
+    }
+
+    // ============================================================
+    // 2. OBTENER EXPERIENCIA LABORAL REAL DESDE BBDD
+    // ============================================================
+    $experiencia_laboral = [];
+    if ($buscador) {
+        $stmt = $pdo->prepare("
+            SELECT 
+                id,
+                empresa,
+                puesto,
+                fecha_inicio,
+                fecha_fin,
+                descripcion
+            FROM experiencia_laboral 
             WHERE usuario_id = ? 
             ORDER BY fecha_inicio DESC
         ");
         $stmt->execute([$id_usuario]);
-        $experiencia_bd = $stmt->fetchAll(PDO::FETCH_ASSOC);
-
-        foreach ($experiencia_bd as $exp) {
-            $estados = ['revision', 'preseleccionado', 'finalizado', 'entrevista', 'descartado'];
-            $estado = $estados[array_rand($estados)]; // Asignar estado aleatorio (simulado)
-            
-            $experiencia[] = [
-                'id' => $exp['id'],
-                'fecha_inicio' => date('d/m/Y', strtotime($exp['fecha_inicio'])),
-                'fecha_fin' => $exp['fecha_fin'] ? date('d/m/Y', strtotime($exp['fecha_fin'])) : 'Actualidad',
-                'puesto' => $exp['puesto'],
-                'empresa' => $exp['empresa'],
-                'descripcion' => $exp['descripcion'],
-                'estado' => $estado
-            ];
-        }
+        $experiencia_laboral = $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
 
-    // Si no hay experiencia en BBDD, usar datos de ejemplo
-    if (empty($experiencia)) {
-        $experiencia = [
-            ['id' => 1, 'fecha_inicio' => '05/07/2026', 'fecha_fin' => 'Actualidad', 'puesto' => 'Auxiliar Técnico de Obras', 'empresa' => 'SOMAGEC', 'descripcion' => 'Supervisión de obras y control de calidad en proyectos de construcción.', 'estado' => 'revision'],
-            ['id' => 2, 'fecha_inicio' => '28/06/2026', 'fecha_fin' => 'Actualidad', 'puesto' => 'Técnico de Soporte TI', 'empresa' => 'GETESA', 'descripcion' => 'Mantenimiento de redes y soporte a usuarios en la empresa GETESA.', 'estado' => 'preseleccionado'],
-            ['id' => 3, 'fecha_inicio' => '15/03/2025', 'fecha_fin' => '30/06/2026', 'puesto' => 'Asistente Administrativo', 'empresa' => 'Ministerio de Educación', 'descripcion' => 'Gestión de expedientes y atención al público en el Ministerio de Educación.', 'estado' => 'finalizado'],
-            ['id' => 4, 'fecha_inicio' => '10/01/2026', 'fecha_fin' => 'Actualidad', 'puesto' => 'Ingeniero Civil', 'empresa' => 'Constructora Nacional', 'descripcion' => 'Diseño y supervisión de proyectos de infraestructura civil.', 'estado' => 'entrevista'],
-            ['id' => 5, 'fecha_inicio' => '20/12/2025', 'fecha_fin' => '15/05/2026', 'puesto' => 'Enfermero', 'empresa' => 'Hospital La Paz', 'descripcion' => 'Atención de pacientes y administración de medicamentos en el área de urgencias.', 'estado' => 'descartado'],
-            ['id' => 6, 'fecha_inicio' => '01/11/2025', 'fecha_fin' => '30/06/2026', 'puesto' => 'Profesor de Matemáticas', 'empresa' => 'Instituto Nacional', 'descripcion' => 'Impartición de clases de matemáticas en educación secundaria.', 'estado' => 'finalizado'],
+    // ============================================================
+    // 3. UNIFICAR AMBOS TIPOS DE REGISTROS EN UN SOLO ARRAY
+    // ============================================================
+    $historial = [];
+
+    // Agregar postulaciones
+    foreach ($postulaciones as $p) {
+        $historial[] = [
+            'id' => 'p_' . $p['id'], // prefijo para distinguir
+            'tipo' => 'postulacion',
+            'fecha_inicio' => date('d/m/Y', strtotime($p['fecha_postulacion'])),
+            'fecha_fin' => '—',
+            'puesto' => $p['titulo_puesto'],
+            'empresa' => $p['nombre_empresa'],
+            'descripcion' => $p['mensaje_presentacion'] ?? 'Postulación a oferta laboral.',
+            'estado' => $p['estado_postulacion'], // pendiente, revisado, interesado, rechazado
+            'extra' => [
+                'oferta_id' => $p['oferta_id'],
+                'fecha_postulacion' => $p['fecha_postulacion']
+            ]
         ];
     }
 
-    // Contar estadísticas
-    $total_postulaciones = count($experiencia);
-    $en_proceso = count(array_filter($experiencia, function($e) { return in_array($e['estado'], ['revision', 'entrevista']); }));
-    $preseleccionados = count(array_filter($experiencia, function($e) { return $e['estado'] == 'preseleccionado'; }));
-    $finalizados = count(array_filter($experiencia, function($e) { return $e['estado'] == 'finalizado' || $e['estado'] == 'descartado'; }));
+    // Agregar experiencia laboral
+    foreach ($experiencia_laboral as $exp) {
+        // Determinar estado (activo si fecha_fin es NULL, sino finalizado)
+        $estado_exp = ($exp['fecha_fin'] === null) ? 'activo' : 'finalizado';
+        $historial[] = [
+            'id' => 'e_' . $exp['id'],
+            'tipo' => 'experiencia',
+            'fecha_inicio' => date('d/m/Y', strtotime($exp['fecha_inicio'])),
+            'fecha_fin' => $exp['fecha_fin'] ? date('d/m/Y', strtotime($exp['fecha_fin'])) : 'Actualidad',
+            'puesto' => $exp['puesto'],
+            'empresa' => $exp['empresa'],
+            'descripcion' => $exp['descripcion'],
+            'estado' => $estado_exp, // activo o finalizado
+            'extra' => [
+                'exp_id' => $exp['id']
+            ]
+        ];
+    }
+
+    // Ordenar por fecha de inicio (más reciente primero)
+    usort($historial, function($a, $b) {
+        $dateA = DateTime::createFromFormat('d/m/Y', $a['fecha_inicio']);
+        $dateB = DateTime::createFromFormat('d/m/Y', $b['fecha_inicio']);
+        if ($a['fecha_inicio'] === '—') return 1;
+        if ($b['fecha_inicio'] === '—') return -1;
+        return $dateB <=> $dateA;
+    });
+
+    // ============================================================
+    // 4. ESTADÍSTICAS
+    // ============================================================
+    $total_registros = count($historial);
+    
+    // Postulaciones en proceso (pendiente, revisado, interesado)
+    $en_proceso = count(array_filter($historial, function($item) {
+        return $item['tipo'] === 'postulacion' && in_array($item['estado'], ['pendiente', 'revisado', 'interesado']);
+    }));
+    
+    // Preseleccionados (interesado)
+    $preseleccionados = count(array_filter($historial, function($item) {
+        return $item['tipo'] === 'postulacion' && $item['estado'] === 'interesado';
+    }));
+    
+    // Finalizados (rechazados + experiencias finalizadas + experiencias activas contadas como finalizadas? Mejor contamos finalizados como rechazado + experiencias finalizadas)
+    $finalizados = count(array_filter($historial, function($item) {
+        return ($item['tipo'] === 'postulacion' && $item['estado'] === 'rechazado') ||
+               ($item['tipo'] === 'experiencia' && $item['estado'] === 'finalizado');
+    }));
 
 } catch (PDOException $e) {
     error_log("Error en historial laboral: " . $e->getMessage());
     $buscador = null;
     $perfil_completo = false;
-    $experiencia = [];
-    $total_postulaciones = 0;
+    $historial = [];
+    $total_registros = 0;
     $en_proceso = 0;
     $preseleccionados = 0;
     $finalizados = 0;
@@ -89,12 +162,7 @@ include '../componentes/menu_desempleado.php';
 ?>
 
 <style>
-
-
-
- 
-
-    /* ===== BOTONES ===== */
+    /* ===== ESTILOS (los mismos que antes, sin cambios) ===== */
     .btn-gov {
         background-color: var(--gov-blue);
         color: #ffffff;
@@ -122,21 +190,20 @@ include '../componentes/menu_desempleado.php';
         color: white;
         border-color: var(--gov-blue);
     }
-    .btn-outline-success {
-        border: 2px solid var(--gov-green);
-        color: var(--gov-green);
+    .btn-ver {
+        border: 2px solid var(--gov-blue);
+        color: var(--gov-blue);
         background: transparent;
         border-radius: var(--gov-radius-sm);
         font-weight: 500;
         transition: all 0.25s;
     }
-    .btn-outline-success:hover {
-        background: var(--gov-green);
+    .btn-ver :hover {
+        background: var(--gov-blue);
         color: white;
-        border-color: var(--gov-green);
+        border-color: var(--gov-blue);
     }
 
-    /* ===== FILTROS ===== */
     .form-control-search {
         border-radius: var(--gov-radius-sm) !important;
         border: 1.5px solid var(--gov-border);
@@ -161,7 +228,6 @@ include '../componentes/menu_desempleado.php';
         box-shadow: 0 0 0 4px rgba(201, 168, 76, 0.12);
     }
 
-    /* ===== TABLA ===== */
     .table-custom {
         border-radius: var(--gov-radius);
         overflow: hidden;
@@ -188,7 +254,6 @@ include '../componentes/menu_desempleado.php';
         background-color: #f8fafc;
     }
 
-    /* Badges de estado */
     .badge-estado {
         font-weight: 500;
         padding: 0.35rem 0.8rem;
@@ -196,13 +261,13 @@ include '../componentes/menu_desempleado.php';
         font-size: 0.75rem;
         display: inline-block;
     }
-    .badge-estado.revision { background: #fff3cd; color: #856404; }
-    .badge-estado.preseleccionado { background: #d4edda; color: #155724; }
+    .badge-estado.pendiente { background: #fff3cd; color: #856404; }
+    .badge-estado.revisado { background: #cce5ff; color: #004085; }
+    .badge-estado.interesado { background: #d4edda; color: #155724; }
+    .badge-estado.rechazado { background: #f8d7da; color: #721c24; }
+    .badge-estado.activo { background: #d4edda; color: #155724; }
     .badge-estado.finalizado { background: #e2e3e5; color: #383d41; }
-    .badge-estado.entrevista { background: #cce5ff; color: #004085; }
-    .badge-estado.descartado { background: #f8d7da; color: #721c24; }
 
-    /* ===== ESTADÍSTICAS RÁPIDAS ===== */
     .stat-mini {
         background: #ffffff;
         border: 1px solid var(--gov-border);
@@ -237,7 +302,6 @@ include '../componentes/menu_desempleado.php';
         letter-spacing: 0.3px;
     }
 
-    /* ===== PAGINACIÓN ===== */
     .pagination-custom .page-link {
         border-radius: var(--gov-radius-sm) !important;
         margin: 0 4px;
@@ -256,7 +320,6 @@ include '../componentes/menu_desempleado.php';
         color: white;
     }
 
-    /* ===== MODAL DETALLE ===== */
     .modal-content {
         border-radius: var(--gov-radius);
         border: none;
@@ -314,7 +377,6 @@ include '../componentes/menu_desempleado.php';
         padding: 1.2rem 2rem;
     }
 
-    /* ===== FOOTER ===== */
     footer {
         background: rgba(255, 255, 255, 0.9) !important;
         backdrop-filter: blur(8px);
@@ -373,8 +435,8 @@ include '../componentes/menu_desempleado.php';
                     <div class="d-flex align-items-center gap-3 mb-3">
                         <i class="bi bi-file-earmark-arrow-down fs-1" style="color: var(--gov-blue);"></i>
                         <div>
-                            <h1 class="h3 fw-bold m-0" style="color: var(--gov-dark);">Mi Historial Laboral</h1>
-                            <p class="text-muted m-0">Consulta todas tus postulaciones, contratos anteriores y experiencias laborales registradas.</p>
+                            <h1 class="h3 fw-bold m-0" style="color: var(--gov-dark);"> Mi Historial Laboral</h1>
+                            <p class="text-muted m-0">Consulta todas tus postulaciones y experiencias laborales registradas.</p>
                         </div>
                     </div>
                     <hr class="mb-4">
@@ -387,7 +449,7 @@ include '../componentes/menu_desempleado.php';
                             <div class="stat-mini">
                                 <div class="stat-icon"><i class="bi bi-send"></i></div>
                                 <div>
-                                    <div class="stat-number"><?php echo $total_postulaciones; ?></div>
+                                    <div class="stat-number"><?php echo $total_registros; ?></div>
                                     <div class="stat-label">Total registros</div>
                                 </div>
                             </div>
@@ -406,7 +468,7 @@ include '../componentes/menu_desempleado.php';
                                 <div class="stat-icon"><i class="bi bi-check2-circle" style="color: var(--gov-green);"></i></div>
                                 <div>
                                     <div class="stat-number"><?php echo $preseleccionados; ?></div>
-                                    <div class="stat-label">Preseleccionadas</div>
+                                    <div class="stat-label">Preseleccionados</div>
                                 </div>
                             </div>
                         </div>
@@ -434,11 +496,12 @@ include '../componentes/menu_desempleado.php';
                                 <label class="form-label fw-semibold small text-muted">Estado</label>
                                 <select id="estadoFiltro" class="form-select form-select-custom">
                                     <option value="">Todos</option>
-                                    <option value="revision">En Revisión</option>
-                                    <option value="preseleccionado">Preseleccionado</option>
-                                    <option value="entrevista">Entrevista</option>
+                                    <option value="pendiente">Pendiente</option>
+                                    <option value="revisado">En revisión</option>
+                                    <option value="interesado">Interesado</option>
+                                    <option value="rechazado">Rechazado</option>
+                                    <option value="activo">Activo (experiencia)</option>
                                     <option value="finalizado">Finalizado</option>
-                                    <option value="descartado">Descartado</option>
                                 </select>
                             </div>
                             <div class="col-md-2">
@@ -458,14 +521,14 @@ include '../componentes/menu_desempleado.php';
                             <h5 class="fw-bold m-0 h6 text-uppercase tracking-wider text-muted">
                                 <i class="bi bi-list-ul me-2"></i>Registros de actividad
                             </h5>
-                            <span class="badge-soft-blue" id="registrosCount"><?php echo count($experiencia); ?> registros</span>
+                            <span class="badge-soft-blue" id="registrosCount"><?php echo count($historial); ?> registros</span>
                         </div>
                         <div class="table-responsive">
                             <table class="table table-custom" id="historialTable">
                                 <thead>
                                     <tr>
                                         <th>Periodo</th>
-                                        <th>Puesto</th>
+                                        <th>Puesto / Oferta</th>
                                         <th>Empresa</th>
                                         <th>Estado</th>
                                         <th class="text-center">Acción</th>
@@ -487,12 +550,12 @@ include '../componentes/menu_desempleado.php';
             </div>
         </main>
 
-        <!-- ===== MODAL DETALLE DE POSTULACIÓN ===== -->
+        <!-- ===== MODAL DETALLE DE REGISTRO ===== -->
         <div class="modal fade" id="detalleModal" tabindex="-1" aria-hidden="true">
             <div class="modal-dialog modal-lg modal-dialog-centered">
                 <div class="modal-content">
                     <div class="modal-header">
-                        <h5 class="modal-title"><i class="bi bi-file-earmark-text me-2" style="color: var(--gov-gold);"></i>Detalle de la experiencia</h5>
+                        <h5 class="modal-title"><i class="bi bi-file-earmark-text me-2" style="color: var(--gov-gold);"></i>Detalle del registro</h5>
                         <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                     </div>
                     <div class="modal-body" id="modalDetalleBody">
@@ -508,32 +571,34 @@ include '../componentes/menu_desempleado.php';
         <?php include '../componentes/footer_desempleado.php'; ?>
 
         <script>
-            // ===== DATOS DE EXPERIENCIA DESDE PHP =====
-            const historialData = <?php echo json_encode($experiencia); ?>;
+            // ===== DATOS DEL HISTORIAL DESDE PHP =====
+            const historialData = <?php echo json_encode($historial); ?>;
 
             let currentPage = 1;
             const itemsPerPage = 3;
             let filteredData = [...historialData];
 
-            // ===== MAPEO DE ESTADOS =====
+            // ===== MAPEO DE ESTADOS A BADGES =====
             function getBadgeClass(estado) {
                 const map = {
-                    'revision': 'badge-estado revision',
-                    'preseleccionado': 'badge-estado preseleccionado',
-                    'finalizado': 'badge-estado finalizado',
-                    'entrevista': 'badge-estado entrevista',
-                    'descartado': 'badge-estado descartado'
+                    'pendiente': 'badge-estado pendiente',
+                    'revisado': 'badge-estado revisado',
+                    'interesado': 'badge-estado interesado',
+                    'rechazado': 'badge-estado rechazado',
+                    'activo': 'badge-estado activo',
+                    'finalizado': 'badge-estado finalizado'
                 };
                 return map[estado] || 'badge-estado';
             }
 
             function getEstadoLabel(estado) {
                 const map = {
-                    'revision': 'En Revisión',
-                    'preseleccionado': 'Preseleccionado',
-                    'finalizado': 'Finalizado',
-                    'entrevista': 'Entrevista',
-                    'descartado': 'Descartado'
+                    'pendiente': '⏳ Pendiente',
+                    'revisado': '🔍 En revisión',
+                    'interesado': '✅ Interesado',
+                    'rechazado': '❌ Rechazado',
+                    'activo': '🟢 Activo',
+                    'finalizado': '⚪ Finalizado'
                 };
                 return map[estado] || estado;
             }
@@ -547,9 +612,15 @@ include '../componentes/menu_desempleado.php';
                 }
 
                 const body = document.getElementById('modalDetalleBody');
+                const tipoLabel = item.tipo === 'postulacion' ? 'Postulación' : 'Experiencia laboral';
+
                 body.innerHTML = `
                     <div class="detail-row">
-                        <span class="detail-label"><i class="bi bi-briefcase"></i> Puesto</span>
+                        <span class="detail-label"><i class="bi bi-tag"></i> Tipo</span>
+                        <span class="detail-value"><span class="badge bg-secondary">${tipoLabel}</span></span>
+                    </div>
+                    <div class="detail-row">
+                        <span class="detail-label"><i class="bi bi-briefcase"></i> Puesto / Oferta</span>
                         <span class="detail-value"><strong>${item.puesto}</strong></span>
                     </div>
                     <div class="detail-row">
@@ -567,7 +638,7 @@ include '../componentes/menu_desempleado.php';
                     <div class="detail-row">
                         <span class="detail-label"><i class="bi bi-info-circle"></i> Descripción</span>
                         <div class="detail-value">
-                            <div class="descripcion-text">${item.descripcion || 'No hay descripción disponible.'}</div>
+                            <div class="descripcion-text">${item.descripcion || 'Sin descripción disponible.'}</div>
                         </div>
                     </div>
                 `;
@@ -609,7 +680,7 @@ include '../componentes/menu_desempleado.php';
                             <td>${item.empresa}</td>
                             <td><span class="${getBadgeClass(item.estado)}">${getEstadoLabel(item.estado)}</span></td>
                             <td class="text-center">
-                                <button class="btn btn-sm btn-outline-success" onclick="abrirDetalle(${item.id})">
+                                <button class="btn btn-sm btn-ver " onclick="abrirDetalle('${item.id}')">
                                     <i class="bi bi-eye"></i>
                                 </button>
                             </td>

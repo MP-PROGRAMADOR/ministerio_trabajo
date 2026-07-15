@@ -1,7 +1,7 @@
 <?php
 session_start();
 
-// ===== VERIFICAR SESIÓN ADMINISTRATIVA =====
+// ===== 1. VERIFICAR SESIÓN ADMINISTRATIVA =====
 if (!isset($_SESSION['id_usuario']) || !in_array($_SESSION['rol'] ?? '', ['administrador', 'ministerio'])) {
     header('Location: ../login_admin.php');
     exit();
@@ -11,7 +11,12 @@ $titulo = 'Control de Usuarios - Panel de Administración';
 include_once '../componentes/header_admin.php';
 include_once '../conexion/conexion.php';
 
-// ===== INICIALIZAR VARIABLES =====
+// ===== 2. CAPTURAR FILTROS DESDE GET =====
+$filtro_busqueda = isset($_GET['busqueda']) ? trim($_GET['busqueda']) : '';
+$filtro_rol = isset($_GET['rol']) ? trim($_GET['rol']) : '';
+$filtro_verificado = isset($_GET['verificado']) ? trim($_GET['verificado']) : '';
+
+// ===== 3. INICIALIZAR VARIABLES =====
 $usuarios = [];
 $total_usuarios = 0;
 $total_buscadores = 0;
@@ -20,7 +25,7 @@ $total_administradores = 0;
 $total_ministerio = 0;
 
 try {
-    // ===== CONTAR ESTADÍSTICAS =====
+    // ===== CONTAR ESTADÍSTICAS (General de la BD) =====
     $stmt = $pdo->query("SELECT COUNT(*) as total FROM usuarios");
     $total_usuarios = $stmt->fetch(PDO::FETCH_ASSOC)['total'] ?? 0;
 
@@ -36,8 +41,8 @@ try {
     $stmt = $pdo->query("SELECT COUNT(*) as total FROM usuarios WHERE rol = 'ministerio'");
     $total_ministerio = $stmt->fetch(PDO::FETCH_ASSOC)['total'] ?? 0;
 
-    // ===== OBTENER TODOS LOS USUARIOS =====
-    $stmt = $pdo->query("
+    // ===== CONSTRUIR CONSULTA FILTRADA =====
+    $sql = "
         SELECT 
             id,
             numero_expediente,
@@ -50,14 +55,47 @@ try {
             correo_verificado,
             DATE_FORMAT(fecha_registro, '%d/%m/%Y') AS fecha_registro
         FROM usuarios
-        ORDER BY id DESC
-    ");
+        WHERE 1=1
+    ";
+
+    $params = [];
+
+    // Aplicar filtro de búsqueda de texto
+    if ($filtro_busqueda !== '') {
+        $sql .= " AND (nombre LIKE ? OR apellidos LIKE ? OR nombre_usuario LIKE ? OR documento_identidad LIKE ? OR numero_expediente LIKE ?)";
+        $buscar_val = "%$filtro_busqueda%";
+        array_push($params, $buscar_val, $buscar_val, $buscar_val, $buscar_val, $buscar_val);
+    }
+
+    // Aplicar filtro de rol
+    if ($filtro_rol !== '') {
+        $sql .= " AND rol = ?";
+        $params[] = $filtro_rol;
+    }
+
+    // Aplicar filtro de verificación
+    if ($filtro_verificado !== '') {
+        $sql .= " AND correo_verificado = ?";
+        $params[] = $filtro_verificado;
+    }
+
+    $sql .= " ORDER BY id DESC";
+
+    $stmt = $pdo->prepare($sql);
+    $stmt->execute($params);
     $usuarios = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
 } catch (PDOException $e) {
     error_log("Error en usuarios: " . $e->getMessage());
     $usuarios = [];
 }
+
+// Construir enlace de impresión dinámico con los mismos filtros aplicados
+$pdf_url = "../php/imprimir_usuarios.php?" . http_build_query([
+    'busqueda' => $filtro_busqueda,
+    'rol' => $filtro_rol,
+    'verificado' => $filtro_verificado
+]);
 ?>
 
 <style>
@@ -89,6 +127,7 @@ try {
         transition: all 0.3s ease;
         height: 100%;
     }
+
     .custom-card:hover {
         box-shadow: 0 8px 25px rgba(11, 58, 96, 0.10);
     }
@@ -102,16 +141,19 @@ try {
         transition: all 0.3s ease;
         height: 100%;
     }
+
     .stat-card:hover {
         transform: translateY(-4px);
         box-shadow: 0 8px 25px rgba(11, 58, 96, 0.12);
     }
+
     .stat-card .stat-number {
         font-size: 1.8rem;
         font-weight: 700;
         color: var(--gov-dark);
         line-height: 1.2;
     }
+
     .stat-card .stat-label {
         font-size: 0.8rem;
         color: #6b7a8a;
@@ -119,6 +161,7 @@ try {
         text-transform: uppercase;
         letter-spacing: 0.3px;
     }
+
     .stat-card .stat-icon {
         width: 48px;
         height: 48px;
@@ -128,16 +171,46 @@ try {
         justify-content: center;
         font-size: 1.4rem;
     }
-    .bg-primary-subtle { background: rgba(11, 58, 96, 0.08); }
-    .text-primary { color: var(--gov-blue) !important; }
-    .bg-success-subtle { background: rgba(30, 126, 52, 0.08); }
-    .text-success { color: var(--gov-green) !important; }
-    .bg-warning-subtle { background: rgba(255, 193, 7, 0.12); }
-    .text-warning { color: #ffc107 !important; }
-    .bg-info-subtle { background: rgba(13, 202, 240, 0.12); }
-    .text-info { color: #0dcaf0 !important; }
-    .bg-danger-subtle { background: rgba(220, 53, 69, 0.08); }
-    .text-danger { color: #dc3545 !important; }
+
+    .bg-primary-subtle {
+        background: rgba(11, 58, 96, 0.08);
+    }
+
+    .text-primary {
+        color: var(--gov-blue) !important;
+    }
+
+    .bg-success-subtle {
+        background: rgba(30, 126, 52, 0.08);
+    }
+
+    .text-success {
+        color: var(--gov-green) !important;
+    }
+
+    .bg-warning-subtle {
+        background: rgba(255, 193, 7, 0.12);
+    }
+
+    .text-warning {
+        color: #ffc107 !important;
+    }
+
+    .bg-info-subtle {
+        background: rgba(13, 202, 240, 0.12);
+    }
+
+    .text-info {
+        color: #0dcaf0 !important;
+    }
+
+    .bg-danger-subtle {
+        background: rgba(220, 53, 69, 0.08);
+    }
+
+    .text-danger {
+        color: #dc3545 !important;
+    }
 
     .badge-rol {
         font-weight: 500;
@@ -147,18 +220,22 @@ try {
         text-transform: uppercase;
         letter-spacing: 0.3px;
     }
+
     .badge-rol.administrador {
         background: #f8d7da;
         color: #721c24;
     }
+
     .badge-rol.ministerio {
         background: #cce5ff;
         color: #004085;
     }
+
     .badge-rol.empleador {
         background: #d1ecf1;
         color: #0c5460;
     }
+
     .badge-rol.buscador {
         background: #d4edda;
         color: #155724;
@@ -172,10 +249,12 @@ try {
         text-transform: uppercase;
         letter-spacing: 0.3px;
     }
+
     .badge-verificado.verificado {
         background: #d4edda;
         color: #155724;
     }
+
     .badge-verificado.pendiente {
         background: #fff3cd;
         color: #856404;
@@ -192,6 +271,7 @@ try {
         min-width: 100%;
         margin-bottom: 0;
     }
+
     .table th {
         font-weight: 600;
         font-size: 0.75rem;
@@ -203,12 +283,14 @@ try {
         white-space: nowrap;
         padding: 0.75rem 1rem;
     }
+
     .table td {
         vertical-align: middle;
         padding: 0.75rem 1rem;
         word-wrap: break-word;
         max-width: 200px;
     }
+
     .table tbody tr:hover {
         background: rgba(11, 58, 96, 0.02);
     }
@@ -221,6 +303,7 @@ try {
         font-size: 0.8rem;
         transition: all 0.2s;
     }
+
     .btn-outline-secondary:hover {
         background: var(--gov-bg);
         border-color: var(--gov-blue);
@@ -235,6 +318,7 @@ try {
         font-weight: 500;
         transition: all 0.3s;
     }
+
     .btn-primary:hover {
         background: var(--gov-blue-light);
         transform: translateY(-2px);
@@ -249,6 +333,7 @@ try {
         font-size: 0.8rem;
         transition: all 0.2s;
     }
+
     .btn-outline-primary:hover {
         background: var(--gov-blue);
         color: white;
@@ -262,6 +347,7 @@ try {
         font-size: 0.8rem;
         transition: all 0.2s;
     }
+
     .btn-outline-danger:hover {
         background: #dc3545;
         color: white;
@@ -276,6 +362,7 @@ try {
         font-size: 0.8rem;
         transition: all 0.2s;
     }
+
     .btn-light:hover {
         background: var(--gov-blue);
         color: white;
@@ -291,6 +378,7 @@ try {
         font-weight: 500;
         transition: all 0.3s;
     }
+
     .btn-warning:hover {
         background: #e0a800;
         transform: translateY(-2px);
@@ -303,28 +391,36 @@ try {
         border-radius: var(--gov-radius);
         box-shadow: 0 20px 60px rgba(0, 0, 0, 0.15);
     }
+
     .modal-header {
         border-bottom: 2px solid var(--gov-border);
         background: var(--gov-bg);
     }
+
     .modal-header .modal-title {
         font-weight: 700;
         color: var(--gov-blue);
     }
+
     .modal-footer {
         border-top: 1px solid var(--gov-border);
         background: var(--gov-bg);
     }
-    .form-control, .form-select {
+
+    .form-control,
+    .form-select {
         border-radius: var(--gov-radius-sm);
         border: 1.5px solid var(--gov-border);
         padding: 0.6rem 1rem;
         transition: all 0.3s;
     }
-    .form-control:focus, .form-select:focus {
+
+    .form-control:focus,
+    .form-select:focus {
         border-color: var(--gov-blue);
         box-shadow: 0 0 0 3px rgba(11, 58, 96, 0.10);
     }
+
     .form-label {
         font-weight: 600;
         font-size: 0.85rem;
@@ -335,28 +431,37 @@ try {
         .stat-card .stat-number {
             font-size: 1.4rem;
         }
+
         .custom-card {
             padding: 1rem;
         }
-        .table td, .table th {
+
+        .table td,
+        .table th {
             padding: 0.5rem 0.75rem;
             font-size: 0.85rem;
         }
+
         .table td {
             max-width: 120px;
         }
     }
+
     @media (max-width: 576px) {
         .stat-card {
             padding: 0.8rem;
         }
+
         .stat-card .stat-number {
             font-size: 1.2rem;
         }
-        .table td, .table th {
+
+        .table td,
+        .table th {
             padding: 0.3rem 0.5rem;
             font-size: 0.75rem;
         }
+
         .table td {
             max-width: 80px;
         }
@@ -420,7 +525,9 @@ try {
                     <div class="d-flex justify-content-between align-items-center">
                         <div>
                             <span class="stat-label">Administradores</span>
-                            <h3 class="stat-number text-danger"><?php echo number_format($total_administradores + $total_ministerio); ?></h3>
+                            <h3 class="stat-number text-danger">
+                                <?php echo number_format($total_administradores + $total_ministerio); ?>
+                            </h3>
                             <small class="text-danger">Personal del sistema</small>
                         </div>
                         <div class="stat-icon bg-danger-subtle text-danger">
@@ -432,128 +539,173 @@ try {
         </div>
 
         <!-- ===== TABLA DE USUARIOS ===== -->
-        <div class="row">
-            <div class="col-12">
-                <div class="custom-card">
-                    <div class="d-flex justify-content-between align-items-center mb-3">
-                        <h5 class="fw-bold m-0">
-                            <i class="bi bi-list-ul me-2"></i>
-                            Lista de Usuarios
-                            <span class="badge bg-light text-dark border ms-2"><?php echo count($usuarios); ?> total</span>
-                        </h5>
-                        <button class="btn btn-primary btn-sm" data-bs-toggle="modal" data-bs-target="#modalAgregarUsuario">
-                            <i class="bi bi-plus-lg me-1"></i> Añadir Usuario
-                        </button>
-                    </div>
-
-                    <div class="table-wrap">
-                        <table class="table table-hover align-middle" id="tablaUsuarios">
-                            <thead>
-                                <tr>
-                                    <th style="min-width: 100px;">Expediente</th>
-                                    <th style="min-width: 160px;">Usuario / Nombre</th>
-                                    <th style="min-width: 150px;">Documento / Email</th>
-                                    <th style="min-width: 100px;">Rol</th>
-                                    <th style="min-width: 100px;">Verificación</th>
-                                    <th style="min-width: 90px;">Registro</th>
-                                    <th style="min-width: 130px;" class="text-end">Acciones</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                <?php if (empty($usuarios)): ?>
-                                    <tr>
-                                        <td colspan="7" class="text-center text-muted py-4">
-                                            <i class="bi bi-inbox fs-2 d-block mb-2"></i>
-                                            No hay usuarios registrados.
-                                        </td>
-                                    </tr>
-                                <?php else: ?>
-                                    <?php foreach ($usuarios as $usr): ?>
-                                        <tr>
-                                            <td>
-                                                <span class="font-monospace fw-bold text-primary">
-                                                    <?php echo htmlspecialchars($usr['numero_expediente']); ?>
-                                                </span>
-                                            </td>
-                                            <td>
-                                                <div class="fw-semibold" style="font-size: 0.9rem;">
-                                                    <?php echo htmlspecialchars($usr['nombre'] . ' ' . $usr['apellidos']); ?>
-                                                </div>
-                                                <small class="text-muted" style="font-size: 0.7rem;">
-                                                    <i class="bi bi-person me-1"></i>@<?php echo htmlspecialchars($usr['nombre_usuario']); ?>
-                                                </small>
-                                            </td>
-                                            <td style="font-size: 0.85rem;">
-                                                <div class="small fw-semibold text-dark">
-                                                    <i class="bi bi-card-heading me-1"></i>
-                                                    <?php echo htmlspecialchars($usr['documento_identidad']); ?>
-                                                </div>
-                                                <small class="text-muted d-block" style="font-size: 0.7rem;">
-                                                    <?php echo htmlspecialchars($usr['correo_electronico']); ?>
-                                                </small>
-                                            </td>
-                                            <td>
-                                                <span class="badge-rol <?php echo $usr['rol']; ?>">
-                                                    <?php echo ucfirst($usr['rol']); ?>
-                                                </span>
-                                            </td>
-                                            <td>
-                                                <span class="badge-verificado <?php echo ($usr['correo_verificado'] == 1) ? 'verificado' : 'pendiente'; ?>">
-                                                    <?php echo ($usr['correo_verificado'] == 1) ? 'Verificado' : 'Pendiente'; ?>
-                                                </span>
-                                            </td>
-                                            <td style="font-size: 0.8rem;">
-                                                <?php echo htmlspecialchars($usr['fecha_registro']); ?>
-                                            </td>
-                                            <td class="text-end">
-                                                <div class="d-flex gap-1 justify-content-end">
-                                                    <button class="btn btn-outline-secondary btn-sm btn-editar-usuario"
-                                                            data-id="<?php echo $usr['id']; ?>"
-                                                            data-expediente="<?php echo htmlspecialchars($usr['numero_expediente']); ?>"
-                                                            data-nombre="<?php echo htmlspecialchars($usr['nombre']); ?>"
-                                                            data-apellidos="<?php echo htmlspecialchars($usr['apellidos']); ?>"
-                                                            data-username="<?php echo htmlspecialchars($usr['nombre_usuario']); ?>"
-                                                            data-email="<?php echo htmlspecialchars($usr['correo_electronico']); ?>"
-                                                            data-documento="<?php echo htmlspecialchars($usr['documento_identidad']); ?>"
-                                                            data-rol="<?php echo htmlspecialchars($usr['rol']); ?>"
-                                                            data-verificado="<?php echo $usr['correo_verificado']; ?>"
-                                                            data-bs-toggle="modal"
-                                                            data-bs-target="#modalEditarUsuario"
-                                                            title="Editar">
-                                                        <i class="bi bi-pencil"></i>
-                                                    </button>
-                                                    <button class="btn btn-outline-secondary btn-sm btn-ver-usuario"
-                                                            data-id="<?php echo $usr['id']; ?>"
-                                                            data-expediente="<?php echo htmlspecialchars($usr['numero_expediente']); ?>"
-                                                            data-nombre="<?php echo htmlspecialchars($usr['nombre'] . ' ' . $usr['apellidos']); ?>"
-                                                            data-username="<?php echo htmlspecialchars($usr['nombre_usuario']); ?>"
-                                                            data-email="<?php echo htmlspecialchars($usr['correo_electronico']); ?>"
-                                                            data-documento="<?php echo htmlspecialchars($usr['documento_identidad']); ?>"
-                                                            data-rol="<?php echo htmlspecialchars($usr['rol']); ?>"
-                                                            data-verificado="<?php echo $usr['correo_verificado']; ?>"
-                                                            data-registro="<?php echo htmlspecialchars($usr['fecha_registro']); ?>"
-                                                            data-bs-toggle="modal"
-                                                            data-bs-target="#modalDetalleUsuario"
-                                                            title="Ver detalles">
-                                                        <i class="bi bi-eye"></i>
-                                                    </button>
-                                                    <button class="btn btn-outline-secondary btn-sm text-danger btn-eliminar-usuario"
-                                                            data-id="<?php echo $usr['id']; ?>"
-                                                            data-nombre="<?php echo htmlspecialchars($usr['nombre_usuario']); ?>"
-                                                            title="Eliminar">
-                                                        <i class="bi bi-trash"></i>
-                                                    </button>
-                                                </div>
-                                            </td>
-                                        </tr>
-                                    <?php endforeach; ?>
-                                <?php endif; ?>
-                            </tbody>
-                        </table>
+        <div class="row mb-4">
+    <div class="col-12">
+        <div class="custom-card p-3" style="background: #f8f9fa; border-radius: 8px; border: 1px solid #e3e6f0;">
+            <form method="GET" action="" class="row g-2 align-items-end">
+                <div class="col-md-4">
+                    <label class="form-label small fw-bold text-secondary">Buscar</label>
+                    <div class="input-group input-group-sm">
+                        <span class="input-group-text bg-white"><i class="bi bi-search"></i></span>
+                        <input type="text" name="busqueda" class="form-control" placeholder="Nombre, expediente, DNI..." value="<?php echo htmlspecialchars($filtro_busqueda); ?>">
                     </div>
                 </div>
+                <div class="col-md-3">
+                    <label class="form-label small fw-bold text-secondary">Rol</label>
+                    <select name="rol" class="form-select form-select-sm">
+                        <option value="">Todos los roles</option>
+                        <option value="buscador" <?php echo $filtro_rol === 'buscador' ? 'selected' : ''; ?>>Buscador</option>
+                        <option value="empleador" <?php echo $filtro_rol === 'empleador' ? 'selected' : ''; ?>>Empleador</option>
+                        <option value="administrador" <?php echo $filtro_rol === 'administrador' ? 'selected' : ''; ?>>Administrador</option>
+                        <option value="ministerio" <?php echo $filtro_rol === 'ministerio' ? 'selected' : ''; ?>>Ministerio</option>
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label small fw-bold text-secondary">Estado Verificación</label>
+                    <select name="verificado" class="form-select form-select-sm">
+                        <option value="">Todos</option>
+                        <option value="1" <?php echo $filtro_verificado === '1' ? 'selected' : ''; ?>>Verificado</option>
+                        <option value="0" <?php echo $filtro_verificado === '0' ? 'selected' : ''; ?>>Pendiente</option>
+                    </select>
+                </div>
+                <div class="col-md-2 d-flex gap-1">
+                    <button type="submit" class="btn btn-dark btn-sm flex-fill">
+                        <i class="bi bi-funnel-fill"></i> Filtrar
+                    </button>
+                    <a href="?" class="btn btn-outline-secondary btn-sm" title="Limpiar filtros">
+                        <i class="bi bi-arrow-counterclockwise"></i>
+                    </a>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-12">
+        <div class="custom-card">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <h5 class="fw-bold m-0">
+                    <i class="bi bi-list-ul me-2"></i>
+                    Lista de Usuarios
+                    <span class="badge bg-light text-dark border ms-2"><?php echo count($usuarios); ?> total</span>
+                </h5>
+                <div class="d-flex gap-2">
+                    <a href="<?php echo $pdf_url; ?>" target="_blank" class="btn btn-outline-danger btn-sm">
+                        <i class="bi bi-file-pdf me-1"></i> Imprimir PDF
+                    </a>
+                    <button class="btn btn-primary btn-sm" data-bs-toggle="modal" data-bs-target="#modalAgregarUsuario">
+                        <i class="bi bi-plus-lg me-1"></i> Añadir Usuario
+                    </button>
+                </div>
+            </div>
+
+            <div class="table-wrap">
+                <table class="table table-hover align-middle" id="tablaUsuarios">
+                    <thead>
+                        <tr>
+                            <th style="min-width: 100px;">Expediente</th>
+                            <th style="min-width: 160px;">Usuario / Nombre</th>
+                            <th style="min-width: 150px;">Documento / Email</th>
+                            <th style="min-width: 100px;">Rol</th>
+                            <th style="min-width: 100px;">Verificación</th>
+                            <th style="min-width: 90px;">Registro</th>
+                            <th style="min-width: 130px;" class="text-end">Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <?php if (empty($usuarios)): ?>
+                            <tr>
+                                <td colspan="7" class="text-center text-muted py-4">
+                                    <i class="bi bi-inbox fs-2 d-block mb-2"></i>
+                                    No hay usuarios registrados con los filtros aplicados.
+                                </td>
+                            </tr>
+                        <?php else: ?>
+                            <?php foreach ($usuarios as $usr): ?>
+                                <tr>
+                                    <td>
+                                        <span class="font-monospace fw-bold text-primary">
+                                            <?php echo htmlspecialchars($usr['numero_expediente']); ?>
+                                        </span>
+                                    </td>
+                                    <td>
+                                        <div class="fw-semibold" style="font-size: 0.9rem;">
+                                            <?php echo htmlspecialchars($usr['nombre'] . ' ' . $usr['apellidos']); ?>
+                                        </div>
+                                        <small class="text-muted" style="font-size: 0.7rem;">
+                                            <i class="bi bi-person me-1"></i>@<?php echo htmlspecialchars($usr['nombre_usuario']); ?>
+                                        </small>
+                                    </td>
+                                    <td style="font-size: 0.85rem;">
+                                        <div class="small fw-semibold text-dark">
+                                            <i class="bi bi-card-heading me-1"></i>
+                                            <?php echo htmlspecialchars($usr['documento_identidad']); ?>
+                                        </div>
+                                        <small class="text-muted d-block" style="font-size: 0.7rem;">
+                                            <?php echo htmlspecialchars($usr['correo_electronico']); ?>
+                                        </small>
+                                    </td>
+                                    <td>
+                                        <span class="badge-rol <?php echo $usr['rol']; ?>">
+                                            <?php echo ucfirst($usr['rol']); ?>
+                                        </span>
+                                    </td>
+                                    <td>
+                                        <span class="badge-verificado <?php echo ($usr['correo_verificado'] == 1) ? 'verificado' : 'pendiente'; ?>">
+                                            <?php echo ($usr['correo_verificado'] == 1) ? 'Verificado' : 'Pendiente'; ?>
+                                        </span>
+                                    </td>
+                                    <td style="font-size: 0.8rem;">
+                                        <?php echo htmlspecialchars($usr['fecha_registro']); ?>
+                                    </td>
+                                    <td class="text-end">
+                                        <div class="d-flex gap-1 justify-content-end">
+                                            <button class="btn btn-outline-secondary btn-sm btn-editar-usuario"
+                                                data-id="<?php echo $usr['id']; ?>"
+                                                data-expediente="<?php echo htmlspecialchars($usr['numero_expediente']); ?>"
+                                                data-nombre="<?php echo htmlspecialchars($usr['nombre']); ?>"
+                                                data-apellidos="<?php echo htmlspecialchars($usr['apellidos']); ?>"
+                                                data-username="<?php echo htmlspecialchars($usr['nombre_usuario']); ?>"
+                                                data-email="<?php echo htmlspecialchars($usr['correo_electronico']); ?>"
+                                                data-documento="<?php echo htmlspecialchars($usr['documento_identidad']); ?>"
+                                                data-rol="<?php echo htmlspecialchars($usr['rol']); ?>"
+                                                data-verificado="<?php echo $usr['correo_verificado']; ?>"
+                                                data-bs-toggle="modal" data-bs-target="#modalEditarUsuario"
+                                                title="Editar">
+                                                <i class="bi bi-pencil"></i>
+                                            </button>
+                                            <button class="btn btn-outline-secondary btn-sm btn-ver-usuario"
+                                                data-id="<?php echo $usr['id']; ?>"
+                                                data-expediente="<?php echo htmlspecialchars($usr['numero_expediente']); ?>"
+                                                data-nombre="<?php echo htmlspecialchars($usr['nombre'] . ' ' . $usr['apellidos']); ?>"
+                                                data-username="<?php echo htmlspecialchars($usr['nombre_usuario']); ?>"
+                                                data-email="<?php echo htmlspecialchars($usr['correo_electronico']); ?>"
+                                                data-documento="<?php echo htmlspecialchars($usr['documento_identidad']); ?>"
+                                                data-rol="<?php echo htmlspecialchars($usr['rol']); ?>"
+                                                data-verificado="<?php echo $usr['correo_verificado']; ?>"
+                                                data-registro="<?php echo htmlspecialchars($usr['fecha_registro']); ?>"
+                                                data-bs-toggle="modal" data-bs-target="#modalDetalleUsuario"
+                                                title="Ver detalles">
+                                                <i class="bi bi-eye"></i>
+                                            </button>
+                                            <button class="btn btn-outline-secondary btn-sm text-danger btn-eliminar-usuario"
+                                                data-id="<?php echo $usr['id']; ?>"
+                                                data-nombre="<?php echo htmlspecialchars($usr['nombre_usuario']); ?>"
+                                                title="Eliminar">
+                                                <i class="bi bi-trash"></i>
+                                            </button>
+                                        </div>
+                                    </td>
+                                </tr>
+                            <?php endforeach; ?>
+                        <?php endif; ?>
+                    </tbody>
+                </table>
             </div>
         </div>
+    </div>
+</div>
 
     </div>
 </div>
@@ -577,22 +729,26 @@ try {
                         </div>
                         <div class="col-md-6">
                             <label class="form-label fw-semibold">Apellidos *</label>
-                            <input type="text" name="apellidos" class="form-control" placeholder="Ej: Mete Bijeri" required>
+                            <input type="text" name="apellidos" class="form-control" placeholder="Ej: Mete Bijeri"
+                                required>
                         </div>
                         <div class="col-md-6">
                             <label class="form-label fw-semibold">Nombre de Usuario *</label>
                             <div class="input-group">
                                 <span class="input-group-text bg-light text-muted">@</span>
-                                <input type="text" name="nombre_usuario" class="form-control" placeholder="ej: smete" required>
+                                <input type="text" name="nombre_usuario" class="form-control" placeholder="ej: smete"
+                                    required>
                             </div>
                         </div>
                         <div class="col-md-6">
                             <label class="form-label fw-semibold">Documento de Identidad *</label>
-                            <input type="text" name="documento_identidad" class="form-control font-monospace" placeholder="Ej: 123456789" required>
+                            <input type="text" name="documento_identidad" class="form-control font-monospace"
+                                placeholder="Ej: 123456789" required>
                         </div>
                         <div class="col-md-7">
                             <label class="form-label fw-semibold">Correo Electrónico *</label>
-                            <input type="email" name="correo_electronico" class="form-control" placeholder="ejemplo@dominio.com" required>
+                            <input type="email" name="correo_electronico" class="form-control"
+                                placeholder="ejemplo@dominio.com" required>
                         </div>
                         <div class="col-md-5">
                             <label class="form-label fw-semibold">Rol Institucional *</label>
@@ -613,7 +769,8 @@ try {
                         </div>
                         <div class="col-12">
                             <div class="form-check form-switch">
-                                <input class="form-check-input" type="checkbox" name="correo_verificado" value="1" checked>
+                                <input class="form-check-input" type="checkbox" name="correo_verificado" value="1"
+                                    checked>
                                 <label class="form-check-label fw-semibold">Marcar correo como verificado</label>
                             </div>
                         </div>
@@ -645,7 +802,8 @@ try {
                 <div class="modal-body p-4">
                     <div class="alert alert-secondary py-2 px-3 small mb-4">
                         <i class="bi bi-folder2-open me-1 text-primary"></i>
-                        Expediente: <strong id="lbl_edit_expediente" class="font-monospace text-primary">EG-00000</strong>
+                        Expediente: <strong id="lbl_edit_expediente"
+                            class="font-monospace text-primary">EG-00000</strong>
                         <span class="ms-3">ID: <span id="lbl_edit_id">0</span></span>
                     </div>
                     <div class="row g-3">
@@ -661,16 +819,19 @@ try {
                             <label class="form-label fw-semibold">Nombre de Usuario *</label>
                             <div class="input-group">
                                 <span class="input-group-text bg-light text-muted">@</span>
-                                <input type="text" id="edit_nombre_usuario" name="nombre_usuario" class="form-control" required>
+                                <input type="text" id="edit_nombre_usuario" name="nombre_usuario" class="form-control"
+                                    required>
                             </div>
                         </div>
                         <div class="col-md-6">
                             <label class="form-label fw-semibold">Documento de Identidad *</label>
-                            <input type="text" id="edit_documento_identidad" name="documento_identidad" class="form-control font-monospace" required>
+                            <input type="text" id="edit_documento_identidad" name="documento_identidad"
+                                class="form-control font-monospace" required>
                         </div>
                         <div class="col-md-7">
                             <label class="form-label fw-semibold">Correo Electrónico *</label>
-                            <input type="email" id="edit_correo_electronico" name="correo_electronico" class="form-control" required>
+                            <input type="email" id="edit_correo_electronico" name="correo_electronico"
+                                class="form-control" required>
                         </div>
                         <div class="col-md-5">
                             <label class="form-label fw-semibold">Rol Institucional *</label>
@@ -689,15 +850,18 @@ try {
                         </div>
                         <div class="col-md-6">
                             <label class="form-label fw-semibold">Nueva Contraseña</label>
-                            <input type="password" id="edit_password" name="password" class="form-control" minlength="8" placeholder="••••••••">
+                            <input type="password" id="edit_password" name="password" class="form-control" minlength="8"
+                                placeholder="••••••••">
                         </div>
                         <div class="col-md-6">
                             <label class="form-label fw-semibold">Confirmar Contraseña</label>
-                            <input type="password" id="edit_password_confirm" name="password_confirm" class="form-control" minlength="8" placeholder="••••••••">
+                            <input type="password" id="edit_password_confirm" name="password_confirm"
+                                class="form-control" minlength="8" placeholder="••••••••">
                         </div>
                         <div class="col-12">
                             <div class="form-check form-switch">
-                                <input class="form-check-input" type="checkbox" id="edit_correo_verificado" name="correo_verificado" value="1">
+                                <input class="form-check-input" type="checkbox" id="edit_correo_verificado"
+                                    name="correo_verificado" value="1">
                                 <label class="form-check-label fw-semibold">Cuenta con correo verificado</label>
                             </div>
                         </div>
@@ -726,21 +890,25 @@ try {
             </div>
             <div class="modal-body p-4">
                 <div class="d-flex align-items-center mb-4 pb-3 border-bottom">
-                    <div class="bg-primary-subtle text-primary rounded-circle d-flex align-items-center justify-content-center fw-bold fs-3 me-3" style="width: 60px; height: 60px;">
+                    <div class="bg-primary-subtle text-primary rounded-circle d-flex align-items-center justify-content-center fw-bold fs-3 me-3"
+                        style="width: 60px; height: 60px;">
                         <span id="view_iniciales">US</span>
                     </div>
                     <div>
                         <h5 class="mb-1 fw-bold text-dark" id="view_nombre_completo">Nombre Apellidos</h5>
                         <div class="text-muted small">
-                            <span class="me-3"><i class="bi bi-at me-1"></i><span id="view_username">usuario</span></span>
-                            <span><i class="bi bi-folder2-open me-1"></i>Expediente: <strong id="view_expediente" class="font-monospace text-primary">EG-00000</strong></span>
+                            <span class="me-3"><i class="bi bi-at me-1"></i><span
+                                    id="view_username">usuario</span></span>
+                            <span><i class="bi bi-folder2-open me-1"></i>Expediente: <strong id="view_expediente"
+                                    class="font-monospace text-primary">EG-00000</strong></span>
                         </div>
                     </div>
                 </div>
                 <div class="row g-3">
                     <div class="col-md-6">
                         <div class="p-3 bg-light rounded-3 h-100">
-                            <small class="text-muted d-block mb-1"><i class="bi bi-card-heading me-1"></i>Documento</small>
+                            <small class="text-muted d-block mb-1"><i
+                                    class="bi bi-card-heading me-1"></i>Documento</small>
                             <span class="fw-bold font-monospace text-dark fs-6" id="view_documento">---</span>
                         </div>
                     </div>
@@ -758,13 +926,15 @@ try {
                     </div>
                     <div class="col-md-4">
                         <div class="p-3 bg-light rounded-3 h-100">
-                            <small class="text-muted d-block mb-1"><i class="bi bi-check-circle me-1"></i>Verificación</small>
+                            <small class="text-muted d-block mb-1"><i
+                                    class="bi bi-check-circle me-1"></i>Verificación</small>
                             <span id="view_badge_verificado" class="badge">---</span>
                         </div>
                     </div>
                     <div class="col-md-4">
                         <div class="p-3 bg-light rounded-3 h-100">
-                            <small class="text-muted d-block mb-1"><i class="bi bi-calendar-event me-1"></i>Registro</small>
+                            <small class="text-muted d-block mb-1"><i
+                                    class="bi bi-calendar-event me-1"></i>Registro</small>
                             <span class="fw-semibold text-dark" id="view_fecha_registro">--/--/----</span>
                         </div>
                     </div>
@@ -779,122 +949,122 @@ try {
 
 <script src="https://cdn.datatables.net/1.13.7/js/jquery.dataTables.min.js"></script>
 <script>
-document.addEventListener('DOMContentLoaded', function() {
-    // ===== INICIALIZAR DATATABLE =====
-    const tabla = document.getElementById('tablaUsuarios');
-    if (tabla && tabla.querySelector('tbody tr') && tabla.querySelector('tbody tr').cells.length > 1) {
-        if (typeof $.fn.DataTable !== 'undefined') {
-            $(tabla).DataTable({
-                language: {
-                    url: 'https://cdn.datatables.net/plug-ins/1.13.7/i18n/es-ES.json'
-                },
-                pageLength: 10,
-                order: [[0, 'desc']],
-                responsive: true,
-                columnDefs: [
-                    { orderable: false, targets: 6 }
-                ],
-                scrollX: false,
-                autoWidth: true,
-                scrollY: false,
-                scrollCollapse: false
-            });
+    document.addEventListener('DOMContentLoaded', function () {
+        // ===== INICIALIZAR DATATABLE =====
+        const tabla = document.getElementById('tablaUsuarios');
+        if (tabla && tabla.querySelector('tbody tr') && tabla.querySelector('tbody tr').cells.length > 1) {
+            if (typeof $.fn.DataTable !== 'undefined') {
+                $(tabla).DataTable({
+                    language: {
+                        url: 'https://cdn.datatables.net/plug-ins/1.13.7/i18n/es-ES.json'
+                    },
+                    pageLength: 10,
+                    order: [[0, 'desc']],
+                    responsive: true,
+                    columnDefs: [
+                        { orderable: false, targets: 6 }
+                    ],
+                    scrollX: false,
+                    autoWidth: true,
+                    scrollY: false,
+                    scrollCollapse: false
+                });
+            }
         }
-    }
 
-    // ===== VALIDAR CONTRASEÑAS EN AGREGAR =====
-    document.querySelector('#modalAgregarUsuario form')?.addEventListener('submit', function(e) {
-        const pass = this.querySelector('input[name="password"]').value;
-        const passConfirm = this.querySelector('input[name="password_confirm"]').value;
-        if (pass !== passConfirm) {
-            e.preventDefault();
-            alert('Las contraseñas no coinciden.');
-        }
-    });
-
-    // ===== EDITAR USUARIO =====
-    document.querySelectorAll('.btn-editar-usuario').forEach(button => {
-        button.addEventListener('click', function() {
-            document.getElementById('edit_id').value = this.dataset.id || '';
-            document.getElementById('lbl_edit_id').textContent = this.dataset.id || '0';
-            document.getElementById('lbl_edit_expediente').textContent = this.dataset.expediente || 'EG-00000';
-            document.getElementById('edit_nombre').value = this.dataset.nombre || '';
-            document.getElementById('edit_apellidos').value = this.dataset.apellidos || '';
-            document.getElementById('edit_nombre_usuario').value = this.dataset.username || '';
-            document.getElementById('edit_documento_identidad').value = this.dataset.documento || '';
-            document.getElementById('edit_correo_electronico').value = this.dataset.email || '';
-            document.getElementById('edit_rol').value = this.dataset.rol || 'buscador';
-            document.getElementById('edit_correo_verificado').checked = (this.dataset.verificado == "1");
-            
-            document.getElementById('edit_password').value = '';
-            document.getElementById('edit_password_confirm').value = '';
-        });
-    });
-
-    // ===== VALIDAR CONTRASEÑAS EN EDICIÓN =====
-    document.querySelector('#modalEditarUsuario form')?.addEventListener('submit', function(e) {
-        const pass = this.querySelector('input[name="password"]').value;
-        const passConfirm = this.querySelector('input[name="password_confirm"]').value;
-        if (pass !== '' || passConfirm !== '') {
+        // ===== VALIDAR CONTRASEÑAS EN AGREGAR =====
+        document.querySelector('#modalAgregarUsuario form')?.addEventListener('submit', function (e) {
+            const pass = this.querySelector('input[name="password"]').value;
+            const passConfirm = this.querySelector('input[name="password_confirm"]').value;
             if (pass !== passConfirm) {
                 e.preventDefault();
                 alert('Las contraseñas no coinciden.');
             }
-        }
-    });
+        });
 
-    // ===== VER DETALLE USUARIO =====
-    document.querySelectorAll('.btn-ver-usuario').forEach(button => {
-        button.addEventListener('click', function() {
-            const nombre = this.dataset.nombre || 'Sin Nombre';
-            const username = this.dataset.username || '---';
-            const expediente = this.dataset.expediente || '---';
-            const documento = this.dataset.documento || '---';
-            const email = this.dataset.email || '---';
-            const rol = this.dataset.rol || 'buscador';
-            const verificado = this.dataset.verificado == "1";
-            const registro = this.dataset.registro || '---';
+        // ===== EDITAR USUARIO =====
+        document.querySelectorAll('.btn-editar-usuario').forEach(button => {
+            button.addEventListener('click', function () {
+                document.getElementById('edit_id').value = this.dataset.id || '';
+                document.getElementById('lbl_edit_id').textContent = this.dataset.id || '0';
+                document.getElementById('lbl_edit_expediente').textContent = this.dataset.expediente || 'EG-00000';
+                document.getElementById('edit_nombre').value = this.dataset.nombre || '';
+                document.getElementById('edit_apellidos').value = this.dataset.apellidos || '';
+                document.getElementById('edit_nombre_usuario').value = this.dataset.username || '';
+                document.getElementById('edit_documento_identidad').value = this.dataset.documento || '';
+                document.getElementById('edit_correo_electronico').value = this.dataset.email || '';
+                document.getElementById('edit_rol').value = this.dataset.rol || 'buscador';
+                document.getElementById('edit_correo_verificado').checked = (this.dataset.verificado == "1");
 
-            document.getElementById('view_nombre_completo').textContent = nombre;
-            document.getElementById('view_username').textContent = username;
-            document.getElementById('view_expediente').textContent = expediente;
-            document.getElementById('view_documento').textContent = documento;
-            document.getElementById('view_email').textContent = email;
-            document.getElementById('view_fecha_registro').textContent = registro;
+                document.getElementById('edit_password').value = '';
+                document.getElementById('edit_password_confirm').value = '';
+            });
+        });
 
-            const iniciales = nombre.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase();
-            document.getElementById('view_iniciales').textContent = iniciales || 'US';
-
-            const badgeRol = document.getElementById('view_badge_rol');
-            const rolMap = {
-                'administrador': 'bg-danger-subtle text-danger border border-danger-subtle',
-                'ministerio': 'bg-primary-subtle text-primary border border-primary-subtle',
-                'empleador': 'bg-info-subtle text-info border border-info-subtle',
-                'buscador': 'bg-success-subtle text-success border border-success-subtle'
-            };
-            badgeRol.textContent = rol;
-            badgeRol.className = 'badge text-capitalize px-2 py-1 ' + (rolMap[rol] || 'bg-secondary-subtle text-secondary');
-
-            const badgeVerificado = document.getElementById('view_badge_verificado');
-            if (verificado) {
-                badgeVerificado.textContent = 'Verificado';
-                badgeVerificado.className = 'badge bg-success-subtle text-success border border-success-subtle';
-            } else {
-                badgeVerificado.textContent = 'Pendiente';
-                badgeVerificado.className = 'badge bg-warning-subtle text-warning border border-warning-subtle';
+        // ===== VALIDAR CONTRASEÑAS EN EDICIÓN =====
+        document.querySelector('#modalEditarUsuario form')?.addEventListener('submit', function (e) {
+            const pass = this.querySelector('input[name="password"]').value;
+            const passConfirm = this.querySelector('input[name="password_confirm"]').value;
+            if (pass !== '' || passConfirm !== '') {
+                if (pass !== passConfirm) {
+                    e.preventDefault();
+                    alert('Las contraseñas no coinciden.');
+                }
             }
         });
-    });
 
-    // ===== ELIMINAR USUARIO =====
-    document.querySelectorAll('.btn-eliminar-usuario').forEach(button => {
-        button.addEventListener('click', function() {
-            if (confirm('¿Estás seguro de eliminar al usuario "' + this.dataset.nombre + '"? Esta acción no se puede deshacer.')) {
-                window.location.href = '../php/eliminar_usuario.php?id=' + this.dataset.id;
-            }
+        // ===== VER DETALLE USUARIO =====
+        document.querySelectorAll('.btn-ver-usuario').forEach(button => {
+            button.addEventListener('click', function () {
+                const nombre = this.dataset.nombre || 'Sin Nombre';
+                const username = this.dataset.username || '---';
+                const expediente = this.dataset.expediente || '---';
+                const documento = this.dataset.documento || '---';
+                const email = this.dataset.email || '---';
+                const rol = this.dataset.rol || 'buscador';
+                const verificado = this.dataset.verificado == "1";
+                const registro = this.dataset.registro || '---';
+
+                document.getElementById('view_nombre_completo').textContent = nombre;
+                document.getElementById('view_username').textContent = username;
+                document.getElementById('view_expediente').textContent = expediente;
+                document.getElementById('view_documento').textContent = documento;
+                document.getElementById('view_email').textContent = email;
+                document.getElementById('view_fecha_registro').textContent = registro;
+
+                const iniciales = nombre.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase();
+                document.getElementById('view_iniciales').textContent = iniciales || 'US';
+
+                const badgeRol = document.getElementById('view_badge_rol');
+                const rolMap = {
+                    'administrador': 'bg-danger-subtle text-danger border border-danger-subtle',
+                    'ministerio': 'bg-primary-subtle text-primary border border-primary-subtle',
+                    'empleador': 'bg-info-subtle text-info border border-info-subtle',
+                    'buscador': 'bg-success-subtle text-success border border-success-subtle'
+                };
+                badgeRol.textContent = rol;
+                badgeRol.className = 'badge text-capitalize px-2 py-1 ' + (rolMap[rol] || 'bg-secondary-subtle text-secondary');
+
+                const badgeVerificado = document.getElementById('view_badge_verificado');
+                if (verificado) {
+                    badgeVerificado.textContent = 'Verificado';
+                    badgeVerificado.className = 'badge bg-success-subtle text-success border border-success-subtle';
+                } else {
+                    badgeVerificado.textContent = 'Pendiente';
+                    badgeVerificado.className = 'badge bg-warning-subtle text-warning border border-warning-subtle';
+                }
+            });
+        });
+
+        // ===== ELIMINAR USUARIO =====
+        document.querySelectorAll('.btn-eliminar-usuario').forEach(button => {
+            button.addEventListener('click', function () {
+                if (confirm('¿Estás seguro de eliminar al usuario "' + this.dataset.nombre + '"? Esta acción no se puede deshacer.')) {
+                    window.location.href = '../php/eliminar_usuario.php?id=' + this.dataset.id;
+                }
+            });
         });
     });
-});
 </script>
 
 <?php include_once '../componentes/footer_admin.php'; ?>

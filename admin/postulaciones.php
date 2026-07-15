@@ -473,11 +473,7 @@ try {
 
                                                 <td class="text-end">
                                                     <div class="d-flex gap-1 justify-content-end">
-                                                        <button class="btn btn-outline-secondary btn-sm" data-bs-toggle="modal"
-                                                            data-bs-target="#modalPostulacion<?php echo $postulacion['postulacion_id']; ?>"
-                                                            title="Ver Mensaje de Presentación">
-                                                            <i class="bi bi-chat-text"></i>
-                                                        </button>
+                                                       
 
                                                         <button class="btn btn-outline-primary btn-sm" title="Cambiar Estado">
                                                             <i class="bi bi-gear"></i>

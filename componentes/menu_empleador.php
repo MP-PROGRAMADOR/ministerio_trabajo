@@ -437,10 +437,8 @@ $expediente = $empresa_data['rnc_ruc'] ?? $empresa_data['numero_expediente'] ?? 
             <li>
                 <a href="candidatos.php" class="nav-link <?php echo $pagina_actual == 'candidatos.php' ? 'active' : ''; ?>">
                     <i class="bi bi-people-fill"></i>
-                    <span>Candidatos / Alertas</span>
-                    <?php if ($notificaciones > 0): ?>
-                        <span class="badge-notif"><?php echo $notificaciones; ?></span>
-                    <?php endif; ?>
+                    <span>Postulaciones </span>
+                    
                 </a>
             </li>
             <li>

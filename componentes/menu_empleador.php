@@ -417,7 +417,7 @@ $expediente = $empresa_data['rnc_ruc'] ?? $empresa_data['numero_expediente'] ?? 
             <i class="bi bi-building-fill-gear fs-3"></i>
             <div>
                 <h6 class="fw-bold m-0 text-white">Portal Empresa</h6>
-                <small class="text-white-50">Ministerio de Trabajo</small>
+                <small class="text-white-50">Oficina Central de Empleo</small>
             </div>
         </div>
 

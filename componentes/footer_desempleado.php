@@ -1,7 +1,7 @@
         <!-- ===== FOOTER INSTITUCIONAL ===== -->
         <footer class="bg-white text-center py-4 text-muted small mt-auto border-top">
             <div class="container">
-                <p class="m-0 fw-medium">&copy; 2026 Ministerio de Trabajo, Fomento del Empleo y Seguridad Social.</p>
+                <p class="m-0 fw-medium">&copy; Oficina Central de Empleo</p>
                 <p class="m-0 text-uppercase tracking-wider mt-1" style="font-size: 0.65rem; color: var(--gov-green); font-weight: 700;">Unidad • Paz • Justicia</p>
             </div>
         </footer>

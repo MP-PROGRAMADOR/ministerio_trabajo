@@ -49,13 +49,24 @@ try {
     $stmt->execute();
     $cursos_bd = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
-    // ===== OBTENER ÁREAS ÚNICAS PARA FILTROS =====
+    // Obtener inscripciones del usuario
+    $cursos_solicitados = [];
+    if ($buscador) {
+        $stmt = $pdo->prepare("SELECT curso_id, estado FROM inscripciones_cursos WHERE buscador_id = ?");
+        $stmt->execute([$buscador['id']]);
+        $inscripciones = $stmt->fetchAll(PDO::FETCH_ASSOC);
+        foreach ($inscripciones as $ins) {
+            $cursos_solicitados[$ins['curso_id']] = $ins['estado'];
+        }
+    }
+
+    // ===== OBTENER MODALIDADES ÚNICAS PARA FILTROS =====
     $stmt = $pdo->prepare("SELECT DISTINCT modalidad FROM cursos ORDER BY modalidad");
     $stmt->execute();
     $modalidades = $stmt->fetchAll(PDO::FETCH_COLUMN);
 
-    // ===== OBTENER ESTADOS ÚNICOS =====
-    $estados = ['activo', 'proximamente'];
+    // ===== OBTENER ENTIDADES ÚNICAS =====
+    $entidades_unicas = array_unique(array_column($cursos_bd, 'nombre_entidad'));
 
 } catch (PDOException $e) {
     error_log("Error en cursos públicos: " . $e->getMessage());
@@ -63,6 +74,8 @@ try {
     $buscador = null;
     $cursos_bd = [];
     $modalidades = [];
+    $cursos_solicitados = [];
+    $entidades_unicas = [];
 }
 
 // ===== INCLUIR MENÚ =====
@@ -70,7 +83,6 @@ include '../componentes/menu_desempleado.php';
 ?>
 
 <style>
-
     /* ===== TARJETAS ===== */
     .dashboard-card {
         background: #ffffff;
@@ -187,6 +199,44 @@ include '../componentes/menu_desempleado.php';
         padding: 0.2rem 0.8rem;
         border-radius: 20px;
         font-size: 0.7rem;
+    }
+
+    /* Badges de estado de solicitud */
+    .badge-soft-warning {
+        background-color: #fff3cd;
+        color: #856404;
+        border: 1px solid #ffc107;
+        font-weight: 500;
+        padding: 0.3rem 0.8rem;
+        border-radius: 20px;
+        font-size: 0.75rem;
+    }
+    .badge-soft-success {
+        background-color: #d4edda;
+        color: #155724;
+        border: 1px solid #28a745;
+        font-weight: 500;
+        padding: 0.3rem 0.8rem;
+        border-radius: 20px;
+        font-size: 0.75rem;
+    }
+    .badge-soft-danger {
+        background-color: #f8d7da;
+        color: #721c24;
+        border: 1px solid #dc3545;
+        font-weight: 500;
+        padding: 0.3rem 0.8rem;
+        border-radius: 20px;
+        font-size: 0.75rem;
+    }
+    .badge-soft-info {
+        background-color: #cce5ff;
+        color: #004085;
+        border: 1px solid #0dcaf0;
+        font-weight: 500;
+        padding: 0.3rem 0.8rem;
+        border-radius: 20px;
+        font-size: 0.75rem;
     }
 
     /* ===== BOTONES ===== */
@@ -465,6 +515,16 @@ include '../componentes/menu_desempleado.php';
 
         <main class="container py-5 flex-grow-1">
 
+            <!-- MENSAJES FLASH -->
+            <?php if (isset($_SESSION['mensaje'])): ?>
+                <div id="flashMessage" class="alert alert-<?php echo $_SESSION['mensaje_tipo']; ?> alert-dismissible fade show" role="alert">
+                    <i class="bi bi-<?php echo $_SESSION['mensaje_tipo'] == 'success' ? 'check-circle-fill' : ($_SESSION['mensaje_tipo'] == 'danger' ? 'x-circle-fill' : 'info-circle-fill'); ?> me-2"></i>
+                    <?php echo htmlspecialchars($_SESSION['mensaje']); ?>
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                </div>
+                <?php unset($_SESSION['mensaje']); unset($_SESSION['mensaje_tipo']); ?>
+            <?php endif; ?>
+
             <!-- ALERTA EXPEDIENTE INCOMPLETO -->
             <?php if (!$perfil_completo): ?>
                 <div id="incompleteProfileBanner" class="alert alert-profile-incomplete p-4 mb-4">
@@ -524,10 +584,7 @@ include '../componentes/menu_desempleado.php';
                                     <div class="col-md-2">
                                         <select id="entidadSelect" class="form-select form-select-custom">
                                             <option value="">Todas las entidades</option>
-                                            <?php 
-                                                $entidades_unicas = array_unique(array_column($cursos_bd, 'nombre_entidad'));
-                                                foreach ($entidades_unicas as $entidad): 
-                                            ?>
+                                            <?php foreach ($entidades_unicas as $entidad): ?>
                                                 <option value="<?php echo htmlspecialchars($entidad); ?>">
                                                     <?php echo htmlspecialchars($entidad); ?>
                                                 </option>
@@ -572,8 +629,7 @@ include '../componentes/menu_desempleado.php';
 
         </main>
 
-        <!-- ===== MODALES ===== -->
-        <!-- Modal Detalle Curso -->
+        <!-- ===== MODAL DETALLE CURSO (sin modales de solicitud) ===== -->
         <div class="modal fade" id="courseModal" tabindex="-1" aria-hidden="true">
             <div class="modal-dialog modal-lg modal-dialog-centered">
                 <div class="modal-content">
@@ -590,93 +646,25 @@ include '../componentes/menu_desempleado.php';
             </div>
         </div>
 
-        <!-- Modal Solicitud -->
-        <div class="modal fade" id="solicitudModal" tabindex="-1" aria-hidden="true">
-            <div class="modal-dialog modal-dialog-centered">
-                <div class="modal-content">
-                    <div class="modal-header">
-                        <h5 class="modal-title"><i class="bi bi-pencil-square me-2" style="color: var(--gov-green);"></i>Solicitar plaza - <span id="solicitudCursoNombre">Curso</span></h5>
-                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                    </div>
-                    <div class="modal-body">
-                        <form id="solicitudForm">
-                            <div class="mb-3">
-                                <label class="form-label fw-semibold">Nombre completo *</label>
-                                <input type="text" id="solicitudNombre" class="form-control form-control-custom" placeholder="Ej: Juan Carlos" required>
-                            </div>
-                            <div class="mb-3">
-                                <label class="form-label fw-semibold">Documento de Identidad (DIP) *</label>
-                                <input type="text" id="solicitudDIP" class="form-control form-control-custom" placeholder="Ej: 123456789" required>
-                            </div>
-                            <div class="mb-3">
-                                <label class="form-label fw-semibold">Teléfono *</label>
-                                <input type="tel" id="solicitudTelefono" class="form-control form-control-custom" placeholder="Ej: 555-123456" required>
-                            </div>
-                            <div class="mb-3">
-                                <label class="form-label fw-semibold">Correo electrónico *</label>
-                                <input type="email" id="solicitudEmail" class="form-control form-control-custom" placeholder="ejemplo@correo.gq" required>
-                            </div>
-                            <div class="mb-3">
-                                <label class="form-label fw-semibold">Motivo de interés (opcional)</label>
-                                <textarea id="solicitudMotivo" class="form-control form-control-custom" rows="2" placeholder="Breve descripción de su motivación..."></textarea>
-                            </div>
-                            <p class="text-muted small">* Campos obligatorios</p>
-                        </form>
-                    </div>
-                    <div class="modal-footer">
-                        <button type="button" class="btn btn-green" id="enviarSolicitudBtn"><i class="bi bi-check2-circle me-2"></i>Enviar solicitud</button>
-                        <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancelar</button>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Modal Confirmación -->
-        <div class="modal fade" id="confirmacionModal" tabindex="-1" aria-hidden="true">
-            <div class="modal-dialog modal-dialog-centered">
-                <div class="modal-content">
-                    <div class="modal-header" style="border-bottom-color: var(--gov-green);">
-                        <h5 class="modal-title"><i class="bi bi-check-circle-fill me-2" style="color: var(--gov-green);"></i>Solicitud enviada</h5>
-                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                    </div>
-                    <div class="modal-body text-center py-4">
-                        <i class="bi bi-hourglass-split" style="font-size: 4rem; color: var(--gov-gold);"></i>
-                        <h5 class="mt-3 fw-bold">¡Su solicitud ha sido recibida!</h5>
-                        <p class="text-muted">Queda <strong>pendiente de confirmación</strong> por parte del Ministerio. Recibirá notificaciones sobre el estado de su inscripción.</p>
-                        <div class="alert alert-info mt-3" role="alert">
-                            <i class="bi bi-info-circle me-2"></i> El proceso de validación puede tomar hasta 48 horas hábiles.
-                        </div>
-                    </div>
-                    <div class="modal-footer">
-                        <button class="btn btn-blue" data-bs-dismiss="modal">Entendido</button>
-                    </div>
-                </div>
-            </div>
-        </div>
-
         <?php include '../componentes/footer_desempleado.php'; ?>
 
         <script>
-            // ===== DATOS DE CURSOS DESDE PHP =====
+            // ===== DATOS DE CURSOS DESDE PHP (con estado de solicitud) =====
             const courses = <?php 
                 $courses_array = [];
                 foreach ($cursos_bd as $curso) {
-                    // Determinar color de acento según estado
                     $color = $curso['estado'] == 'activo' ? 'green' : 'gold';
-                    
-                    // Badge según estado
                     $badge = $curso['estado'] == 'activo' ? 'Cupos disponibles' : 'Próximamente';
                     $badgeColor = $curso['estado'] == 'activo' ? 'green' : 'gold';
-                    
-                    // Determinar estado para el filtro
                     $estado = $curso['estado'];
+                    
+                    $solicitado = isset($cursos_solicitados[$curso['id']]) ? $cursos_solicitados[$curso['id']] : null;
                     
                     $courses_array[] = [
                         'id' => $curso['id'],
                         'title' => $curso['titulo_curso'],
                         'institution' => $curso['nombre_entidad'],
                         'siglas' => $curso['siglas'] ?? '',
-                        'area' => 'tecnologia',
                         'modalidad' => $curso['modalidad'] ?? 'presencial',
                         'estado' => $estado,
                         'spots' => $curso['cupos_maximos'] ?? 30,
@@ -687,8 +675,7 @@ include '../componentes/menu_desempleado.php';
                         'accent' => $color,
                         'description' => $curso['descripcion_curso'] ?? '',
                         'imagen' => $curso['imagen_portada'] ?? '',
-                        'requisitos' => ['Disponibilidad para completar el curso', 'Cumplir con los requisitos de la entidad formadora'],
-                        'beneficios' => ['Certificado oficial del Ministerio', 'Acceso a bolsa de empleo']
+                        'solicitado' => $solicitado // 'pendiente', 'confirmado', 'rechazado' o null
                     ];
                 }
                 echo json_encode($courses_array);
@@ -739,12 +726,31 @@ include '../componentes/menu_desempleado.php';
 
                     const siglasHtml = course.siglas ? `(${course.siglas})` : '';
 
+                    // Botón o estado según solicitud
                     let btnHtml = '';
-                    if (course.estado === 'activo') {
+                    const solicitado = course.solicitado;
+                    if (solicitado) {
+                        let estadoTexto = '';
+                        let estadoClase = '';
+                        if (solicitado === 'pendiente') {
+                            estadoTexto = '⏳ Pendiente de confirmación';
+                            estadoClase = 'badge-soft-warning';
+                        } else if (solicitado === 'confirmado') {
+                            estadoTexto = '✅ Confirmado';
+                            estadoClase = 'badge-soft-success';
+                        } else if (solicitado === 'rechazado') {
+                            estadoTexto = '❌ Rechazado';
+                            estadoClase = 'badge-soft-danger';
+                        } else {
+                            estadoTexto = 'Solicitado';
+                            estadoClase = 'badge-soft-info';
+                        }
+                        btnHtml = `<span class="badge ${estadoClase}" style="font-size:0.75rem; padding:0.4rem 1rem;">${estadoTexto}</span>`;
+                    } else if (course.estado === 'activo') {
                         btnHtml = `
-                            <button class="btn btn-green btn-sm px-3" onclick="openSolicitudModal(${course.id})">
+                            <a href="solicitar_plaza.php?curso_id=${course.id}" class="btn btn-green btn-sm px-3">
                                 <i class="bi bi-send me-1"></i> Solicitar plaza
-                            </button>
+                            </a>
                         `;
                     } else if (course.estado === 'proximamente') {
                         btnHtml = `
@@ -882,7 +888,7 @@ include '../componentes/menu_desempleado.php';
                 filterCourses();
             });
 
-            // ===== MODALES =====
+            // ===== MODAL DETALLE CURSO =====
             function openCourseModal(id) {
                 const course = courses.find(c => c.id === id);
                 if (!course) return;
@@ -943,14 +949,27 @@ include '../componentes/menu_desempleado.php';
                 `;
 
                 const btnSolicitar = document.getElementById('modalSolicitarBtn');
-                if (course.estado === 'activo') {
+                const solicitado = course.solicitado;
+                if (solicitado) {
+                    let estadoTexto = '';
+                    if (solicitado === 'pendiente') estadoTexto = '⏳ Pendiente de confirmación';
+                    else if (solicitado === 'confirmado') estadoTexto = '✅ Confirmado';
+                    else if (solicitado === 'rechazado') estadoTexto = '❌ Rechazado';
+                    else estadoTexto = 'Solicitado';
+                    btnSolicitar.style.display = 'inline-block';
+                    btnSolicitar.textContent = estadoTexto;
+                    btnSolicitar.className = 'btn btn-secondary';
+                    btnSolicitar.onclick = function() { 
+                        alert('Ya has solicitado plaza en este curso. Estado: ' + estadoTexto);
+                    };
+                } else if (course.estado === 'activo') {
                     btnSolicitar.style.display = 'inline-block';
                     btnSolicitar.textContent = 'Solicitar plaza';
                     btnSolicitar.className = 'btn btn-green';
                     btnSolicitar.onclick = function() { 
                         const modal = bootstrap.Modal.getInstance(document.getElementById('courseModal'));
                         modal.hide();
-                        setTimeout(() => openSolicitudModal(id), 300);
+                        window.location.href = 'solicitar_plaza.php?curso_id=' + course.id;
                     };
                 } else {
                     btnSolicitar.style.display = 'inline-block';
@@ -965,50 +984,19 @@ include '../componentes/menu_desempleado.php';
                 modal.show();
             }
 
-            function openSolicitudModal(courseId) {
-                const id = courseId || selectedCourseId;
-                const course = courses.find(c => c.id === id);
-                if (!course) {
-                    alert('Curso no encontrado');
-                    return;
-                }
-
-                document.getElementById('solicitudCursoNombre').textContent = course.title;
-                document.getElementById('solicitudNombre').value = '';
-                document.getElementById('solicitudDIP').value = '';
-                document.getElementById('solicitudTelefono').value = '';
-                document.getElementById('solicitudEmail').value = '';
-                document.getElementById('solicitudMotivo').value = '';
-
-                document.getElementById('enviarSolicitudBtn').dataset.courseId = id;
-
-                const modal = new bootstrap.Modal(document.getElementById('solicitudModal'));
-                modal.show();
-            }
-
-            document.getElementById('enviarSolicitudBtn').addEventListener('click', function() {
-                const nombre = document.getElementById('solicitudNombre').value.trim();
-                const dip = document.getElementById('solicitudDIP').value.trim();
-                const telefono = document.getElementById('solicitudTelefono').value.trim();
-                const email = document.getElementById('solicitudEmail').value.trim();
-
-                if (!nombre || !dip || !telefono || !email) {
-                    alert('Por favor, complete todos los campos obligatorios (*).');
-                    return;
-                }
-
-                const solicitudModal = bootstrap.Modal.getInstance(document.getElementById('solicitudModal'));
-                solicitudModal.hide();
-
-                const confirmacionModal = new bootstrap.Modal(document.getElementById('confirmacionModal'));
-                confirmacionModal.show();
-
-                console.log('Solicitud enviada para el curso ID:', this.dataset.courseId);
-                console.log('Datos:', { nombre, dip, telefono, email });
-            });
-
             // ===== INICIALIZAR =====
             renderCourses();
+
+            // ===== AUTO-CERRAR ALERTAS FLASH =====
+            document.addEventListener('DOMContentLoaded', function() {
+                const flash = document.getElementById('flashMessage');
+                if (flash) {
+                    setTimeout(() => {
+                        flash.classList.remove('show');
+                        setTimeout(() => flash.remove(), 300);
+                    }, 4000);
+                }
+            });
         </script>
 
     </div>

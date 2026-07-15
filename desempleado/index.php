@@ -29,7 +29,7 @@ try {
     $documentos = $stmt_doc->fetch();
     $perfil_completo = ($buscador && $documentos);
 
-    // ===== ESTADÍSTICAS REALES (sin rand) =====
+    // ===== ESTADÍSTICAS REALES =====
     $postulaciones = 0;
     if ($buscador) {
         $stmt = $pdo->prepare("SELECT COUNT(*) as total FROM favoritos WHERE buscador_id = ?");
@@ -38,20 +38,20 @@ try {
         $postulaciones = $result['total'] ?? 0;
     }
 
-    // === Ofertas Vistas = Total de ofertas activas (no cambia con recarga) ===
+    // Ofertas Vistas = Total de ofertas activas
     $stmt = $pdo->prepare("SELECT COUNT(*) as total FROM ofertas_empleo WHERE estado = 'abierta'");
     $stmt->execute();
     $ofertas_vistas = $stmt->fetch(PDO::FETCH_ASSOC)['total'] ?? 0;
 
-    // === Cursos Inscritos = Total de cursos activos (no cambia con recarga) ===
+    // Cursos Inscritos = Total de cursos activos
     $stmt = $pdo->prepare("SELECT COUNT(*) as total FROM cursos WHERE estado = 'activo'");
     $stmt->execute();
     $cursos_inscritos = $stmt->fetch(PDO::FETCH_ASSOC)['total'] ?? 0;
 
-    // === Notificaciones (simuladas o se pueden obtener de BBDD) ===
-    $notificaciones = rand(0, 10); // Puedes reemplazar con una consulta real si tienes tabla de notificaciones
+    // Notificaciones (simuladas)
+    $notificaciones = rand(0, 10);
 
-    // ===== OFERTAS RECOMENDADAS (con estado de postulación) =====
+    // ===== OFERTAS RECOMENDADAS =====
     $stmt = $pdo->prepare("
         SELECT o.*, e.nombre_empresa 
         FROM ofertas_empleo o 
@@ -71,7 +71,7 @@ try {
         $postulados_ids = $stmt->fetchAll(PDO::FETCH_COLUMN);
     }
 
-    // ===== CURSOS =====
+    // ===== CURSOS CON ESTADO DE SOLICITUD =====
     $stmt = $pdo->prepare("
         SELECT * 
         FROM cursos 
@@ -82,6 +82,19 @@ try {
     $stmt->execute();
     $cursos = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
+    // Obtener inscripciones del usuario para estos cursos
+    $solicitudes_cursos = [];
+    if ($buscador && !empty($cursos)) {
+        $curso_ids = array_column($cursos, 'id');
+        $placeholders = implode(',', array_fill(0, count($curso_ids), '?'));
+        $stmt = $pdo->prepare("SELECT curso_id, estado FROM inscripciones_cursos WHERE buscador_id = ? AND curso_id IN ($placeholders)");
+        $stmt->execute(array_merge([$buscador['id']], $curso_ids));
+        $solicitudes = $stmt->fetchAll(PDO::FETCH_ASSOC);
+        foreach ($solicitudes as $sol) {
+            $solicitudes_cursos[$sol['curso_id']] = $sol['estado'];
+        }
+    }
+
     // ===== NOTICIAS (estáticas) =====
     $noticias = [
         ['titulo' => 'Nueva convocatoria de empleo público', 'fecha' => '15/07/2026', 'badge' => 'Nuevo'],
@@ -89,14 +102,14 @@ try {
         ['titulo' => 'Feria de empleo en Malabo', 'fecha' => '20/07/2026', 'badge' => 'Evento']
     ];
 
-    // ===== NOTIFICACIONES DE OFICINA (estáticas) =====
+    // ===== NOTIFICACIONES DE OFICINA =====
     $notificaciones_lista = [
         ['mensaje' => 'Nueva oferta en tu sector: Técnico de Soporte TI', 'fecha' => 'Hace 2 horas'],
         ['mensaje' => 'Tu postulación a GETESA está en revisión', 'fecha' => 'Hace 1 día'],
         ['mensaje' => 'Nuevo curso disponible: Administración de Redes', 'fecha' => 'Hace 3 días']
     ];
 
-    // Obtener datos del usuario para mostrar en perfil
+    // Obtener datos del usuario
     $stmt = $pdo->prepare("SELECT numero_expediente FROM usuarios WHERE id = ?");
     $stmt->execute([$id_usuario]);
     $usuario = $stmt->fetch(PDO::FETCH_ASSOC);
@@ -112,6 +125,7 @@ try {
     $ofertas = [];
     $cursos = [];
     $postulados_ids = [];
+    $solicitudes_cursos = [];
     $usuario = ['numero_expediente' => 'EG-00000'];
 }
 
@@ -120,7 +134,6 @@ include '../componentes/menu_desempleado.php';
 ?>
 
 <style>
-
     /* ===== TARJETAS ===== */
     .dashboard-card {
         background: #ffffff;
@@ -129,7 +142,6 @@ include '../componentes/menu_desempleado.php';
         box-shadow: 0 4px 12px rgba(11, 58, 96, 0.015);
         transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
     }
-    /* === HOVER DORADO === */
     .dashboard-card:hover {
         border-color: var(--gov-gold);
         box-shadow: 0 10px 25px rgba(201, 168, 76, 0.15);
@@ -145,7 +157,6 @@ include '../componentes/menu_desempleado.php';
         transition: all 0.3s;
         text-align: center;
     }
-    /* === HOVER DORADO === */
     .stat-card:hover {
         border-color: var(--gov-gold);
         transform: translateY(-3px);
@@ -253,7 +264,6 @@ include '../componentes/menu_desempleado.php';
         border-radius: var(--gov-radius);
         transition: all 0.2s ease;
     }
-    /* === HOVER DORADO === */
     .list-item-custom:hover {
         background-color: #F1F5F9;
         border-color: var(--gov-gold);
@@ -297,6 +307,35 @@ include '../componentes/menu_desempleado.php';
         font-size: 0.7rem;
     }
 
+    /* ===== BADGES DE ESTADO PARA CURSOS ===== */
+    .badge-pendiente {
+        background-color: #fff3cd;
+        color: #856404;
+        border: 1px solid #ffc107;
+        padding: 0.3rem 0.8rem;
+        border-radius: 20px;
+        font-size: 0.75rem;
+        font-weight: 500;
+    }
+    .badge-confirmado {
+        background-color: #d4edda;
+        color: #155724;
+        border: 1px solid #28a745;
+        padding: 0.3rem 0.8rem;
+        border-radius: 20px;
+        font-size: 0.75rem;
+        font-weight: 500;
+    }
+    .badge-rechazado {
+        background-color: #f8d7da;
+        color: #721c24;
+        border: 1px solid #dc3545;
+        padding: 0.3rem 0.8rem;
+        border-radius: 20px;
+        font-size: 0.75rem;
+        font-weight: 500;
+    }
+
     /* ===== ALERTAS ===== */
     .alert-profile-incomplete {
         background-color: #FFF5F5;
@@ -307,8 +346,8 @@ include '../componentes/menu_desempleado.php';
     }
 
     .registro-pendiente {
-        background: var(--gov-blue-soft);
-        border: 1px solid rgba(11, 58, 96, 0.15);
+        background: #f0f7ff;
+        border: 1px solid #cfe2ff;
         border-radius: var(--gov-radius);
         padding: 1.2rem 1.5rem;
         display: flex;
@@ -352,7 +391,6 @@ include '../componentes/menu_desempleado.php';
     .news-item:last-child {
         border-bottom: none;
     }
-    /* === HOVER DORADO === */
     .news-item:hover {
         background: #f8fafc;
         border-color: var(--gov-gold);
@@ -388,7 +426,6 @@ include '../componentes/menu_desempleado.php';
     .curso-item:last-child {
         border-bottom: none;
     }
-    /* === HOVER DORADO === */
     .curso-item:hover {
         background: #f8fafc;
         border-color: var(--gov-gold);
@@ -462,7 +499,6 @@ include '../componentes/menu_desempleado.php';
         color: var(--gov-blue);
         transition: all 0.2s;
     }
-    /* === HOVER DORADO === */
     .pagination-custom .page-link:hover {
         background: var(--gov-gold);
         color: white;
@@ -526,10 +562,10 @@ include '../componentes/menu_desempleado.php';
         color: var(--gov-blue) !important;
     }
     .bg-green-soft {
-        background-color: var(--gov-green-soft) !important;
+        background-color: #e6f3e8 !important;
     }
     .bg-blue-soft {
-        background-color: var(--gov-blue-soft) !important;
+        background-color: #e8eef3 !important;
     }
 
     .tracking-wider {
@@ -540,14 +576,13 @@ include '../componentes/menu_desempleado.php';
     .notificacion-item {
         transition: all 0.2s;
     }
-    /* === HOVER DORADO === */
     .notificacion-item:hover {
         background: #f8fafc;
         border-color: var(--gov-gold);
         transform: translateX(4px);
     }
     .notificacion-item.no-leida {
-        background: var(--gov-blue-soft);
+        background: var(--bg-blue-soft);
         border-left-color: var(--gov-blue);
     }
     .notificacion-item .noti-icon {
@@ -599,7 +634,6 @@ include '../componentes/menu_desempleado.php';
     <div class="main-wrapper">
         <main class="container py-5 flex-grow-1">
             <?php if (!$perfil_completo): ?>
-                <!-- Alerta de perfil incompleto (igual) -->
                 <div id="incompleteProfileBanner" class="alert alert-profile-incomplete p-4 mb-4">
                     <div class="d-flex flex-column flex-md-row align-items-md-center justify-content-between gap-3">
                         <div class="d-flex align-items-start gap-3">
@@ -657,7 +691,7 @@ include '../componentes/menu_desempleado.php';
 
                 <div class="row g-4">
                     <div class="col-xl-4 col-lg-5">
-                        <!-- Perfil (igual) -->
+                        <!-- Perfil -->
                         <div class="card dashboard-card p-4 text-center mb-4">
                             <?php 
                                 $foto = $buscador['foto_carnet'] ?? '';
@@ -701,14 +735,11 @@ include '../componentes/menu_desempleado.php';
 
                             <div class="d-grid gap-2">
                                 <button class="btn btn-gov btn-sm fw-semibold"><i class="bi bi-qr-code me-2"></i> Descargar Tarjeta Demandante</button>
-                                <div>
-                                <a href="./perfil.php" class="btn btn-gov-outline btn-sm fw-semibold"><i class="bi bi-pencil-square me-2"></i> Editar Perfil</a>
-
-                                </div>
+                                <a href="perfil.php" class="btn btn-gov-outline btn-sm fw-semibold"><i class="bi bi-pencil-square me-2"></i> Editar Perfil</a>
                             </div>
                         </div>
 
-                        <!-- Notificaciones de Oficina (igual) -->
+                        <!-- Notificaciones de Oficina -->
                         <div class="card dashboard-card p-4 mb-4">
                             <h5 class="fw-bold mb-3 h6 text-uppercase tracking-wider text-muted"><i class="bi bi-chat-left-text text-primary me-2" style="color: var(--gov-blue) !important;"></i>Notificaciones de Oficina</h5>
                             <div class="d-flex flex-column gap-2">
@@ -721,7 +752,7 @@ include '../componentes/menu_desempleado.php';
                             </div>
                         </div>
 
-                        <!-- Noticias (igual) -->
+                        <!-- Noticias -->
                         <div class="card dashboard-card p-4">
                             <h5 class="fw-bold mb-3 h6 text-uppercase tracking-wider text-muted"><i class="bi bi-newspaper me-2" style="color: var(--gov-gold);"></i>Noticias y Eventos</h5>
                             <?php foreach ($noticias as $noticia): ?>
@@ -759,11 +790,9 @@ include '../componentes/menu_desempleado.php';
                                                 </div>
                                                 <div>
                                                     <?php if (in_array($oferta['id'], $postulados_ids)): ?>
-                                                        <span class="badge bg-success" style="padding: 0.5rem 1rem;">
-                                                            <i class="bi bi-check-circle me-1"></i> Ya postulado
-                                                        </span>
+                                                        <span class="badge" style="padding: 0.5rem 1rem; background: #d19003cb"> ⏳ Pendiente de confirmación </span>
                                                     <?php else: ?>
-                                                        <button class="btn btn-sm btn-gov btn-pill-custom">Postularme</button>
+                                                        <a href="postular.php?oferta_id=<?php echo $oferta['id']; ?>" class="btn btn-sm btn-gov btn-pill-custom">Postularme</a>
                                                     <?php endif; ?>
                                                 </div>
                                             </div>
@@ -790,7 +819,24 @@ include '../componentes/menu_desempleado.php';
                                                 <i class="bi bi-calendar me-1"></i><?php echo $curso['fecha_inicio'] ? date('d/m/Y', strtotime($curso['fecha_inicio'])) : 'Por definir'; ?>
                                             </p>
                                         </div>
-                                        <a href="" class="btn btn-sm btn-green btn-pill-custom text-nowrap">Solicitar Plaza</a>
+                                        <div>
+                                            <?php 
+                                            $estado_solicitud = isset($solicitudes_cursos[$curso['id']]) ? $solicitudes_cursos[$curso['id']] : null;
+                                            if ($estado_solicitud) {
+                                                if ($estado_solicitud == 'pendiente') {
+                                                    echo '<span class="badge-pendiente">⏳ Pendiente de confirmación</span>';
+                                                } elseif ($estado_solicitud == 'confirmado') {
+                                                    echo '<span class="badge-confirmado">✅ Confirmado</span>';
+                                                } elseif ($estado_solicitud == 'rechazado') {
+                                                    echo '<span class="badge-rechazado">❌ Rechazado</span>';
+                                                } else {
+                                                    echo '<span class="badge-pendiente">Solicitado</span>';
+                                                }
+                                            } else {
+                                                echo '<a href="solicitar_plaza.php?curso_id=' . $curso['id'] . '" class="btn btn-sm btn-green btn-pill-custom text-nowrap">Solicitar Plaza</a>';
+                                            }
+                                            ?>
+                                        </div>
                                     </div>
                                 <?php endforeach; ?>
                             <?php endif; ?>

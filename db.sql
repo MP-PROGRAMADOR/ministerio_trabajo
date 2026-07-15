@@ -131,7 +131,7 @@ CREATE TABLE notificaciones_intermediacion (
     oferta_id INT NULL,                              -- La oferta vinculada (NULL si es búsqueda directa de perfil)
     empleador_id INT NOT NULL,                       -- La empresa implicada
     mensaje_motivo TEXT NULL,                        -- Notas aclaratorias para el administrador estatal
-    estado_ministerio ENUM('pendiente', 'en_revision', 'aprobado', 'rechazado') DEFAULT 'pendiente',
+    estado_ministerio ENUM('pendiente', 'en_revision', 'aprobado', 'rechazado','contratado') DEFAULT 'pendiente',
     codigo_seguimiento VARCHAR(20) NOT NULL UNIQUE,  -- Código identificador (Ej: MITRAD-2026-X9)
     fecha_creacion TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (buscador_id) REFERENCES buscadores_empleo(id) ON DELETE CASCADE,
@@ -234,7 +234,7 @@ CREATE TABLE notificaciones_intermediacion (
     oferta_id INT NULL,
     
     -- Estados del trámite ministerial
-    estado_ministerio ENUM('pendiente', 'en_revision', 'aprobado', 'rechazado') DEFAULT 'pendiente',
+    estado_ministerio ENUM('pendiente', 'en_revision', 'aprobado', 'rechazado', 'contratado') DEFAULT 'pendiente',
     
     -- Datos de la credencial / Pase emitido por el Ministerio
     codigo_seguimiento VARCHAR(30) NOT NULL UNIQUE,     -- Ej: MITRAD-2026-X9

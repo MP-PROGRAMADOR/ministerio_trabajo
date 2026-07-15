@@ -140,10 +140,10 @@
             <div class="text-center mb-5">
                 <div class="mb-3">
                     <div class="logo-escudo">
-                        <img src="./src/img/logo.png" alt="Escudo del Ministerio">
+                        <img src="./src/img/logo_nuevo.png" alt="Escudo de la Oficina Central de Empleo">
                     </div>
                 </div>
-                <h1 class="h2 text-uppercase fw-extrabold m-0 tracking-wide text-white">Ministerio de Trabajo</h1>
+                <h1 class="h2 text-uppercase fw-extrabold m-0 tracking-wide text-white">Oficina Central de Empleo</h1>
                 <p class="text-white-50 small text-uppercase tracking-wider mt-1">Plataforma de Intermediación Laboral
                 </p>
             </div>
@@ -199,7 +199,7 @@
         <!-- Footer -->
         <footer class="bg-dark bg-opacity-50 text-center py-3 text-white-50 small">
             <div class="container d-flex flex-column flex-sm-row justify-content-between align-items-center gap-2">
-                <div>&copy; 2026 Ministerio de Trabajo y Empleo. Todos los derechos reservados.</div>
+                <div>&copy; 2026 Oficina Central de Empleo</div>
                 <div class="d-flex gap-3 fs-5">
                     <a href="#" class="text-white-50"><i class="bi bi-facebook"></i></a>
                     <a href="#" class="text-white-50"><i class="bi bi-twitter-x"></i></a>

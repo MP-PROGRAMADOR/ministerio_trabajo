@@ -220,7 +220,7 @@
                         </div>
                         <div class="carousel-inner">
                             <div class="carousel-item active">
-                                <div class="carousel-bg-img" style="background: linear-gradient(rgba(0, 0, 0, 0.2), rgba(17, 45, 110, 0.9)), url('img/img1.png');"></div>
+                                <div class="carousel-bg-img" style="background: linear-gradient(rgba(0, 0, 0, 0.2), rgba(17, 45, 110, 0.9)), url('./src/img/img1.png');"></div>
                                 <div class="carousel-caption d-flex flex-column justify-content-end h-100 pb-5">
                                     <div class="mb-3 text-gold"><i class="bi bi-people-fill fs-1"></i></div>
                                     <h3 class="h4 fw-bold text-white mb-2">Búsqueda Inteligente de Talentos</h3>
@@ -228,15 +228,15 @@
                                 </div>
                             </div>
                             <div class="carousel-item">
-                                <div class="carousel-bg-img" style="background: linear-gradient(rgba(0, 0, 0, 0.2), rgba(17, 45, 110, 0.9)), url('img/img2.png');"></div>
+                                <div class="carousel-bg-img" style="background: linear-gradient(rgba(0, 0, 0, 0.2), rgba(17, 45, 110, 0.9)), url('./src/img/img2.png');"></div>
                                 <div class="carousel-caption d-flex flex-column justify-content-end h-100 pb-5">
                                     <div class="mb-3 text-gold"><i class="bi bi-cash-coin fs-1"></i></div>
                                     <h3 class="h4 fw-bold text-white mb-2">Incentivos y Subvenciones</h3>
-                                    <p class="small text-white-50 m-0">Descubre los programas de apoyo financiero del Ministerio de Trabajo para la contratación de nuevos empleados.</p>
+                                    <p class="small text-white-50 m-0">Descubre los programas de apoyo financiero de la Oficina Central de Empleo para la contratación de nuevos empleados.</p>
                                 </div>
                             </div>
                             <div class="carousel-item">
-                                <div class="carousel-bg-img" style="background: linear-gradient(rgba(0, 0, 0, 0.2), rgba(17, 45, 110, 0.9)), url('img/img3.png');"></div>
+                                <div class="carousel-bg-img" style="background: linear-gradient(rgba(0, 0, 0, 0.2), rgba(17, 45, 110, 0.9)), url('./src/img/img3.png');"></div>
                                 <div class="carousel-caption d-flex flex-column justify-content-end h-100 pb-5">
                                     <div class="mb-3 text-gold"><i class="bi bi-shield-check fs-1"></i></div>
                                     <h3 class="h4 fw-bold text-white mb-2">Gestión 100% Legal y Segura</h3>
@@ -258,7 +258,7 @@
                 <div class="col-lg-4 col-md-5 text-center text-md-start">
                     <div class="mb-4 text-center">
                         <i class="bi bi-building fs-1 text-gold mb-2 d-block"></i>
-                        <h1 class="h5 text-uppercase m-0 tracking-wide text-white">Ministerio de Trabajo</h1>
+                        <h1 class="h5 text-uppercase m-0 tracking-wide text-white">Oficina Central de Empleo</h1>
                         <p class="small text-white-50 mt-1">Acceso Corporativo</p>
                     </div>
 
@@ -305,7 +305,7 @@
 
         <footer class="bg-dark bg-opacity-50 text-center py-3 text-white-50 small">
             <div class="container d-flex flex-column flex-sm-row justify-content-between align-items-center gap-2">
-                <div>&copy; 2026 Ministerio de Trabajo y Empleo. Sección Empresas.</div>
+                <div>&copy; 2026 Oficina Central de Empleo. Sección Empresas.</div>
                 <div class="d-flex gap-3 fs-5">
                     <a href="#" class="text-white-50"><i class="bi bi-facebook"></i></a>
                     <a href="#" class="text-white-50"><i class="bi bi-twitter-x"></i></a>

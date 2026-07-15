@@ -246,7 +246,7 @@
                         <div class="carousel-inner">
                             <div class="carousel-item active">
                                 <div class="carousel-bg-img"
-                                    style="background: linear-gradient(rgba(0, 0, 0, 0.3), rgba(15, 32, 67, 0.95)), url('img/img7.jpg');">
+                                    style="background: linear-gradient(rgba(0, 0, 0, 0.3), rgba(15, 32, 67, 0.95)), url('./src/img/img7.jpg');">
                                 </div>
                                 <div class="carousel-caption d-flex flex-column justify-content-end h-100 pb-5">
                                     <div class="mb-3 text-gold"><i class="bi bi-diagram-3-fill fs-1"></i></div>
@@ -256,7 +256,7 @@
                             </div>
                             <div class="carousel-item">
                                 <div class="carousel-bg-img"
-                                    style="background: linear-gradient(rgba(0, 0, 0, 0.3), rgba(15, 32, 67, 0.95)), url('img/img5.jpeg');">
+                                    style="background: linear-gradient(rgba(0, 0, 0, 0.3), rgba(15, 32, 67, 0.95)), url('./src/img/img5.jpeg');">
                                 </div>
                                 <div class="carousel-caption d-flex flex-column justify-content-end h-100 pb-5">
                                     <div class="mb-3 text-gold"><i class="bi bi-folder-check fs-1"></i></div>
@@ -266,7 +266,7 @@
                             </div>
                             <div class="carousel-item">
                                 <div class="carousel-bg-img"
-                                    style="background: linear-gradient(rgba(0, 0, 0, 0.3), rgba(15, 32, 67, 0.95)), url('img/ima6.jpeg');">
+                                    style="background: linear-gradient(rgba(0, 0, 0, 0.3), rgba(15, 32, 67, 0.95)), url('./src/img/ima6.jpeg');">
                                 </div>
                                 <div class="carousel-caption d-flex flex-column justify-content-end h-100 pb-5">
                                     <div class="mb-3 text-gold"><i class="bi bi-bar-chart-line-fill fs-1"></i></div>
@@ -287,7 +287,7 @@
                 <div class="col-lg-4 col-md-5 text-center text-md-start">
                     <div class="mb-4 text-center">
                         <i class="bi bi-person-gear fs-1 text-gold mb-2 d-block"></i>
-                        <h1 class="h pipeline h5 text-uppercase m-0 tracking-wide text-white">Ministerio de Trabajo</h1>
+                        <h1 class="h pipeline h5 text-uppercase m-0 tracking-wide text-white">Oficina Central de Empleo</h1>
                         <p class="small text-white-50 mt-1">Acceso Administrativo e Inspección</p>
                     </div>
 
@@ -341,7 +341,7 @@
 
         <footer class="bg-dark bg-opacity-50 text-center py-3 text-white-50 small">
             <div class="container d-flex flex-column flex-sm-row justify-content-between align-items-center gap-2">
-                <div>&copy; 2026 Ministerio de Trabajo y Fomento de Empleo. Panel Administrativo.</div>
+                <div>&copy; 2026 Oficina Central de Empleo. Panel Administrativo.</div>
                 <div class="d-flex gap-3 fs-5">
                     <a href="#" class="text-white-50"><i class="bi bi-facebook"></i></a>
                     <a href="#" class="text-white-50"><i class="bi bi-twitter-x"></i></a>

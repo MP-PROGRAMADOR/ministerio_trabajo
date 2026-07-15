@@ -204,7 +204,7 @@ try {
 <nav class="navbar navbar-expand-lg navbar-light navbar-portal py-2">
     <div class="container">
       
-            <img src="../src/img/logo_,ministerio.png" alt="Escudo de Guinea Ecuatorial" style="height: 45px; width: auto; object-fit: contain;" onerror="this.src='https://placehold.co/45x50?text=Logo'">
+            <img src="../src/img/logo_nuevo.png" alt="Escudo de Guinea Ecuatorial" style="height: 45px; width: auto; object-fit: contain;" onerror="this.src='https://placehold.co/45x50?text=Logo'">
             <div class="d-flex flex-column lh-1 border-start ps-3 border-secondary border-opacity-25">
                 <span style="color: var(--gov-dark); font-size: 1.15rem; letter-spacing: -0.3px; font-weight: 700; margin-bottom: 3px;">PortalEmpleo</span>
                 <span class="text-muted" style="font-size: 0.62rem; text-transform: uppercase; letter-spacing: 0.5px; font-weight: 600;">Min. de Trabajo, Fomento del Empleo y Seguridad Social</span>

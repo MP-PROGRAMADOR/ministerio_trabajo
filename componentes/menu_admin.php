@@ -26,7 +26,7 @@ try {
     <div class="sidebar-heading d-flex align-items-center gap-2">
         <img src="../src/img/logo_,ministerio.png" alt="Logo Ministerio" class="img-fluid" style="max-height: 40px; width: auto;">
         <div>
-            <h6 class="mb-0 text-white fw-bold text-center">MINISTERIO DE TRABAJO</h6>
+            <h6 class="mb-0 text-white fw-bold text-center">OFICINA CENTRAL DE EMPLEO</h6>
             <small class="text-center" style="font-size: 10px; color: gray">GUINEA ECUATORIAL</small>
         </div>
     </div>
@@ -150,7 +150,7 @@ try {
                     </div>
                     <div class="d-none d-md-block text-start">
                         <span class="d-block fw-semibold text-dark fs-7"><?php echo htmlspecialchars($nombre_usuario); ?></span>
-                        <small class="text-muted fs-8">Ministerio de Trabajo</small>
+                        <small class="text-muted fs-8">Oficina Central de Empleo</small>
                     </div>
                 </a>
                 <ul class="dropdown-menu dropdown-menu-end shadow-sm border-0 mt-2">

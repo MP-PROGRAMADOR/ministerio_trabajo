@@ -251,3 +251,50 @@ CREATE TABLE notificaciones_intermediacion (
     FOREIGN KEY (empleador_id) REFERENCES empleadores(id) ON DELETE CASCADE,
     FOREIGN KEY (oferta_id) REFERENCES ofertas_empleo(id) ON DELETE CASCADE
 );
+
+
+
+CREATE TABLE credenciales_empleo (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    notificacion_id INT NOT NULL,                     -- Trámite de origen
+    buscador_id INT NOT NULL,                         -- Beneficiario (Empleado)
+    numero_credencial VARCHAR(50) NOT NULL UNIQUE,     -- Ej: CRED-2026-XXXXX
+    codigo_qr_verificacion VARCHAR(255) NULL,         -- Enlace o hash para verificar autenticidad
+    fecha_emision TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    fecha_vencimiento DATE NOT NULL,                  -- Vigencia (Ej: 6 meses o 1 año)
+    estado ENUM('activa', 'vencida', 'revocada') DEFAULT 'activa',
+    
+    FOREIGN KEY (notificacion_id) REFERENCES notificaciones_intermediacion(id) ON DELETE CASCADE,
+    FOREIGN KEY (buscador_id) REFERENCES buscadores_empleo(id) ON DELETE CASCADE
+);
+
+
+
+DELIMITER //
+
+CREATE TRIGGER generar_credencial_despues_de_aprobar
+AFTER UPDATE ON notificaciones_intermediacion
+FOR EACH ROW
+BEGIN
+    -- Verificar si el estado cambió a 'aprobado'
+    IF NEW.estado_ministerio = 'aprobado' AND OLD.estado_ministerio != 'aprobado' THEN
+        
+        -- Insertar la credencial calculando 1 meses de vigencia
+        INSERT INTO credenciales_empleo (
+            notificacion_id, 
+            buscador_id, 
+            numero_credencial, 
+            fecha_vencimiento, 
+            estado
+        ) VALUES (
+            NEW.id, 
+            NEW.buscador_id, 
+            NEW.numero_credencial, 
+            DATE_ADD(CURRENT_DATE(), INTERVAL 6 MONTH), 
+            'activa'
+        );
+        
+    END IF;
+END //
+
+DELIMITER ;

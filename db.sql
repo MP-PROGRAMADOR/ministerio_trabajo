@@ -298,3 +298,36 @@ BEGIN
 END //
 
 DELIMITER ;
+
+
+
+
+
+
+
+
+
+
+SELECT 
+            ni.id,
+            ni.codigo_seguimiento,
+            ni.estado_ministerio,
+            ni.fecha_creacion,
+            ni.motivo_empresa,
+            u_b.nombre as buscador_nombre,
+            u_b.apellidos as buscador_apellidos,
+            u_b.numero_expediente as buscador_expediente,
+            b.estado_laboral as buscador_estado,
+            b.provincia as buscador_provincia,
+            e.nombre_empresa,
+            e.rnc_ruc,
+            o.titulo_puesto,
+            o.salario_ofrecido
+        FROM notificaciones_intermediacion ni
+        INNER JOIN buscadores_empleo b ON ni.buscador_id = b.id
+        INNER JOIN usuarios u_b ON b.usuario_id = u_b.id
+        INNER JOIN empleadores e ON ni.empleador_id = e.id
+        LEFT JOIN ofertas_empleo o ON ni.oferta_id = o.id
+        WHERE ni.estado_ministerio = 'en_revision' -- <-- FILTRO AÑADIDO AQUÍ
+        ORDER BY ni.fecha_creacion DESC
+    "

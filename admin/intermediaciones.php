@@ -57,6 +57,7 @@ try {
         INNER JOIN usuarios u_b ON b.usuario_id = u_b.id
         INNER JOIN empleadores e ON ni.empleador_id = e.id
         LEFT JOIN ofertas_empleo o ON ni.oferta_id = o.id
+        WHERE ni.estado_ministerio = 'en_revision' -- <-- FILTRO AÑADIDO AQUÍ
         ORDER BY ni.fecha_creacion DESC
     ");
     $intermediaciones = $stmt->fetchAll(PDO::FETCH_ASSOC);

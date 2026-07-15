@@ -49,6 +49,15 @@ try {
             </a>
         </li>
 
+
+        <!-- Buscadores de Empleo -->
+        <li class="nav-item">
+            <a class="nav-link <?php echo ($pagina_actual == 'postulaciones.php') ? 'active' : ''; ?>" href="postulaciones.php">
+                <i class="bi bi-people-fill"></i> Postulaciones
+            </a>
+        </li>
+
+
         <!-- Buscadores de Empleo -->
         <li class="nav-item">
             <a class="nav-link <?php echo ($pagina_actual == 'buscadores_empleo.php') ? 'active' : ''; ?>" href="buscadores_empleo.php">

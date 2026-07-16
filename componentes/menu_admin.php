@@ -86,6 +86,13 @@ try {
             </a>
         </li>
 
+        <!-- Inscribir Empleado -->
+<li class="nav-item">
+    <a class="nav-link <?php echo ($pagina_actual == 'inscripciones.php') ? 'active' : ''; ?>" href="inscripciones.php">
+        <i class="bi bi-person-plus-fill"></i> Inscripciones
+    </a>
+</li>
+
         <!-- Entidades / Centros -->
         <li class="nav-item">
             <a class="nav-link <?php echo ($pagina_actual == 'entidades.php') ? 'active' : ''; ?>" href="entidades.php">

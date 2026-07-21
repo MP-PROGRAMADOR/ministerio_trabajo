@@ -245,33 +245,6 @@ include '../componentes/menu_desempleado.php';
     }
 
     /* ===== ESTILOS ADICIONALES PARA PERFIL ===== */
-   
-    .position-relative .rounded-circle {
-        transition: transform 0.3s ease;
-    }
-    .position-relative .rounded-circle:hover {
-        transform: scale(1.02);
-    }
-    .position-relative .bg-white {
-        cursor: pointer;
-        transition: all 0.2s;
-    }
-    .position-relative .bg-white:hover {
-        background-color: var(--gov-gold-light) !important;
-        border-color: var(--gov-gold) !important;
-    }
-    .position-relative .bg-white:hover i {
-        color: var(--gov-gold) !important;
-    }
-    hr {
-        opacity: 0.5;
-    }
-    #passwordHelp {
-        font-size: 0.8rem;
-        margin-top: 0.25rem;
-    }
-
-    /* Estado del perfil */
     .perfil-completo {
         background-color: #d4edda;
         color: #155724;
@@ -301,6 +274,27 @@ include '../componentes/menu_desempleado.php';
     @media (max-width: 576px) {
         .dashboard-card { padding: 1.5rem !important; }
     }
+
+    /* ===== CONTENEDOR DE ALERTA EN PÁGINA (debajo del título) ===== */
+    #alertContainer {
+        margin-bottom: 1.5rem;
+    }
+    #alertContainer .alert {
+        border-radius: var(--gov-radius);
+        border-left: 6px solid;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+        padding: 0.75rem 1.25rem;
+    }
+    #alertContainer .alert-success {
+        border-left-color: var(--gov-green);
+        background-color: #d4edda;
+        color: #155724;
+    }
+    #alertContainer .alert-danger {
+        border-left-color: #dc3545;
+        background-color: #f8d7da;
+        color: #721c24;
+    }
 </style>
 
 <body>
@@ -319,7 +313,10 @@ include '../componentes/menu_desempleado.php';
                             <p class="text-muted m-0">Gestiona tus datos personales y configuración de seguridad</p>
                         </div>
                     </div>
-                    <hr class="mb-4">
+                    <hr class="mb-3">
+
+                    <!-- === CONTENEDOR PARA MENSAJES DE CONFIRMACIÓN (éxito/error) === -->
+                    <div id="alertContainer"></div>
                 </div>
 
                 <!-- COLUMNA IZQUIERDA: DATOS PERSONALES -->
@@ -338,7 +335,7 @@ include '../componentes/menu_desempleado.php';
                             </div>
                         <?php endif; ?>
 
-                        <form id="perfilForm" action="php/procesar_actualizar_perfil.php" method="POST" enctype="multipart/form-data">
+                        <form id="perfilForm" action="../php/procesar_actualizar_perfil.php" method="POST" enctype="multipart/form-data">
                             <div class="row g-3">
                                 <div class="col-12 text-center mb-3">
                                     <div class="position-relative d-inline-block">
@@ -354,6 +351,7 @@ include '../componentes/menu_desempleado.php';
                                             class="rounded-circle border border-3 border-gold shadow-sm"
                                             style="width: 120px; height: 120px; object-fit: cover;" 
                                             alt="Foto de perfil"
+                                            id="fotoPreview"
                                             onerror="this.src='https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/icons/person-bounding-box.svg'">
                                         <label class="position-absolute bottom-0 end-0 bg-white rounded-circle p-1 shadow-sm" 
                                                style="border: 2px solid var(--gov-blue); cursor: pointer;">
@@ -362,31 +360,31 @@ include '../componentes/menu_desempleado.php';
                                         </label>
                                     </div>
                                     <div class="mt-2">
-                                        <small class="text-muted">Haz clic en la cámara para cambiar la foto</small>
+                                        <small class="text-muted">Haz clic en la cámara para cambiar la foto (opcional)</small>
                                     </div>
                                 </div>
 
                                 <input type="hidden" name="usuario_id" value="<?php echo htmlspecialchars($usuario['id']); ?>">
 
                                 <div class="col-md-6">
-                                    <label class="form-label fw-semibold"><i class="bi bi-person me-1"></i>Nombre *</label>
+                                    <label class="form-label fw-semibold"><i class="bi bi-person me-1"></i>Nombre</label>
                                     <input type="text" name="nombre" class="form-control form-control-custom" 
-                                           value="<?php echo htmlspecialchars($usuario['nombre'] ?? ''); ?>" required>
+                                           value="<?php echo htmlspecialchars($usuario['nombre'] ?? ''); ?>">
                                 </div>
                                 <div class="col-md-6">
-                                    <label class="form-label fw-semibold"><i class="bi bi-person me-1"></i>Apellidos *</label>
+                                    <label class="form-label fw-semibold"><i class="bi bi-person me-1"></i>Apellidos</label>
                                     <input type="text" name="apellidos" class="form-control form-control-custom" 
-                                           value="<?php echo htmlspecialchars($usuario['apellidos'] ?? ''); ?>" required>
+                                           value="<?php echo htmlspecialchars($usuario['apellidos'] ?? ''); ?>">
                                 </div>
                                 <div class="col-md-6">
-                                    <label class="form-label fw-semibold"><i class="bi bi-card-text me-1"></i>DIP *</label>
+                                    <label class="form-label fw-semibold"><i class="bi bi-card-text me-1"></i>DIP</label>
                                     <input type="text" name="documento_identidad" class="form-control form-control-custom" 
-                                           value="<?php echo htmlspecialchars($usuario['documento_identidad'] ?? ''); ?>" required>
+                                           value="<?php echo htmlspecialchars($usuario['documento_identidad'] ?? ''); ?>">
                                 </div>
                                 <div class="col-md-6">
-                                    <label class="form-label fw-semibold"><i class="bi bi-telephone me-1"></i>Teléfono *</label>
+                                    <label class="form-label fw-semibold"><i class="bi bi-telephone me-1"></i>Teléfono</label>
                                     <input type="tel" name="telefono" class="form-control form-control-custom" 
-                                           value="<?php echo htmlspecialchars($buscador['telefono'] ?? ''); ?>" required>
+                                           value="<?php echo htmlspecialchars($buscador['telefono'] ?? ''); ?>">
                                 </div>
                                 <div class="col-12">
                                     <label class="form-label fw-semibold"><i class="bi bi-envelope me-1"></i>Correo electrónico</label>
@@ -395,8 +393,8 @@ include '../componentes/menu_desempleado.php';
                                     <small class="text-muted">El correo electrónico no se puede modificar</small>
                                 </div>
                                 <div class="col-md-6">
-                                    <label class="form-label fw-semibold"><i class="bi bi-people me-1"></i>Estado Civil *</label>
-                                    <select name="estado_civil" class="form-select form-select-custom" required>
+                                    <label class="form-label fw-semibold"><i class="bi bi-people me-1"></i>Estado Civil</label>
+                                    <select name="estado_civil" class="form-select form-select-custom">
                                         <option value="soltero" <?php echo ($buscador['estado_civil'] ?? '') == 'soltero' ? 'selected' : ''; ?>>Soltero/a</option>
                                         <option value="casado" <?php echo ($buscador['estado_civil'] ?? '') == 'casado' ? 'selected' : ''; ?>>Casado/a</option>
                                         <option value="divorciado" <?php echo ($buscador['estado_civil'] ?? '') == 'divorciado' ? 'selected' : ''; ?>>Divorciado/a</option>
@@ -454,7 +452,7 @@ include '../componentes/menu_desempleado.php';
                         </h5>
 
                         <!-- Cambiar contraseña -->
-                        <form id="seguridadForm" action="php/procesar_cambiar_password.php" method="POST">
+                        <form id="seguridadForm" action="../php/procesar_cambiar_password.php" method="POST">
                             <div class="row g-3">
                                 <div class="col-12">
                                     <hr>
@@ -568,7 +566,7 @@ include '../componentes/menu_desempleado.php';
             function previewImage(event) {
                 const reader = new FileReader();
                 reader.onload = function() {
-                    const img = document.querySelector('.position-relative .rounded-circle');
+                    const img = document.getElementById('fotoPreview');
                     if (img) {
                         img.src = reader.result;
                     }
@@ -604,16 +602,47 @@ include '../componentes/menu_desempleado.php';
                 }
             });
 
-            // Mostrar mensajes de éxito/error (si vienen de la sesión)
-            <?php if (isset($_SESSION['mensaje_exito'])): ?>
-                alert('<?php echo htmlspecialchars($_SESSION['mensaje_exito']); ?>');
-                <?php unset($_SESSION['mensaje_exito']); ?>
-            <?php endif; ?>
+            // ===== MOSTRAR MENSAJES DE CONFIRMACIÓN EN EL CONTENEDOR DE LA PÁGINA =====
+            (function() {
+                const container = document.getElementById('alertContainer');
+                let mensaje = null;
 
-            <?php if (isset($_SESSION['mensaje_error'])): ?>
-                alert('❌ <?php echo htmlspecialchars($_SESSION['mensaje_error']); ?>');
-                <?php unset($_SESSION['mensaje_error']); ?>
-            <?php endif; ?>
+                // Recoger mensaje de sesión (si existe)
+                <?php if (isset($_SESSION['mensaje_exito'])): ?>
+                    mensaje = {
+                        texto: "<?php echo htmlspecialchars($_SESSION['mensaje_exito']); ?>",
+                        tipo: 'success'
+                    };
+                    <?php unset($_SESSION['mensaje_exito']); ?>
+                <?php elseif (isset($_SESSION['mensaje_error'])): ?>
+                    mensaje = {
+                        texto: "<?php echo htmlspecialchars($_SESSION['mensaje_error']); ?>",
+                        tipo: 'danger'
+                    };
+                    <?php unset($_SESSION['mensaje_error']); ?>
+                <?php endif; ?>
+
+                if (mensaje && container) {
+                    // Crear el div de alerta
+                    const alertDiv = document.createElement('div');
+                    alertDiv.className = `alert alert-${mensaje.tipo} alert-dismissible fade show`;
+                    alertDiv.role = 'alert';
+                    alertDiv.innerHTML = `
+                        <i class="bi bi-${mensaje.tipo === 'success' ? 'check-circle' : 'exclamation-triangle'} me-2"></i>
+                        ${mensaje.texto}
+                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                    `;
+                    container.appendChild(alertDiv);
+
+                    // Desaparecer automáticamente después de 8 segundos
+                    setTimeout(() => {
+                        if (alertDiv) {
+                            alertDiv.classList.remove('show');
+                            setTimeout(() => alertDiv.remove(), 300);
+                        }
+                    }, 8000);
+                }
+            })();
         </script>
 
     </div>

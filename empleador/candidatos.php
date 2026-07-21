@@ -39,26 +39,31 @@ try {
     // ===== 1. OBTENER CANDIDATOS (POSTULACIONES) =====
     $stmt = $pdo->prepare("
         SELECT 
-            p.*,
-            u.id as usuario_id,
-            u.nombre,
-            u.apellidos,
-            u.numero_expediente,
-            u.documento_identidad,
-            u.correo_electronico,
-            b.telefono,
-            b.estado_laboral,
-            b.provincia,
-            b.ciudad_municipio,
-            b.foto_carnet,
-            o.titulo_puesto,
-            o.salario_ofrecido
-        FROM postulaciones p
-        JOIN ofertas_empleo o ON p.oferta_id = o.id
-        JOIN buscadores_empleo b ON p.buscador_id = b.id
-        JOIN usuarios u ON b.usuario_id = u.id
-        WHERE o.empleador_id = ?
-        ORDER BY p.fecha_postulacion DESC
+    p.*,
+    u.id as usuario_id,
+    u.nombre,
+    u.apellidos,
+    u.numero_expediente,
+    u.documento_identidad,
+    u.correo_electronico,
+    b.telefono,
+    b.estado_laboral,
+    b.provincia,
+    b.ciudad_municipio,
+    b.foto_carnet,
+    o.titulo_puesto,
+    o.salario_ofrecido,
+    d.copia_dip,
+    d.cv,
+    d.titulos,
+    d.otros_documentos
+FROM postulaciones p
+JOIN ofertas_empleo o ON p.oferta_id = o.id
+JOIN buscadores_empleo b ON p.buscador_id = b.id
+JOIN usuarios u ON b.usuario_id = u.id
+LEFT JOIN documentos d ON u.id = d.usuario_id
+WHERE o.empleador_id = ?
+ORDER BY p.fecha_postulacion DESC
     ");
     $stmt->execute([$empleador_id]);
     $candidatos = $stmt->fetchAll(PDO::FETCH_ASSOC);
@@ -86,7 +91,7 @@ try {
     $intermediaciones = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
     // ===== 3. CONTAR PENDIENTES =====
-    $notificaciones_pendientes = count(array_filter($intermediaciones, function($i) {
+    $notificaciones_pendientes = count(array_filter($intermediaciones, function ($i) {
         return $i['estado_ministerio'] == 'pendiente';
     }));
 
@@ -133,6 +138,7 @@ include_once '../componentes/menu_empleador.php';
         transition: all 0.3s ease;
         height: 100%;
     }
+
     .custom-card:hover {
         box-shadow: 0 8px 25px rgba(11, 58, 96, 0.10);
     }
@@ -146,16 +152,19 @@ include_once '../componentes/menu_empleador.php';
         transition: all 0.3s ease;
         height: 100%;
     }
+
     .stat-card:hover {
         transform: translateY(-4px);
         box-shadow: 0 8px 25px rgba(11, 58, 96, 0.12);
     }
+
     .stat-card .stat-number {
         font-size: 1.8rem;
         font-weight: 700;
         color: var(--gov-dark);
         line-height: 1.2;
     }
+
     .stat-card .stat-label {
         font-size: 0.8rem;
         color: #6b7a8a;
@@ -163,6 +172,7 @@ include_once '../componentes/menu_empleador.php';
         text-transform: uppercase;
         letter-spacing: 0.3px;
     }
+
     .stat-card .stat-icon {
         width: 48px;
         height: 48px;
@@ -172,14 +182,38 @@ include_once '../componentes/menu_empleador.php';
         justify-content: center;
         font-size: 1.4rem;
     }
-    .bg-primary-subtle { background: rgba(11, 58, 96, 0.08); }
-    .text-primary { color: var(--gov-blue) !important; }
-    .bg-warning-subtle { background: rgba(255, 193, 7, 0.12); }
-    .text-warning { color: #ffc107 !important; }
-    .bg-info-subtle { background: rgba(13, 202, 240, 0.12); }
-    .text-info { color: #0dcaf0 !important; }
-    .bg-success-subtle { background: rgba(30, 126, 52, 0.08); }
-    .text-success { color: var(--gov-green) !important; }
+
+    .bg-primary-subtle {
+        background: rgba(11, 58, 96, 0.08);
+    }
+
+    .text-primary {
+        color: var(--gov-blue) !important;
+    }
+
+    .bg-warning-subtle {
+        background: rgba(255, 193, 7, 0.12);
+    }
+
+    .text-warning {
+        color: #ffc107 !important;
+    }
+
+    .bg-info-subtle {
+        background: rgba(13, 202, 240, 0.12);
+    }
+
+    .text-info {
+        color: #0dcaf0 !important;
+    }
+
+    .bg-success-subtle {
+        background: rgba(30, 126, 52, 0.08);
+    }
+
+    .text-success {
+        color: var(--gov-green) !important;
+    }
 
     .intermediacion-item {
         background: var(--gov-bg);
@@ -188,26 +222,32 @@ include_once '../componentes/menu_empleador.php';
         transition: all 0.2s;
         border-left: 4px solid transparent;
     }
+
     .intermediacion-item:hover {
         background: #ffffff;
         border-color: var(--gov-gold-light);
     }
+
     .intermediacion-item.pendiente {
         border-left-color: #ffc107;
         background: #fffdf0;
     }
+
     .intermediacion-item.en_revision {
         border-left-color: #0dcaf0;
         background: #f0f9ff;
     }
+
     .intermediacion-item.aprobado {
         border-left-color: #198754;
         background: #f0fff4;
     }
+
     .intermediacion-item.rechazado {
         border-left-color: #dc3545;
         background: #fff5f5;
     }
+
     .intermediacion-item .codigo {
         font-family: monospace;
         font-weight: 600;
@@ -223,26 +263,32 @@ include_once '../componentes/menu_empleador.php';
         text-transform: uppercase;
         letter-spacing: 0.3px;
     }
+
     .badge-estado.pendiente {
         background: #fff3cd;
         color: #856404;
     }
+
     .badge-estado.en_revision {
         background: #cce5ff;
         color: #004085;
     }
+
     .badge-estado.aprobado {
         background: #d4edda;
         color: #155724;
     }
+
     .badge-estado.rechazado {
         background: #f8d7da;
         color: #721c24;
     }
+
     .badge-estado.revisado {
         background: #e2e3e5;
         color: #383d41;
     }
+
     .badge-estado.interesado {
         background: #d4edda;
         color: #155724;
@@ -257,11 +303,13 @@ include_once '../componentes/menu_empleador.php';
         font-size: 0.85rem;
         transition: all 0.3s;
     }
+
     .btn-primary:hover {
         background: var(--gov-blue-light);
         transform: translateY(-2px);
         box-shadow: 0 4px 12px rgba(11, 58, 96, 0.2);
     }
+
     .btn-outline-success {
         border: 1px solid var(--gov-green);
         color: var(--gov-green);
@@ -270,10 +318,12 @@ include_once '../componentes/menu_empleador.php';
         font-size: 0.8rem;
         transition: all 0.2s;
     }
+
     .btn-outline-success:hover {
         background: var(--gov-green);
         color: white;
     }
+
     .btn-outline-danger {
         border: 1px solid #dc3545;
         color: #dc3545;
@@ -282,10 +332,12 @@ include_once '../componentes/menu_empleador.php';
         font-size: 0.8rem;
         transition: all 0.2s;
     }
+
     .btn-outline-danger:hover {
         background: #dc3545;
         color: white;
     }
+
     .btn-outline-secondary {
         border: 1px solid var(--gov-border);
         color: var(--gov-dark);
@@ -294,6 +346,7 @@ include_once '../componentes/menu_empleador.php';
         font-size: 0.8rem;
         transition: all 0.2s;
     }
+
     .btn-outline-secondary:hover {
         background: var(--gov-bg);
         border-color: var(--gov-blue);
@@ -313,9 +366,11 @@ include_once '../componentes/menu_empleador.php';
         border-radius: var(--gov-radius-sm);
         overflow: hidden;
     }
+
     .table-candidatos thead {
         background: var(--gov-bg);
     }
+
     .table-candidatos th {
         font-weight: 600;
         font-size: 0.75rem;
@@ -325,11 +380,13 @@ include_once '../componentes/menu_empleador.php';
         border-bottom: 2px solid var(--gov-border);
         padding: 0.75rem 1rem;
     }
+
     .table-candidatos td {
         padding: 0.75rem 1rem;
         vertical-align: middle;
         border-bottom: 1px solid #f1f5f9;
     }
+
     .table-candidatos tbody tr:hover {
         background: var(--gov-bg);
     }
@@ -347,6 +404,7 @@ include_once '../componentes/menu_empleador.php';
         color: var(--gov-blue);
         flex-shrink: 0;
     }
+
     .avatar-mini img {
         width: 36px;
         height: 36px;
@@ -365,6 +423,7 @@ include_once '../componentes/menu_empleador.php';
         background: transparent;
         text-decoration: none;
     }
+
     .btn-ver-todos:hover {
         background: var(--gov-blue);
         color: white;
@@ -375,10 +434,13 @@ include_once '../componentes/menu_empleador.php';
         .stat-card .stat-number {
             font-size: 1.4rem;
         }
-        .table-candidatos td, .table-candidatos th {
+
+        .table-candidatos td,
+        .table-candidatos th {
             padding: 0.5rem 0.75rem;
             font-size: 0.85rem;
         }
+
         .btn-ver-todos {
             font-size: 0.7rem;
             padding: 0.15rem 0.6rem;
@@ -424,11 +486,11 @@ include_once '../componentes/menu_empleador.php';
             <div class="d-flex justify-content-between align-items-center">
                 <div>
                     <span class="stat-label">En Revisión</span>
-                    <h3 class="stat-number text-info"><?php 
-                        $en_revision = count(array_filter($intermediaciones, function($i) {
-                            return $i['estado_ministerio'] == 'en_revision';
-                        }));
-                        echo number_format($en_revision);
+                    <h3 class="stat-number text-info"><?php
+                    $en_revision = count(array_filter($intermediaciones, function ($i) {
+                        return $i['estado_ministerio'] == 'en_revision';
+                    }));
+                    echo number_format($en_revision);
                     ?></h3>
                     <small class="text-info">En proceso ministerial</small>
                 </div>
@@ -444,11 +506,11 @@ include_once '../componentes/menu_empleador.php';
             <div class="d-flex justify-content-between align-items-center">
                 <div>
                     <span class="stat-label">Aprobados</span>
-                    <h3 class="stat-number text-success"><?php 
-                        $aprobados = count(array_filter($intermediaciones, function($i) {
-                            return $i['estado_ministerio'] == 'aprobado';
-                        }));
-                        echo number_format($aprobados);
+                    <h3 class="stat-number text-success"><?php
+                    $aprobados = count(array_filter($intermediaciones, function ($i) {
+                        return $i['estado_ministerio'] == 'aprobado';
+                    }));
+                    echo number_format($aprobados);
                     ?></h3>
                     <small class="text-success"><i class="bi bi-check-circle"></i> Gestionados con éxito</small>
                 </div>
@@ -484,11 +546,11 @@ include_once '../componentes/menu_empleador.php';
                 </div>
             <?php else: ?>
                 <div class="row g-3">
-                    <?php 
+                    <?php
                     // Mostrar solo las 3 más recientes
                     $alertas_mostrar = array_slice($intermediaciones, 0, 3);
-                    foreach ($alertas_mostrar as $inter): 
-                    ?>
+                    foreach ($alertas_mostrar as $inter):
+                        ?>
                         <div class="col-12 col-md-6 col-lg-4">
                             <div class="intermediacion-item <?php echo htmlspecialchars($inter['estado_ministerio']); ?>">
                                 <div class="d-flex justify-content-between align-items-start mb-2">
@@ -514,14 +576,17 @@ include_once '../componentes/menu_empleador.php';
                                     </small>
                                     <div>
                                         <?php if ($inter['estado_ministerio'] == 'pendiente'): ?>
-                                            <button class="btn btn-sm btn-outline-success" onclick="aprobarIntermediacion('<?php echo htmlspecialchars($inter['codigo_seguimiento']); ?>')">
+                                            <button class="btn btn-sm btn-outline-success"
+                                                onclick="aprobarIntermediacion('<?php echo htmlspecialchars($inter['codigo_seguimiento']); ?>')">
                                                 <i class="bi bi-check-lg"></i>
                                             </button>
-                                            <button class="btn btn-sm btn-outline-danger" onclick="rechazarIntermediacion('<?php echo htmlspecialchars($inter['codigo_seguimiento']); ?>')">
+                                            <button class="btn btn-sm btn-outline-danger"
+                                                onclick="rechazarIntermediacion('<?php echo htmlspecialchars($inter['codigo_seguimiento']); ?>')">
                                                 <i class="bi bi-x-lg"></i>
                                             </button>
                                         <?php endif; ?>
-                                        <button class="btn btn-sm btn-outline-secondary" data-bs-toggle="modal" data-bs-target="#modalDetalleCandidato"
+                                        <button class="btn btn-sm btn-outline-secondary" data-bs-toggle="modal"
+                                            data-bs-target="#modalDetalleCandidato"
                                             data-codigo="<?php echo htmlspecialchars($inter['codigo_seguimiento']); ?>"
                                             data-nombre="<?php echo htmlspecialchars($inter['buscador_nombre'] . ' ' . $inter['buscador_apellidos']); ?>"
                                             data-expediente="<?php echo htmlspecialchars($inter['buscador_expediente']); ?>"
@@ -585,16 +650,16 @@ include_once '../componentes/menu_empleador.php';
                             </tr>
                         </thead>
                         <tbody>
-                            <?php 
+                            <?php
                             // Mostrar solo los 5 más recientes
                             $candidatos_mostrar = array_slice($candidatos, 0, 5);
-                            foreach ($candidatos_mostrar as $c): 
-                            ?>
+                            foreach ($candidatos_mostrar as $c):
+                                ?>
                                 <tr>
                                     <td>
                                         <div class="d-flex align-items-center gap-2">
-                                            <?php 
-                                                $foto = !empty($c['foto_carnet']) ? '../' . $c['foto_carnet'] : '';
+                                            <?php
+                                            $foto = !empty($c['foto_carnet']) ? '../' . $c['foto_carnet'] : '';
                                             ?>
                                             <div class="avatar-mini">
                                                 <?php if ($foto): ?>
@@ -635,7 +700,8 @@ include_once '../componentes/menu_empleador.php';
                                         <?php echo date('d/m/Y', strtotime($c['fecha_postulacion'])); ?>
                                     </td>
                                     <td class="text-end">
-                                        <button class="btn btn-sm btn-outline-secondary" data-bs-toggle="modal" data-bs-target="#modalDetalleCandidato"
+                                        <button class="btn btn-sm btn-outline-secondary" data-bs-toggle="modal"
+                                            data-bs-target="#modalDetalleCandidato"
                                             data-codigo="<?php echo htmlspecialchars($c['numero_expediente']); ?>"
                                             data-nombre="<?php echo htmlspecialchars($c['nombre'] . ' ' . $c['apellidos']); ?>"
                                             data-expediente="<?php echo htmlspecialchars($c['numero_expediente']); ?>"
@@ -646,6 +712,13 @@ include_once '../componentes/menu_empleador.php';
                                             data-fecha="<?php echo date('d/m/Y', strtotime($c['fecha_postulacion'])); ?>"
                                             data-email="<?php echo htmlspecialchars($c['correo_electronico']); ?>"
                                             data-dip="<?php echo htmlspecialchars($c['documento_identidad']); ?>"
+                                       
+
+                                            data-file-dip="<?php echo htmlspecialchars($c['copia_dip'] ?? ''); ?>"
+                                            data-file-cv="<?php echo htmlspecialchars($c['cv'] ?? ''); ?>"
+                                            data-file-titulos="<?php echo htmlspecialchars($c['titulos'] ?? ''); ?>"
+                                            data-file-otros="<?php echo htmlspecialchars($c['otros_documentos'] ?? ''); ?>"
+
                                             title="Ver detalles">
                                             <i class="bi bi-eye"></i>
                                         </button>
@@ -669,6 +742,7 @@ include_once '../componentes/menu_empleador.php';
     </div>
 </div>
 
+<!-- ===== MODAL DETALLE CANDIDATO ===== -->
 <!-- ===== MODAL DETALLE CANDIDATO ===== -->
 <div class="modal fade" id="modalDetalleCandidato" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered modal-lg">
@@ -699,6 +773,33 @@ include_once '../componentes/menu_empleador.php';
                         <p class="mb-0"><strong>Código:</strong> <span id="modal-codigo" class="font-monospace text-primary"></span></p>
                     </div>
                 </div>
+
+                <hr class="my-3">
+
+                <!-- SECCIÓN DE DOCUMENTOS -->
+                <div class="row g-2">
+                    <h6 class="fw-bold text-muted mb-2" style="font-size: 0.8rem; text-transform: uppercase;">Documentación adjunta</h6>
+                    <div class="col-6 col-md-3" id="wrapper-cv">
+                        <a id="btn-cv" href="#" target="_blank" class="btn btn-outline-primary btn-sm w-100 text-truncate">
+                            <i class="bi bi-file-earmark-pdf me-1"></i> Ver CV
+                        </a>
+                    </div>
+                    <div class="col-6 col-md-3" id="wrapper-dip">
+                        <a id="btn-dip" href="#" target="_blank" class="btn btn-outline-secondary btn-sm w-100 text-truncate">
+                            <i class="bi bi-card-image me-1"></i> Copia DIP
+                        </a>
+                    </div>
+                    <div class="col-6 col-md-3" id="wrapper-titulos">
+                        <a id="btn-titulos" href="#" target="_blank" class="btn btn-outline-info btn-sm w-100 text-truncate">
+                            <i class="bi bi-journal-bookmark me-1"></i> Títulos
+                        </a>
+                    </div>
+                    <div class="col-6 col-md-3" id="wrapper-otros">
+                        <a id="btn-otros" href="#" target="_blank" class="btn btn-outline-dark btn-sm w-100 text-truncate">
+                            <i class="bi bi-folder2-open me-1"></i> Otros Docs
+                        </a>
+                    </div>
+                </div>
             </div>
             <div class="modal-footer">
                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
@@ -709,57 +810,60 @@ include_once '../componentes/menu_empleador.php';
         </div>
     </div>
 </div>
-
 <script>
     // ===== PASAR DATOS AL MODAL =====
-    document.addEventListener('DOMContentLoaded', function() {
-        const buttons = document.querySelectorAll('[data-bs-toggle="modal"][data-bs-target="#modalDetalleCandidato"]');
-        buttons.forEach(button => {
-            button.addEventListener('click', function() {
-                document.getElementById('modal-nombre').textContent = this.dataset.nombre || 'N/A';
-                document.getElementById('modal-expediente').textContent = this.dataset.expediente || 'N/A';
-                document.getElementById('modal-dip').textContent = this.dataset.dip || 'N/A';
-                document.getElementById('modal-telefono').textContent = this.dataset.telefono || 'N/A';
-                document.getElementById('modal-email').textContent = this.dataset.email || 'N/A';
-                document.getElementById('modal-puesto').textContent = this.dataset.puesto || 'N/A';
-                document.getElementById('modal-salario').textContent = this.dataset.salario || 'N/A';
-                document.getElementById('modal-fecha').textContent = this.dataset.fecha || 'N/A';
-                document.getElementById('modal-codigo').textContent = this.dataset.codigo || 'N/A';
-                
-                const estadoLab = document.getElementById('modal-estado-lab');
-                const estado = this.dataset.estado || 'desempleado';
-                const badgeMap = {
-                    'desempleado': 'badge bg-warning text-dark',
-                    'contratado': 'badge bg-success',
-                    'suspendido': 'badge bg-danger'
-                };
-                estadoLab.className = badgeMap[estado] || 'badge bg-secondary';
-                estadoLab.textContent = estado.charAt(0).toUpperCase() + estado.slice(1);
+   document.addEventListener('DOMContentLoaded', function() {
+    const buttons = document.querySelectorAll('[data-bs-toggle="modal"][data-bs-target="#modalDetalleCandidato"]');
+    
+    buttons.forEach(button => {
+        button.addEventListener('click', function() {
+            // Carga de datos generales
+            document.getElementById('modal-nombre').textContent = this.dataset.nombre || 'N/A';
+            document.getElementById('modal-expediente').textContent = this.dataset.expediente || 'N/A';
+            document.getElementById('modal-dip').textContent = this.dataset.dip || 'N/A';
+            document.getElementById('modal-telefono').textContent = this.dataset.telefono || 'N/A';
+            document.getElementById('modal-email').textContent = this.dataset.email || 'N/A';
+            document.getElementById('modal-puesto').textContent = this.dataset.puesto || 'N/A';
+            document.getElementById('modal-salario').textContent = this.dataset.salario || 'N/A';
+            document.getElementById('modal-fecha').textContent = this.dataset.fecha || 'N/A';
+            document.getElementById('modal-codigo').textContent = this.dataset.codigo || 'N/A';
+            
+            // Estado laboral
+            const estadoLab = document.getElementById('modal-estado-lab');
+            const estado = this.dataset.estado || 'desempleado';
+            const badgeMap = {
+                'desempleado': 'badge bg-warning text-dark',
+                'contratado': 'badge bg-success',
+                'suspendido': 'badge bg-danger'
+            };
+            estadoLab.className = badgeMap[estado] || 'badge bg-secondary';
+            estadoLab.textContent = estado.charAt(0).toUpperCase() + estado.slice(1);
+
+            // Mapeo y procesamiento de documentos
+            const docs = [
+                { key: 'fileCv', btn: 'btn-cv', wrapper: 'wrapper-cv' },
+                { key: 'fileDip', btn: 'btn-dip', wrapper: 'wrapper-dip' },
+                { key: 'fileTitulos', btn: 'btn-titulos', wrapper: 'wrapper-titulos' },
+                { key: 'fileOtros', btn: 'btn-otros', wrapper: 'wrapper-otros' }
+            ];
+
+            docs.forEach(doc => {
+                const filePath = this.dataset[doc.key];
+                const btnElem = document.getElementById(doc.btn);
+                const wrapperElem = document.getElementById(doc.wrapper);
+
+                if (filePath && filePath.trim() !== '' && filePath !== 'null') {
+                    // Si la BD devuelve la ruta relativa directa ej: 'uploads/documentos/...'
+                    // la asignamos directamente al enlace.
+                    btnElem.href = filePath.startsWith('/') ? filePath : '../' + filePath;
+                    wrapperElem.style.display = 'block';
+                } else {
+                    wrapperElem.style.display = 'none'; // Se oculta si no existe el documento
+                }
             });
         });
     });
-
-    function aprobarIntermediacion(codigo) {
-        if (confirm('¿Aprobar la intermediación ' + codigo + '?')) {
-            alert('✅ Intermediación ' + codigo + ' aprobada.');
-        }
-    }
-
-    function rechazarIntermediacion(codigo) {
-        if (confirm('¿Rechazar la intermediación ' + codigo + '?')) {
-            alert('❌ Intermediación ' + codigo + ' rechazada.');
-        }
-    }
-
-    function contactarCandidato() {
-        const nombre = document.getElementById('modal-nombre').textContent;
-        const email = document.getElementById('modal-email').textContent;
-        if (email && email !== 'N/A') {
-            window.location.href = 'mailto:' + email + '?subject=Interés en su perfil profesional';
-        } else {
-            alert('No hay correo electrónico disponible para este candidato.');
-        }
-    }
+});
 </script>
 
 <?php

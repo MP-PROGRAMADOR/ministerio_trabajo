@@ -707,27 +707,28 @@ include_once '../componentes/menu_empleador.php';
                                         <?php echo date('d/m/Y', strtotime($c['fecha_postulacion'])); ?>
                                     </td>
                                     <td class="text-end">
-                                        <button class="btn btn-sm btn-outline-secondary" 
-    data-bs-toggle="modal" 
-    data-bs-target="#modalDetalleCandidato"
-    data-notificacion-id="<?php echo htmlspecialchars($c['notificacion_id'] ?? ''); ?>"
-    data-codigo="<?php echo htmlspecialchars($c['numero_expediente']); ?>"
-    data-nombre="<?php echo htmlspecialchars($c['nombre'] . ' ' . $c['apellidos']); ?>"
-    data-expediente="<?php echo htmlspecialchars($c['numero_expediente']); ?>"
-    data-telefono="<?php echo htmlspecialchars($c['telefono'] ?? 'No registrado'); ?>"
-    data-estado="<?php echo htmlspecialchars($c['estado_laboral']); ?>"
-    data-puesto="<?php echo htmlspecialchars($c['titulo_puesto']); ?>"
-    data-salario="<?php echo $c['salario_ofrecido'] ? number_format($c['salario_ofrecido'], 0, ',', '.') . ' XAF' : 'No especificado'; ?>"
-    data-fecha="<?php echo date('d/m/Y', strtotime($c['fecha_postulacion'])); ?>"
-    data-email="<?php echo htmlspecialchars($c['correo_electronico']); ?>"
-    data-dip="<?php echo htmlspecialchars($c['documento_identidad']); ?>"
-    data-file-dip="<?php echo htmlspecialchars($c['copia_dip'] ?? ''); ?>"
-    data-file-cv="<?php echo htmlspecialchars($c['cv'] ?? ''); ?>"
-    data-file-titulos="<?php echo htmlspecialchars($c['titulos'] ?? ''); ?>"
-    data-file-otros="<?php echo htmlspecialchars($c['otros_documentos'] ?? ''); ?>"
-    title="Ver detalles">
-    <i class="bi bi-eye"></i>
-</button>
+                                        <button class="btn btn-sm btn-outline-secondary" data-bs-toggle="modal"
+                                            data-bs-target="#modalDetalleCandidato"          
+                                            data-notificacion-id="<?php echo htmlspecialchars($c['notificacion_id'] ?? ''); ?>" 
+                                            data-postulaciones-id="<?php echo htmlspecialchars($c['id'] ?? ''); ?>" 
+                                            data-estado-ministerio="<?php echo htmlspecialchars($c['estado_ministerio'] ?? ''); ?>"
+                                            data-codigo="<?php echo htmlspecialchars($c['numero_expediente']); ?>"
+                                            data-nombre="<?php echo htmlspecialchars($c['nombre'] . ' ' . $c['apellidos']); ?>"
+                                            data-expediente="<?php echo htmlspecialchars($c['numero_expediente']); ?>"
+                                            data-telefono="<?php echo htmlspecialchars($c['telefono'] ?? 'No registrado'); ?>"
+                                            data-estado="<?php echo htmlspecialchars($c['estado_laboral']); ?>"
+                                            data-puesto="<?php echo htmlspecialchars($c['titulo_puesto']); ?>"
+                                            data-salario="<?php echo $c['salario_ofrecido'] ? number_format($c['salario_ofrecido'], 0, ',', '.') . ' XAF' : 'No especificado'; ?>"
+                                            data-fecha="<?php echo date('d/m/Y', strtotime($c['fecha_postulacion'])); ?>"
+                                            data-email="<?php echo htmlspecialchars($c['correo_electronico']); ?>"
+                                            data-dip="<?php echo htmlspecialchars($c['documento_identidad']); ?>"
+                                            data-file-dip="<?php echo htmlspecialchars($c['copia_dip'] ?? ''); ?>"
+                                            data-file-cv="<?php echo htmlspecialchars($c['cv'] ?? ''); ?>"
+                                            data-file-titulos="<?php echo htmlspecialchars($c['titulos'] ?? ''); ?>"
+                                            data-file-otros="<?php echo htmlspecialchars($c['otros_documentos'] ?? ''); ?>"
+                                            title="Ver detalles">
+                                            <i class="bi bi-eye"></i>
+                                        </button>
                                     </td>
                                 </tr>
                             <?php endforeach; ?>
@@ -827,85 +828,98 @@ include_once '../componentes/menu_empleador.php';
 <script>
     // ===== PASAR DATOS AL MODAL =====
     document.addEventListener('DOMContentLoaded', function () {
-        const buttons = document.querySelectorAll('[data-bs-toggle="modal"][data-bs-target="#modalDetalleCandidato"]');
-     
+    const modalDetalle = document.getElementById('modalDetalleCandidato');
 
-        buttons.forEach(button => {
-            button.addEventListener('click', function () {
-                // Carga de datos generales
-                document.getElementById('modal-nombre').textContent = this.dataset.nombre || 'N/A';
-                document.getElementById('modal-expediente').textContent = this.dataset.expediente || 'N/A';
-                document.getElementById('modal-dip').textContent = this.dataset.dip || 'N/A';
-                document.getElementById('modal-telefono').textContent = this.dataset.telefono || 'N/A';
-                document.getElementById('modal-email').textContent = this.dataset.email || 'N/A';
-                document.getElementById('modal-puesto').textContent = this.dataset.puesto || 'N/A';
-                document.getElementById('modal-salario').textContent = this.dataset.salario || 'N/A';
-                document.getElementById('modal-fecha').textContent = this.dataset.fecha || 'N/A';
-                document.getElementById('modal-codigo').textContent = this.dataset.codigo || 'N/A';
+    if (modalDetalle) {
+        modalDetalle.addEventListener('show.bs.modal', function (event) {
+            // Elemento que activó el modal (el botón de la tabla)
+            const button = event.relatedTarget;
 
+            // 1. Carga de datos generales
+            document.getElementById('modal-nombre').textContent = button.dataset.nombre || 'N/A';
+            document.getElementById('modal-expediente').textContent = button.dataset.expediente || 'N/A';
+            document.getElementById('modal-dip').textContent = button.dataset.dip || 'N/A';
+            document.getElementById('modal-telefono').textContent = button.dataset.telefono || 'N/A';
+            document.getElementById('modal-email').textContent = button.dataset.email || 'N/A';
+            document.getElementById('modal-puesto').textContent = button.dataset.puesto || 'N/A';
+            document.getElementById('modal-salario').textContent = button.dataset.salario || 'N/A';
+            document.getElementById('modal-fecha').textContent = button.dataset.fecha || 'N/A';
+            document.getElementById('modal-codigo').textContent = button.dataset.codigo || 'N/A';
 
-                // Dentro del Listener donde pasas datos al modal:
-const btnContactar = document.getElementById('btn-contactar-modal');
-btnContactar.dataset.notificacionId = this.dataset.notificacionId || '';
+            // 2. Estado laboral y formateo de Badge
+            const estadoLab = document.getElementById('modal-estado-lab');
+            const estado = button.dataset.estado || 'desempleado';
+            const badgeMap = {
+                'desempleado': 'badge bg-warning text-dark',
+                'contratado': 'badge bg-success',
+                'suspendido': 'badge bg-danger'
+            };
+            estadoLab.className = badgeMap[estado] || 'badge bg-secondary';
+            estadoLab.textContent = estado.charAt(0).toUpperCase() + estado.slice(1);
 
-                // Estado laboral
-                const estadoLab = document.getElementById('modal-estado-lab');
-                const estado = this.dataset.estado || 'desempleado';
-                const badgeMap = {
-                    'desempleado': 'badge bg-warning text-dark',
-                    'contratado': 'badge bg-success',
-                    'suspendido': 'badge bg-danger'
-                };
-                estadoLab.className = badgeMap[estado] || 'badge bg-secondary';
-                estadoLab.textContent = estado.charAt(0).toUpperCase() + estado.slice(1);
+            // 3. Mapeo y visibilidad de documentos
+            const docs = [
+                { key: 'fileCv', btn: 'btn-cv', wrapper: 'wrapper-cv' },
+                { key: 'fileDip', btn: 'btn-dip', wrapper: 'wrapper-dip' },
+                { key: 'fileTitulos', btn: 'btn-titulos', wrapper: 'wrapper-titulos' },
+                { key: 'fileOtros', btn: 'btn-otros', wrapper: 'wrapper-otros' }
+            ];
 
-                // Mapeo y procesamiento de documentos
-                const docs = [
-                    { key: 'fileCv', btn: 'btn-cv', wrapper: 'wrapper-cv' },
-                    { key: 'fileDip', btn: 'btn-dip', wrapper: 'wrapper-dip' },
-                    { key: 'fileTitulos', btn: 'btn-titulos', wrapper: 'wrapper-titulos' },
-                    { key: 'fileOtros', btn: 'btn-otros', wrapper: 'wrapper-otros' }
-                ];
+            docs.forEach(doc => {
+                const filePath = button.dataset[doc.key];
+                const btnElem = document.getElementById(doc.btn);
+                const wrapperElem = document.getElementById(doc.wrapper);
 
-                docs.forEach(doc => {
-                    const filePath = this.dataset[doc.key];
-                    const btnElem = document.getElementById(doc.btn);
-                    const wrapperElem = document.getElementById(doc.wrapper);
-
+                if (wrapperElem && btnElem) {
                     if (filePath && filePath.trim() !== '' && filePath !== 'null') {
-                        // Si la BD devuelve la ruta relativa directa ej: 'uploads/documentos/...'
-                        // la asignamos directamente al enlace.
                         btnElem.href = filePath.startsWith('/') ? filePath : '../' + filePath;
                         wrapperElem.style.display = 'block';
                     } else {
-                        wrapperElem.style.display = 'none'; // Se oculta si no existe el documento
+                        wrapperElem.style.display = 'none';
                     }
-
-
-
-                       // Dentro del evento donde abres el modal:
-       
-       
-       
-
-                });
+                }
             });
+
+            // 4. Captura de IDs y Control del Botón Contactar
+            const notificacionId = button.getAttribute('data-notificacion-id') || '';
+            const postulacionId = button.getAttribute('data-postulaciones-id') || '';
+            const estadoMinisterio = button.getAttribute('data-estado-ministerio') || 'pendiente';
+
+            const btnContactar = document.getElementById('btn-contactar-modal');
+
+            if (btnContactar) {
+                // Asignar IDs al dataset del botón de acción
+                btnContactar.dataset.notificacionId = notificacionId;
+                btnContactar.dataset.postulacionId = postulacionId;
+
+                // Ocultar botón si ya no está en estado pendiente
+                if (['en_revision', 'aprobado', 'contratado'].includes(estadoMinisterio)) {
+                    btnContactar.style.display = 'none';
+                } else {
+                    btnContactar.style.display = 'inline-block';
+                }
+            }
         });
-    });
+    }
+});
 </script>
 
 
 <script>
+    // Dentro del Listener de Bootstrap cuando se abre el modal:
 function contactarCandidato() {
     const btn = document.getElementById('btn-contactar-modal');
-    const notificacionId = btn.dataset.notificacionId;
+    if (!btn) return;
 
-    if (!notificacionId) {
-        alert('No se pudo obtener el identificador de la notificación.');
+    const notificacionId = btn.dataset.notificacionId;
+    const postulacionId = btn.dataset.postulacionId;
+
+    if (!notificacionId || !postulacionId) {
+        alert('Faltan datos requeridos (Notificación o Postulación).');
         return;
     }
 
-    // Enviar petición al backend para actualizar únicamente el estado
+    // Petición al backend
     fetch('../php/actualizar_estado_ministerio.php', {
         method: 'POST',
         headers: {
@@ -914,21 +928,22 @@ function contactarCandidato() {
         },
         body: new URLSearchParams({
             'notificacion_id': notificacionId,
+            'postulacion_id': postulacionId,
             'estado_ministerio': 'en_revision'
         })
     })
     .then(response => response.json())
     .then(data => {
         if (data.success) {
-            // Cerrar el modal de Bootstrap
+            // Ocultar el modal de Bootstrap de forma limpia
             const modalElem = document.getElementById('modalDetalleCandidato');
             const modal = bootstrap.Modal.getInstance(modalElem);
             if (modal) modal.hide();
 
-            // Recargar la página para reflejar los cambios de estado en la vista
+            // Recargar para mostrar los estados actualizados
             window.location.reload();
         } else {
-            alert('Error al actualizar el estado: ' + (data.message || 'Intente nuevamente'));
+            alert('Error al actualizar: ' + (data.message || 'Intente nuevamente'));
         }
     })
     .catch(error => {

@@ -25,6 +25,7 @@ $cursos = [];
 $postulaciones_usuario = [];
 $noticias = [];
 $notificaciones_lista = [];
+$postulaciones_detalle = [];
 $usuario = ['numero_expediente' => 'EG-00000'];
 
 try {
@@ -39,26 +40,61 @@ try {
     $documentos = $stmt_doc->fetch();
     $perfil_completo = ($buscador && $documentos);
 
-    // ===== ESTADÍSTICAS =====
+    // ===== ESTADÍSTICAS Y DATOS DINÁMICOS =====
     if ($buscador) {
+        // Postulaciones totales
         $stmt = $pdo->prepare("SELECT COUNT(*) as total FROM postulaciones WHERE buscador_id = ?");
         $stmt->execute([$buscador['id']]);
-        $result = $stmt->fetch(PDO::FETCH_ASSOC);
-        $postulaciones = $result['total'] ?? 0;
+        $postulaciones = $stmt->fetch(PDO::FETCH_ASSOC)['total'] ?? 0;
+
+        // Notificaciones de intermediación (últimas 3)
+        $stmt = $pdo->prepare("
+            SELECT 
+                CONCAT('Trámite #', codigo_seguimiento, ' - ', estado_ministerio) AS mensaje,
+                fecha_creacion AS fecha
+            FROM notificaciones_intermediacion
+            WHERE buscador_id = ?
+            ORDER BY fecha_creacion DESC
+            LIMIT 3
+        ");
+        $stmt->execute([$buscador['id']]);
+        $notificaciones_lista = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+        // Total de notificaciones
+        $stmt = $pdo->prepare("SELECT COUNT(*) as total FROM notificaciones_intermediacion WHERE buscador_id = ?");
+        $stmt->execute([$buscador['id']]);
+        $notificaciones = $stmt->fetch(PDO::FETCH_ASSOC)['total'] ?? 0;
+
+        // Detalle de postulaciones del usuario (para mostrar en la sección de candidaturas)
+        $stmt = $pdo->prepare("
+            SELECT p.id, p.estado, p.fecha_postulacion, o.titulo_puesto, e.nombre_empresa
+            FROM postulaciones p
+            JOIN ofertas_empleo o ON p.oferta_id = o.id
+            JOIN empleadores e ON o.empleador_id = e.id
+            WHERE p.buscador_id = ?
+            ORDER BY p.fecha_postulacion DESC
+            LIMIT 5
+        ");
+        $stmt->execute([$buscador['id']]);
+        $postulaciones_detalle = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+        // Cursos inscritos (si existe la tabla inscripciones_cursos)
+        try {
+            $stmt = $pdo->prepare("SELECT COUNT(*) as total FROM inscripciones_cursos WHERE buscador_id = ?");
+            $stmt->execute([$buscador['id']]);
+            $cursos_inscritos = $stmt->fetch(PDO::FETCH_ASSOC)['total'] ?? 0;
+        } catch (PDOException $e) {
+            // Si no existe la tabla, usamos el total de cursos activos como estadística general
+            $stmt = $pdo->prepare("SELECT COUNT(*) as total FROM cursos WHERE estado = 'activo'");
+            $stmt->execute();
+            $cursos_inscritos = $stmt->fetch(PDO::FETCH_ASSOC)['total'] ?? 0;
+        }
     }
 
     // Ofertas Vistas = Total de ofertas activas
     $stmt = $pdo->prepare("SELECT COUNT(*) as total FROM ofertas_empleo WHERE estado = 'abierta'");
     $stmt->execute();
     $ofertas_vistas = $stmt->fetch(PDO::FETCH_ASSOC)['total'] ?? 0;
-
-    // Cursos Inscritos = Total de cursos activos (sin relación, solo para estadística)
-    $stmt = $pdo->prepare("SELECT COUNT(*) as total FROM cursos WHERE estado = 'activo'");
-    $stmt->execute();
-    $cursos_inscritos = $stmt->fetch(PDO::FETCH_ASSOC)['total'] ?? 0;
-
-    // Notificaciones (simuladas – reemplazar si existe tabla)
-    $notificaciones = rand(0, 10);
 
     // ===== OFERTAS RECOMENDADAS =====
     $stmt = $pdo->prepare("
@@ -72,14 +108,14 @@ try {
     $stmt->execute();
     $ofertas = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
-    // Obtener postulaciones del usuario (oferta_id => estado)
+    // Obtener postulaciones del usuario (oferta_id => estado) para los botones
     if ($buscador) {
         $stmt = $pdo->prepare("SELECT oferta_id, estado FROM postulaciones WHERE buscador_id = ?");
         $stmt->execute([$buscador['id']]);
         $postulaciones_usuario = $stmt->fetchAll(PDO::FETCH_KEY_PAIR);
     }
 
-    // ===== CURSOS (sin estado de inscripción, solo listado) =====
+    // ===== CURSOS DISPONIBLES =====
     $stmt = $pdo->prepare("
         SELECT * 
         FROM cursos 
@@ -90,19 +126,16 @@ try {
     $stmt->execute();
     $cursos = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
-    // ===== NOTICIAS (estáticas) =====
-    $noticias = [
-        ['titulo' => 'Nueva convocatoria de empleo público', 'fecha' => '15/07/2026', 'badge' => 'Nuevo'],
-        ['titulo' => 'Curso gratuito de inglés técnico', 'fecha' => '12/07/2026', 'badge' => 'Próximo'],
-        ['titulo' => 'Feria de empleo en Malabo', 'fecha' => '20/07/2026', 'badge' => 'Evento']
-    ];
-
-    // ===== NOTIFICACIONES DE OFICINA =====
-    $notificaciones_lista = [
-        ['mensaje' => 'Nueva oferta en tu sector: Técnico de Soporte TI', 'fecha' => 'Hace 2 horas'],
-        ['mensaje' => 'Tu postulación a GETESA está en revisión', 'fecha' => 'Hace 1 día'],
-        ['mensaje' => 'Nuevo curso disponible: Administración de Redes', 'fecha' => 'Hace 3 días']
-    ];
+    // ===== NOTICIAS REALES =====
+    $stmt = $pdo->prepare("
+        SELECT titulo, fecha_publicacion, badge 
+        FROM noticias 
+        WHERE estado = 'activo' 
+        ORDER BY fecha_publicacion DESC 
+        LIMIT 3
+    ");
+    $stmt->execute();
+    $noticias = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
     // Obtener número de expediente
     $stmt = $pdo->prepare("SELECT numero_expediente FROM usuarios WHERE id = ?");
@@ -112,7 +145,6 @@ try {
 } catch (PDOException $e) {
     error_log("Error en dashboard: " . $e->getMessage());
     // Todas las variables ya están inicializadas con valores por defecto
-    // Solo aseguramos que $buscador sea null y $perfil_completo false
     $perfil_completo = false;
     $buscador = null;
 }
@@ -122,7 +154,7 @@ include '../componentes/menu_desempleado.php';
 ?>
 
 <style>
-    /* ===== ESTILOS (sin cambios, los mismos que tenías) ===== */
+    /* ===== ESTILOS (los mismos que tenías, se mantienen) ===== */
     .dashboard-card {
         background: #ffffff;
         border: 1px solid var(--gov-border);
@@ -546,31 +578,52 @@ include '../componentes/menu_desempleado.php';
                         </div>
                     </div>
 
-                    <!-- Notificaciones de Oficina -->
+                    <!-- Notificaciones de Oficina (dinámicas) -->
                     <div class="card dashboard-card p-4 mb-4">
-                        <h5 class="fw-bold mb-3 h6 text-uppercase tracking-wider text-muted"><i class="bi bi-chat-left-text text-primary me-2" style="color: var(--gov-blue) !important;"></i>Notificaciones de Oficina</h5>
+                        <h5 class="fw-bold mb-3 h6 text-uppercase tracking-wider text-muted">
+                            <i class="bi bi-chat-left-text text-primary me-2" style="color: var(--gov-blue) !important;"></i>
+                            Notificaciones de Oficina
+                        </h5>
                         <div class="d-flex flex-column gap-2">
-                            <?php foreach ($notificaciones_lista as $notif): ?>
-                                <div class="p-2 rounded bg-info bg-opacity-10 border-0 small">
-                                    <strong class="text-info-emphasis d-block" style="font-weight: 600;"><?php echo htmlspecialchars($notif['mensaje']); ?></strong>
-                                    <span class="text-muted" style="font-size: 0.75rem;"><?php echo htmlspecialchars($notif['fecha']); ?></span>
-                                </div>
-                            <?php endforeach; ?>
+                            <?php if (empty($notificaciones_lista)): ?>
+                                <p class="text-muted text-center small">No hay notificaciones recientes.</p>
+                            <?php else: ?>
+                                <?php foreach ($notificaciones_lista as $notif): ?>
+                                    <div class="p-2 rounded bg-info bg-opacity-10 border-0 small">
+                                        <strong class="text-info-emphasis d-block" style="font-weight: 600;">
+                                            <?php echo htmlspecialchars($notif['mensaje']); ?>
+                                        </strong>
+                                        <span class="text-muted" style="font-size: 0.75rem;">
+                                            <?php echo date('d/m/Y H:i', strtotime($notif['fecha'])); ?>
+                                        </span>
+                                    </div>
+                                <?php endforeach; ?>
+                            <?php endif; ?>
                         </div>
                     </div>
 
-                    <!-- Noticias -->
+                    <!-- Noticias (dinámicas) -->
                     <div class="card dashboard-card p-4">
-                        <h5 class="fw-bold mb-3 h6 text-uppercase tracking-wider text-muted"><i class="bi bi-newspaper me-2" style="color: var(--gov-gold);"></i>Noticias y Eventos</h5>
-                        <?php foreach ($noticias as $noticia): ?>
-                            <div class="news-item">
-                                <div class="d-flex justify-content-between align-items-center">
-                                    <span class="news-title"><?php echo htmlspecialchars($noticia['titulo']); ?></span>
-                                    <span class="news-badge"><?php echo htmlspecialchars($noticia['badge']); ?></span>
+                        <h5 class="fw-bold mb-3 h6 text-uppercase tracking-wider text-muted">
+                            <i class="bi bi-newspaper me-2" style="color: var(--gov-gold);"></i>
+                            Noticias y Eventos
+                        </h5>
+                        <?php if (empty($noticias)): ?>
+                            <p class="text-muted text-center small">No hay noticias disponibles.</p>
+                        <?php else: ?>
+                            <?php foreach ($noticias as $noticia): ?>
+                                <div class="news-item">
+                                    <div class="d-flex justify-content-between align-items-center">
+                                        <span class="news-title"><?php echo htmlspecialchars($noticia['titulo']); ?></span>
+                                        <span class="news-badge"><?php echo htmlspecialchars($noticia['badge'] ?? 'Nuevo'); ?></span>
+                                    </div>
+                                    <div class="news-meta">
+                                        <i class="bi bi-calendar-event me-1"></i>
+                                        <?php echo date('d/m/Y', strtotime($noticia['fecha_publicacion'])); ?>
+                                    </div>
                                 </div>
-                                <div class="news-meta"><i class="bi bi-calendar-event me-1"></i> <?php echo htmlspecialchars($noticia['fecha']); ?></div>
-                            </div>
-                        <?php endforeach; ?>
+                            <?php endforeach; ?>
+                        <?php endif; ?>
                     </div>
                 </div>
 
@@ -634,9 +687,12 @@ include '../componentes/menu_desempleado.php';
                         </div>
                     </div>
 
-                    <!-- Cursos (sin estado de inscripción) -->
+                    <!-- Cursos disponibles -->
                     <div class="card dashboard-card p-4 mb-4">
-                        <h5 class="fw-bold mb-3 h6 text-uppercase tracking-wider text-muted"><i class="bi bi-journal-bookmark me-2" style="color: var(--gov-green);"></i>Planes Estatales de Capacitación</h5>
+                        <h5 class="fw-bold mb-3 h6 text-uppercase tracking-wider text-muted">
+                            <i class="bi bi-journal-bookmark me-2" style="color: var(--gov-green);"></i>
+                            Planes Estatales de Capacitación
+                        </h5>
                         <?php if (empty($cursos)): ?>
                             <p class="text-muted text-center">No hay cursos disponibles en este momento.</p>
                         <?php else: ?>
@@ -652,7 +708,6 @@ include '../componentes/menu_desempleado.php';
                                         </p>
                                     </div>
                                     <div>
-                                        <!-- Ahora solo mostramos el botón de solicitar plaza (sin estado de inscripción) -->
                                         <a href="solicitar_plaza.php?curso_id=<?php echo $curso['id']; ?>" class="btn btn-sm btn-green btn-pill-custom text-nowrap">Solicitar Plaza</a>
                                     </div>
                                 </div>
@@ -660,18 +715,39 @@ include '../componentes/menu_desempleado.php';
                         <?php endif; ?>
                     </div>
 
-                    <!-- Estado de candidaturas -->
+                    <!-- Estado de candidaturas (detalle dinámico) -->
                     <div class="card dashboard-card p-4 mb-4">
-                        <h5 class="fw-bold mb-3 h6 text-uppercase tracking-wider text-muted">Estado de mis Candidaturas</h5>
+                        <h5 class="fw-bold mb-3 h6 text-uppercase tracking-wider text-muted">
+                            Estado de mis Candidaturas
+                        </h5>
                         <div class="d-flex flex-column gap-3 mt-2">
-                            <?php if ($postulaciones > 0): ?>
-                                <div class="timeline-item">
-                                    <span class="badge bg-light text-secondary border mb-1" style="font-size: 0.65rem; font-weight: 600;"><?php echo date('d/m/Y'); ?></span>
-                                    <h6 class="fw-bold text-dark m-0 small">Tienes <?php echo $postulaciones; ?> postulaciones activas</h6>
-                                    <p class="text-muted small m-0">Revisa el estado de tus aplicaciones en el panel de seguimiento.</p>
-                                </div>
-                            <?php else: ?>
+                            <?php if (empty($postulaciones_detalle)): ?>
                                 <p class="text-muted text-center">No tienes candidaturas activas.</p>
+                            <?php else: ?>
+                                <?php foreach ($postulaciones_detalle as $post): 
+                                    // Mapeo de estado a clase CSS
+                                    $badge_class = [
+                                        'pendiente'  => 'badge-pendiente',
+                                        'revisado'   => 'badge-revisado',
+                                        'interesado' => 'badge-interesado',
+                                        'rechazado'  => 'badge-rechazado'
+                                    ][$post['estado']] ?? 'badge-pendiente';
+                                    
+                                    $texto_estado = ucfirst($post['estado']);
+                                ?>
+                                    <div class="timeline-item">
+                                        <span class="badge bg-light text-secondary border mb-1" style="font-size: 0.65rem; font-weight: 600;">
+                                            <?php echo date('d/m/Y', strtotime($post['fecha_postulacion'])); ?>
+                                        </span>
+                                        <h6 class="fw-bold text-dark m-0 small">
+                                            <?php echo htmlspecialchars($post['titulo_puesto']); ?>
+                                            <span class="badge <?php echo $badge_class; ?> ms-2"><?php echo $texto_estado; ?></span>
+                                        </h6>
+                                        <p class="text-muted small m-0">
+                                            <i class="bi bi-building me-1"></i><?php echo htmlspecialchars($post['nombre_empresa']); ?>
+                                        </p>
+                                    </div>
+                                <?php endforeach; ?>
                             <?php endif; ?>
                         </div>
                     </div>

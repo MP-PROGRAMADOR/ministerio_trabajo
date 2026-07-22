@@ -10,6 +10,11 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
 
 // Validar sesión activa del empleador
 if (!isset($_SESSION['empleador_id']) || empty($_SESSION['empleador_id'])) {
+    if (!empty($_SERVER['HTTP_X_REQUESTED_WITH']) && strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) === 'xmlhttprequest') {
+        header('Content-Type: application/json');
+        echo json_encode(['success' => false, 'message' => 'Sesión expirada. Inicie sesión nuevamente.']);
+        exit();
+    }
     $_SESSION['alerta'] = [
         'tipo' => 'danger',
         'mensaje' => 'Sesión expirada. Inicie sesión nuevamente.'
@@ -21,8 +26,8 @@ if (!isset($_SESSION['empleador_id']) || empty($_SESSION['empleador_id'])) {
 $empleador_id = $_SESSION['empleador_id'];
 
 // Capturar ambos IDs y el estado objetivo
-$notificacion_id = filter_input(INPUT_POST, 'notificacion_id', FILTER_VALIDATE_INT);
-$postulacion_id  = filter_input(INPUT_POST, 'postulacion_id', FILTER_VALIDATE_INT);
+$notificacion_id   = filter_input(INPUT_POST, 'notificacion_id', FILTER_VALIDATE_INT);
+$postulacion_id    = filter_input(INPUT_POST, 'postulacion_id', FILTER_VALIDATE_INT);
 $estado_ministerio = isset($_POST['estado_ministerio']) ? trim($_POST['estado_ministerio']) : 'en_revision';
 
 // -------------------------------------------------------------------------
@@ -66,10 +71,12 @@ try {
     // Iniciar transacción para asegurar atomicidad
     $pdo->beginTransaction();
 
-    // 1. Actualizar estado en notificaciones_intermediacion
-    $sqlNotif = "UPDATE notificaciones_intermediacion 
-                 SET estado_ministerio = :estado_ministerio
-                 WHERE id = :id AND empleador_id = :empleador_id";
+    // 1. Actualizar estado en notificaciones_intermediacion validando pertenencia al empleador
+    $sqlNotif = "UPDATE notificaciones_intermediacion n
+                 JOIN postulaciones p ON n.postulacion_id = p.id
+                 JOIN ofertas_empleo o ON p.oferta_id = o.id
+                 SET n.estado_ministerio = :estado_ministerio
+                 WHERE n.id = :id AND o.empleador_id = :empleador_id";
     
     $stmtNotif = $pdo->prepare($sqlNotif);
     $stmtNotif->execute([
@@ -78,17 +85,21 @@ try {
         ':empleador_id'      => $empleador_id
     ]);
 
-    // 2. Actualizar estado a 'revisado' en postulaciones
-    // Nos aseguramos de validar que la postulación pertenezca a una oferta de este empleador
+    // 2. Determinar dinámicamente el estado para la tabla postulaciones
+    // Si pulsa 'Contactar' (en_revision) -> cambia a 'revisado'
+    // Si pulsa 'Rechazar'  (rechazado)   -> cambia a 'rechazado'
+    $estado_postulacion = ($estado_ministerio === 'rechazado') ? 'rechazado' : 'revisado';
+
     $sqlPost = "UPDATE postulaciones p
                 JOIN ofertas_empleo o ON p.oferta_id = o.id
-                SET p.estado = 'revisado'
+                SET p.estado = :estado_postulacion
                 WHERE p.id = :postulacion_id AND o.empleador_id = :empleador_id";
 
     $stmtPost = $pdo->prepare($sqlPost);
     $stmtPost->execute([
-        ':postulacion_id' => $postulacion_id,
-        ':empleador_id'   => $empleador_id
+        ':estado_postulacion' => $estado_postulacion,
+        ':postulacion_id'     => $postulacion_id,
+        ':empleador_id'       => $empleador_id
     ]);
 
     // Confirmar los cambios
@@ -100,7 +111,7 @@ try {
         header('Content-Type: application/json');
         echo json_encode([
             'success' => true, 
-            'message' => 'Estados actualizados correctamente en notificación y postulación.'
+            'message' => 'Estados actualizados correctamente.'
         ]);
         exit();
     }
@@ -130,3 +141,4 @@ try {
 
 header('Location: ../empleador/candidatos.php');
 exit();
+?>

@@ -816,15 +816,23 @@ include_once '../componentes/menu_empleador.php';
                     </div>
                 </div>
             </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
-                <button type="button" class="btn btn-primary" id="btn-contactar-modal" onclick="contactarCandidato()">
-                    <i class="bi bi-envelope me-1"></i> Contactar
-                </button>
-            </div>
+           <div class="modal-footer">
+    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
+    
+    <!-- Botón Rechazar -->
+    <button type="button" class="btn btn-danger" id="btn-rechazar-modal" onclick="rechazarCandidato()">
+        <i class="bi bi-x-circle me-1"></i> Rechazar
+    </button>
+
+    <!-- Botón Contactar -->
+    <button type="button" class="btn btn-primary" id="btn-contactar-modal" onclick="contactarCandidato()">
+        <i class="bi bi-envelope me-1"></i> Contactar
+    </button>
+</div>
         </div>
     </div>
 </div>
+
 <script>
     // ===== PASAR DATOS AL MODAL =====
     document.addEventListener('DOMContentLoaded', function () {
@@ -880,25 +888,30 @@ include_once '../componentes/menu_empleador.php';
                 }
             });
 
-            // 4. Captura de IDs y Control del Botón Contactar
+            // 4. Captura de IDs y Control de Botones (Contactar / Rechazar)
             const notificacionId = button.getAttribute('data-notificacion-id') || '';
             const postulacionId = button.getAttribute('data-postulaciones-id') || '';
             const estadoMinisterio = button.getAttribute('data-estado-ministerio') || 'pendiente';
 
             const btnContactar = document.getElementById('btn-contactar-modal');
+            const btnRechazar = document.getElementById('btn-rechazar-modal');
 
+            // Asignar IDs al dataset de los dos botones
             if (btnContactar) {
-                // Asignar IDs al dataset del botón de acción
                 btnContactar.dataset.notificacionId = notificacionId;
                 btnContactar.dataset.postulacionId = postulacionId;
-
-                // Ocultar botón si ya no está en estado pendiente
-                if (['en_revision', 'aprobado', 'contratado'].includes(estadoMinisterio)) {
-                    btnContactar.style.display = 'none';
-                } else {
-                    btnContactar.style.display = 'inline-block';
-                }
             }
+            if (btnRechazar) {
+                btnRechazar.dataset.notificacionId = notificacionId;
+                btnRechazar.dataset.postulacionId = postulacionId;
+            }
+
+            // Ocultar botones si el estado ya NO es 'pendiente'
+            const esPendiente = (estadoMinisterio === 'pendiente');
+            const displayStyle = esPendiente ? 'inline-block' : 'none';
+
+            if (btnContactar) btnContactar.style.display = displayStyle;
+            if (btnRechazar) btnRechazar.style.display = displayStyle;
         });
     }
 });
@@ -906,9 +919,22 @@ include_once '../componentes/menu_empleador.php';
 
 
 <script>
-    // Dentro del Listener de Bootstrap cuando se abre el modal:
+// Función para el botón Contactar
 function contactarCandidato() {
-    const btn = document.getElementById('btn-contactar-modal');
+    enviarEstadoAlServidor('btn-contactar-modal', 'en_revision');
+}
+
+// Función para el botón Rechazar
+function rechazarCandidato() {
+    if (!confirm('¿Está seguro de que desea rechazar a este candidato?')) {
+        return;
+    }
+    enviarEstadoAlServidor('btn-rechazar-modal', 'rechazado');
+}
+
+// Función auxiliar para realizar la petición AJAX
+function enviarEstadoAlServidor(btnId, nuevoEstadoMinisterio) {
+    const btn = document.getElementById(btnId);
     if (!btn) return;
 
     const notificacionId = btn.dataset.notificacionId;
@@ -929,7 +955,7 @@ function contactarCandidato() {
         body: new URLSearchParams({
             'notificacion_id': notificacionId,
             'postulacion_id': postulacionId,
-            'estado_ministerio': 'en_revision'
+            'estado_ministerio': nuevoEstadoMinisterio
         })
     })
     .then(response => response.json())

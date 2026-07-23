@@ -579,37 +579,46 @@ ORDER BY ni.fecha_creacion DESC
                                                 <?php echo date('d M, Y', strtotime($inter['fecha_creacion'])); ?>
                                             </td>
                                             <td class="text-end">
-                                                <div class="d-flex gap-1 justify-content-end">
-                                                    <?php if ($estado === 'pendiente'): ?>
-                                                        <button class="btn btn-sm btn-success rounded-circle" title="Aprobar">
-                                                            <i class="bi bi-check-lg"></i>
-                                                        </button>
-                                                        <button class="btn btn-sm btn-outline-danger rounded-circle"
-                                                            title="Rechazar">
-                                                            <i class="bi bi-x-lg"></i>
-                                                        </button>
-                                                    <?php endif; ?>
-                                                    <button class="btn btn-sm btn-light rounded-circle btn-ver-detalle"
-        data-notificacion-id="<?php echo htmlspecialchars($inter['notificacion_id'] ?? ''); ?>"
-        data-buscador-id="<?php echo htmlspecialchars($inter['buscador_id'] ?? ''); ?>"
-        data-postulaciones-id="<?php echo htmlspecialchars($inter['postulacion_id'] ?? ''); ?>"
-        data-codigo="<?php echo htmlspecialchars($inter['codigo_seguimiento']); ?>"
-        data-candidato="<?php echo htmlspecialchars($inter['buscador_nombre'] . ' ' . $inter['buscador_apellidos']); ?>"
-        data-expediente="<?php echo htmlspecialchars($inter['buscador_expediente']); ?>"
-        data-estado="<?php echo htmlspecialchars($inter['buscador_estado']); ?>"
-        data-provincia="<?php echo htmlspecialchars($inter['buscador_provincia']); ?>"
-        data-empresa="<?php echo htmlspecialchars($inter['nombre_empresa']); ?>"
-        data-puesto="<?php echo htmlspecialchars($inter['titulo_puesto'] ?? 'N/A'); ?>"
-        data-ruc="<?php echo htmlspecialchars($inter['rnc_ruc'] ?? 'N/A'); ?>"
-        data-salario="<?php echo $inter['salario_ofrecido'] ? number_format($inter['salario_ofrecido'], 0, ',', '.') . ' XAF' : 'No especificado'; ?>"
-        data-motivo="<?php echo htmlspecialchars($inter['motivo_empresa'] ?? 'Sin observaciones.'); ?>"
-        data-estado-ministerio="<?php echo htmlspecialchars($inter['estado_ministerio'] ?? ''); ?>"
-        data-bs-toggle="modal" 
-        data-bs-target="#modalDetalleNotificacion"
-        title="Ver detalles">
-    <i class="bi bi-eye"></i>
-</button>
-                                                </div>
+                                             <div class="d-flex gap-1 justify-content-end">
+    <?php if ($estado === 'pendiente'): ?>
+        <button class="btn btn-sm btn-success rounded-circle" title="Aprobar">
+            <i class="bi bi-check-lg"></i>
+        </button>
+        <button class="btn btn-sm btn-outline-danger rounded-circle" title="Rechazar">
+            <i class="bi bi-x-lg"></i>
+        </button>
+    <?php endif; ?>
+
+    <!-- Botón para imprimir credencial solo si está aprobado -->
+    <?php if (($inter['estado_ministerio'] ?? '') === 'aprobado'): ?>
+        <a href="../php/generar_credencial_pdf.php?notificacion_id=<?php echo urlencode($inter['notificacion_id']); ?>" 
+           target="_blank" 
+           class="btn btn-sm btn-outline-primary rounded-circle" 
+           title="Imprimir Credencial / Pase">
+            <i class="bi bi-printer"></i>
+        </a>
+    <?php endif; ?>
+
+    <button class="btn btn-sm btn-light rounded-circle btn-ver-detalle"
+            data-notificacion-id="<?php echo htmlspecialchars($inter['notificacion_id'] ?? ''); ?>"
+            data-buscador-id="<?php echo htmlspecialchars($inter['buscador_id'] ?? ''); ?>"
+            data-postulaciones-id="<?php echo htmlspecialchars($inter['postulacion_id'] ?? ''); ?>"
+            data-codigo="<?php echo htmlspecialchars($inter['codigo_seguimiento']); ?>"
+            data-candidato="<?php echo htmlspecialchars($inter['buscador_nombre'] . ' ' . $inter['buscador_apellidos']); ?>"
+            data-expediente="<?php echo htmlspecialchars($inter['buscador_expediente']); ?>"
+            data-estado="<?php echo htmlspecialchars($inter['buscador_estado']); ?>"
+            data-provincia="<?php echo htmlspecialchars($inter['buscador_provincia']); ?>"
+            data-empresa="<?php echo htmlspecialchars($inter['nombre_empresa']); ?>"
+            data-puesto="<?php echo htmlspecialchars($inter['titulo_puesto'] ?? 'N/A'); ?>"
+            data-ruc="<?php echo htmlspecialchars($inter['rnc_ruc'] ?? 'N/A'); ?>"
+            data-salario="<?php echo $inter['salario_ofrecido'] ? number_format($inter['salario_ofrecido'], 0, ',', '.') . ' XAF' : 'No especificado'; ?>"
+            data-motivo="<?php echo htmlspecialchars($inter['motivo_empresa'] ?? 'Sin observaciones.'); ?>"
+            data-estado-ministerio="<?php echo htmlspecialchars($inter['estado_ministerio'] ?? ''); ?>"
+            data-bs-toggle="modal" data-bs-target="#modalDetalleNotificacion"
+            title="Ver detalles">
+        <i class="bi bi-eye"></i>
+    </button>
+</div>
                                             </td>
                                         </tr>
                                     <?php endforeach; ?>
@@ -632,55 +641,99 @@ ORDER BY ni.fecha_creacion DESC
 <div class="modal fade" id="modalDetalleNotificacion" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered modal-lg">
         <div class="modal-content border-0 shadow">
+            
+            <!-- Encabezado -->
             <div class="modal-header bg-light">
-                <h5 class="modal-title fw-bold">Expediente de Intermediación: <span id="modal-codigo" class="text-primary"></span></h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                <h5 class="modal-title fw-bold">
+                    Expediente de Intermediación: <span id="modal-codigo" class="text-primary"></span>
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
+
+            <!-- Cuerpo del Modal -->
             <div class="modal-body">
                 <div class="row g-3">
+                    <!-- Datos Candidato -->
                     <div class="col-md-6 border-end">
-                        <h6 class="fw-bold text-muted" style="font-size: 0.8rem; text-transform: uppercase;">Datos del Candidato</h6>
+                        <h6 class="fw-bold text-muted" style="font-size: 0.8rem; text-transform: uppercase;">
+                            Datos del Candidato
+                        </h6>
                         <p class="mb-1"><strong>Nombre:</strong> <span id="modal-candidato"></span></p>
                         <p class="mb-1"><strong>Nº Expediente:</strong> <span id="modal-expediente"></span></p>
-                        <p class="mb-1"><strong>Estado Actual:</strong> <span id="modal-estado" class="badge bg-secondary"></span></p>
+                        <p class="mb-1">
+                            <strong>Estado Actual:</strong> 
+                            <span id="modal-estado" class="badge bg-secondary"></span>
+                        </p>
                         <p class="mb-0"><strong>Provincia:</strong> <span id="modal-provincia"></span></p>
                     </div>
+
+                    <!-- Datos Empresa / Oferta -->
                     <div class="col-md-6">
-                        <h6 class="fw-bold text-muted" style="font-size: 0.8rem; text-transform: uppercase;">Datos de la Empresa / Oferta</h6>
+                        <h6 class="fw-bold text-muted" style="font-size: 0.8rem; text-transform: uppercase;">
+                            Datos de la Empresa / Oferta
+                        </h6>
                         <p class="mb-1"><strong>Empresa:</strong> <span id="modal-empresa"></span></p>
                         <p class="mb-1"><strong>Puesto:</strong> <span id="modal-puesto"></span></p>
                         <p class="mb-1"><strong>RUC / RNC:</strong> <span id="modal-ruc"></span></p>
                         <p class="mb-0"><strong>Salario:</strong> <span id="modal-salario"></span></p>
                     </div>
+
+                    <!-- Motivo -->
                     <div class="col-12">
                         <hr>
                         <label class="form-label fw-bold">Motivo de la Empresa</label>
                         <div id="modal-motivo" class="p-3 bg-light rounded text-muted"></div>
                     </div>
+
+                    <!-- Estado Ministerio -->
                     <div class="col-12">
                         <label class="form-label fw-bold">Estado Ministerio</label>
-                        <div><span id="modal-estado-ministerio" class="badge bg-warning">Pendiente</span></div>
+                        <div>
+                            <span id="modal-estado-ministerio" class="badge bg-warning">Pendiente</span>
+                        </div>
                     </div>
-                    
-                    <!-- Campo editable de Observaciones del Ministerio (Solo visible en_revision) -->
+
+                    <!-- Observaciones Ministerio (Solo en revisión) -->
                     <div class="col-12" id="seccion-observaciones" style="display: none;">
                         <hr>
-                        <label for="modal-observaciones-ministerio" class="form-label fw-bold">Observaciones del Ministerio</label>
-                        <textarea id="modal-observaciones-ministerio" class="form-control" rows="3" placeholder="Ingrese las observaciones o notas de resolución..."></textarea>
+                        <label for="modal-observaciones-ministerio" class="form-label fw-bold">
+                            Observaciones del Ministerio
+                        </label>
+                        <textarea id="modal-observaciones-ministerio" class="form-control" rows="3"
+                            placeholder="Ingrese las observaciones o notas de resolución..."></textarea>
                     </div>
                 </div>
             </div>
-            <div class="modal-footer bg-light">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
-                <div id="seccion-botones-acciones" style="display: none;">
-                    <button type="button" class="btn btn-danger" id="btn-rechazar-modal" onclick="procesarRespuestaMinisterio('rechazado')">
-                        <i class="bi bi-x-circle me-1"></i> Rechazar
-                    </button>
-                    <button type="button" class="btn btn-success" id="btn-aprobar-modal" onclick="procesarRespuestaMinisterio('aprobado')">
-                        <i class="bi bi-check-circle me-1"></i> Aprobar
-                    </button>
+
+            <!-- Pie de Página (modal-footer) -->
+            <div class="modal-footer bg-light d-flex justify-content-between align-items-center">
+                
+                <!-- Lado Izquierdo: Botón de Imprimir Credencial (Solo cuando estado = 'aprobado') -->
+                <div id="seccion-imprimir-modal" style="display: none;">
+                    <a id="btn-imprimir-modal-pdf" href="#" target="_blank" class="btn btn-outline-primary">
+                        <i class="bi bi-printer-fill me-1"></i> Imprimir Credencial / Pase (OCE)
+                    </a>
                 </div>
+
+                <!-- Lado Derecho: Acciones y Cierre -->
+                <div class="d-flex gap-2 ms-auto">
+                    <!-- Botones Aprobar/Rechazar (Solo cuando estado = 'en_revision') -->
+                    <div id="seccion-botones-acciones" style="display: none;">
+                        <button type="button" class="btn btn-danger me-1" id="btn-rechazar-modal"
+                            onclick="procesarRespuestaMinisterio('rechazado')">
+                            <i class="bi bi-x-circle me-1"></i> Rechazar
+                        </button>
+                        <button type="button" class="btn btn-success" id="btn-aprobar-modal"
+                            onclick="procesarRespuestaMinisterio('aprobado')">
+                            <i class="bi bi-check-circle me-1"></i> Aprobar
+                        </button>
+                    </div>
+
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
+                </div>
+
             </div>
+
         </div>
     </div>
 </div>
@@ -755,24 +808,19 @@ ORDER BY ni.fecha_creacion DESC
 
 
 <script>
-    // Variables globales para almacenar los IDs de la fila seleccionada
-let currentNotificacionId = null;
-let currentBuscadorId     = null;
-let currentPostulacionId  = null;
-
-document.addEventListener('DOMContentLoaded', function () {
+    document.addEventListener('DOMContentLoaded', function () {
     const modalDetalle = document.getElementById('modalDetalleNotificacion');
 
     if (modalDetalle) {
         modalDetalle.addEventListener('show.bs.modal', function (event) {
             const button = event.relatedTarget;
 
-            // 1. Guardar los 3 IDs en variables globales
+            // 1. Guardar IDs globales
             currentNotificacionId = button.getAttribute('data-notificacion-id') || null;
             currentBuscadorId     = button.getAttribute('data-buscador-id') || null;
             currentPostulacionId  = button.getAttribute('data-postulaciones-id') || null;
 
-            // 2. Cargar datos generales en el modal
+            // 2. Cargar datos en los campos del modal...
             document.getElementById('modal-codigo').textContent    = button.dataset.codigo || 'N/A';
             document.getElementById('modal-candidato').textContent = button.dataset.candidato || 'N/A';
             document.getElementById('modal-expediente').textContent= button.dataset.expediente || 'N/A';
@@ -783,92 +831,36 @@ document.addEventListener('DOMContentLoaded', function () {
             document.getElementById('modal-salario').textContent   = button.dataset.salario || 'N/A';
             document.getElementById('modal-motivo').textContent    = button.dataset.motivo || 'Sin observaciones.';
 
-            // 3. Formatear estado del candidato
-            const estadoCandidatoElem = document.getElementById('modal-estado');
-            const estadoCandidato = button.dataset.estado || 'desempleado';
-            estadoCandidatoElem.textContent = estadoCandidato.charAt(0).toUpperCase() + estadoCandidato.slice(1);
-
-            // 4. Evaluar estado del ministerio y visibilidad de controles
+            // 3. Evaluar estado y visibilidad de los botones
             const estadoMinisterio = button.getAttribute('data-estado-ministerio') || 'pendiente';
-            const estadoMinisterioElem = document.getElementById('modal-estado-ministerio');
             
-            // Mapeo visual de badges
-            const badgeMinisterioMap = {
-                'pendiente': 'badge bg-warning text-dark',
-                'en_revision': 'badge bg-info text-dark',
-                'aprobado': 'badge bg-success',
-                'rechazado': 'badge bg-danger',
-                'contratado': 'badge bg-primary'
-            };
-            estadoMinisterioElem.className = badgeMinisterioMap[estadoMinisterio] || 'badge bg-secondary';
-            estadoMinisterioElem.textContent = estadoMinisterio.replace('_', ' ').toUpperCase();
-
-            // Elementos condicionales
             const seccionObservaciones = document.getElementById('seccion-observaciones');
-            const seccionBotones = document.getElementById('seccion-botones-acciones');
-            const textareaObservaciones = document.getElementById('modal-observaciones-ministerio');
+            const seccionBotones       = document.getElementById('seccion-botones-acciones');
+            const seccionImprimir      = document.getElementById('seccion-imprimir-modal');
+            const btnImprimirPDF       = document.getElementById('btn-imprimir-modal-pdf');
+            const textareaObs          = document.getElementById('modal-observaciones-ministerio');
 
-            // Habilitar observaciones y botones SOLO si el estado es 'en_revision'
+            // Control de visibilidad según estado
             if (estadoMinisterio === 'en_revision') {
                 seccionObservaciones.style.display = 'block';
-                seccionBotones.style.display = 'inline-block';
-                textareaObservaciones.value = button.dataset.observacionesMinisterio || '';
+                seccionBotones.style.display       = 'inline-block';
+                seccionImprimir.style.display     = 'none';
+                textareaObs.value                  = button.dataset.observacionesMinisterio || '';
+            } else if (estadoMinisterio === 'aprobado') {
+                seccionObservaciones.style.display = 'none';
+                seccionBotones.style.display       = 'none';
+                seccionImprimir.style.display     = 'inline-block';
+                
+                // Asignar URL con el notificacion_id actual
+                btnImprimirPDF.href = `../php/generar_credencial_pdf.php?notificacion_id=${currentNotificacionId}`;
             } else {
                 seccionObservaciones.style.display = 'none';
-                seccionBotones.style.display = 'none';
-                textareaObservaciones.value = '';
+                seccionBotones.style.display       = 'none';
+                seccionImprimir.style.display     = 'none';
             }
         });
     }
 });
-
-// Función para procesar Aprobar o Rechazar
-function procesarRespuestaMinisterio(nuevoEstado) {
-    const accionTexto = (nuevoEstado === 'aprobado') ? 'aprobar' : 'rechazar';
-    
-    if (!confirm(`¿Está seguro de que desea ${accionTexto} esta solicitud?`)) {
-        return;
-    }
-
-    if (!currentNotificacionId || !currentPostulacionId) {
-        alert('Error: No se encontraron los identificadores necesarios.');
-        return;
-    }
-
-    const observaciones = document.getElementById('modal-observaciones-ministerio').value.trim();
-
-    // Petición AJAX al PHP
-    fetch('../php/procesar_resolucion_ministerio.php', {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/x-www-form-urlencoded',
-            'X-Requested-With': 'XMLHttpRequest'
-        },
-        body: new URLSearchParams({
-            'notificacion_id': currentNotificacionId,
-            'buscador_id': currentBuscadorId,
-            'postulacion_id': currentPostulacionId,
-            'estado_ministerio': nuevoEstado,
-            'observaciones_ministerio': observaciones
-        })
-    })
-    .then(response => response.json())
-    .then(data => {
-        if (data.success) {
-            const modalElem = document.getElementById('modalDetalleNotificacion');
-            const modal = bootstrap.Modal.getInstance(modalElem);
-            if (modal) modal.hide();
-
-            window.location.reload();
-        } else {
-            alert('Error: ' + (data.message || 'No se pudo actualizar el registro.'));
-        }
-    })
-    .catch(error => {
-        console.error('Error AJAX:', error);
-        alert('Ocurrió un error al procesar la solicitud.');
-    });
-}
 </script>
 
 <?php include_once '../componentes/footer_admin.php'; ?>

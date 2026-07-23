@@ -292,8 +292,8 @@ include_once '../componentes/menu_empleador.php';
     }
 
     .badge-estado.revisado {
-        background: #e2e3e5;
-        color: #383d41;
+        background: #2ef1ffb6;
+        color: #000000;
     }
 
     .badge-estado.interesado {
@@ -581,31 +581,6 @@ include_once '../componentes/menu_empleador.php';
                                         <i class="bi bi-clock me-1"></i>
                                         <?php echo date('d/m/Y H:i', strtotime($inter['fecha_creacion'])); ?>
                                     </small>
-                                    <div>
-                                        <?php if ($inter['estado_ministerio'] == 'pendiente'): ?>
-                                            <button class="btn btn-sm btn-outline-success"
-                                                onclick="aprobarIntermediacion('<?php echo htmlspecialchars($inter['codigo_seguimiento']); ?>')">
-                                                <i class="bi bi-check-lg"></i>
-                                            </button>
-                                            <button class="btn btn-sm btn-outline-danger"
-                                                onclick="rechazarIntermediacion('<?php echo htmlspecialchars($inter['codigo_seguimiento']); ?>')">
-                                                <i class="bi bi-x-lg"></i>
-                                            </button>
-                                        <?php endif; ?>
-                                        <button class="btn btn-sm btn-outline-secondary" data-bs-toggle="modal"
-                                            data-bs-target="#modalDetalleCandidato"
-                                            data-codigo="<?php echo htmlspecialchars($inter['codigo_seguimiento']); ?>"
-                                            data-nombre="<?php echo htmlspecialchars($inter['buscador_nombre'] . ' ' . $inter['buscador_apellidos']); ?>"
-                                            data-expediente="<?php echo htmlspecialchars($inter['buscador_expediente']); ?>"
-                                            data-telefono="<?php echo htmlspecialchars($inter['buscador_telefono'] ?? 'No registrado'); ?>"
-                                            data-estado="<?php echo htmlspecialchars($inter['buscador_estado']); ?>"
-                                            data-puesto="<?php echo htmlspecialchars($inter['titulo_puesto'] ?? 'N/A'); ?>"
-                                            data-salario="<?php echo $inter['salario_ofrecido'] ? number_format($inter['salario_ofrecido'], 0, ',', '.') . ' XAF' : 'No especificado'; ?>"
-                                            data-fecha="<?php echo date('d/m/Y', strtotime($inter['fecha_creacion'])); ?>"
-                                            title="Ver detalles">
-                                            <i class="bi bi-eye"></i>
-                                        </button>
-                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -749,7 +724,6 @@ include_once '../componentes/menu_empleador.php';
     </div>
 </div>
 
-<!-- ===== MODAL DETALLE CANDIDATO ===== -->
 <!-- ===== MODAL DETALLE CANDIDATO ===== -->
 <div class="modal fade" id="modalDetalleCandidato" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered modal-lg">
